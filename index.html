@@ -58,6 +58,7 @@ th{background:#0d6efd;color:#fff;}
     
 </style>    </head>    
 <body>    <select id="season" onchange="onSeasonChange()"></select>
+<button onclick="newSeason()">➕ New Season</button>
 
 <div style="display:flex;gap:6px;">    
  <button onclick="openSeasonScreen()">⚙ Season Setup</button>    
@@ -150,20 +151,23 @@ function closeEntryScreen(){
     
 function openSeasonScreen(){    
  document.getElementById("seasonScreen").style.display="block";    
-    
+
  const s = document.getElementById("season").value;    
-    
- // if no season selected    
- if(!s) return;    
-    
- // load season DATA into input boxes    
+
+ // ⭐ अगर कोई season select नहीं = नया season बनाना है
+ if(!s){
+     document.getElementById("seasonName").value = "";
+     document.getElementById("seasonWeight").value = "";
+     return;
+ }
+
+ // ⭐ अगर selected है = edit mode
  db.ref("seasonsInfo/" + s).once("value", snap => {    
      const d = snap.val();    
      document.getElementById("seasonName").value = d.name || "";    
      document.getElementById("seasonWeight").value = d.defaultBw || "";    
  });    
-}    
-    
+}
 function closeSeasonScreen(){    
  document.getElementById("seasonScreen").style.display="none";    
 }    
@@ -173,7 +177,22 @@ function saveSeason(){
  const oldName = document.getElementById("season").value;  // existing selected    
  const newName = document.getElementById("seasonName").value.trim();    
  const weight  = document.getElementById("seasonWeight").value.trim();    
-    
+    // ⭐ NEW SEASON CREATE
+if(!oldName){
+   db.ref("seasonsInfo/" + newName).set({
+       name:newName,
+       defaultBw:weight
+   });
+
+   db.ref("seasons/" + newName).set({ entries: {} });
+
+   localStorage.setItem("lastSeason", newName);
+
+   alert("New Season Created");
+   closeSeasonScreen();
+   loadSeasons();
+   return;
+}
  if(!newName || !weight){    
     alert("Enter Season & Weight");    
     return;    
@@ -473,6 +492,17 @@ loadSeasons();
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js');
+}
+function newSeason(){
+   // dropdown को खाली कर देते हैं
+   document.getElementById("season").value = "";
+
+   // season form blank open
+   document.getElementById("seasonName").value = "";
+   document.getElementById("seasonWeight").value = "";
+
+   // open screen
+   document.getElementById("seasonScreen").style.display="block";
 }
 </script>
 </body>    
