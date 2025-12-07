@@ -1,0 +1,469 @@
+<!DOCTYPE html>    <html lang="hi">    
+<head>    
+<meta charset="UTF-8">    
+<title>Mandi App Final</title>    
+<meta name="viewport" content="width=device-width, initial-scale=1">    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>    <style>    
+body{font-family:Arial;padding:12px;background:#eef0f4;}    
+    
+button,input,select{    
+ width:100%;padding:10px;margin:6px 0;border-radius:6px;    
+ border:1px solid #aaa;font-size:15px;    
+}    
+button{background:#0d6efd;color:#fff;border:none;}    
+    
+.tableBox{background:#fff;border-radius:6px;overflow-y:auto;max-height:400px;}    
+table{width:100%;border-collapse:collapse;}    
+th,td{border:1px solid #ccc;padding:8px;font-size:14px;}    
+th{background:#0d6efd;color:#fff;}    
+.actionBtn{padding:4px 8px;background:#444;color:#fff;border:none;border-radius:4px;}    
+    
+.searchBar{background:#d9edff;padding:10px;border-radius:6px;margin-bottom:10px;}    
+    
+#entryScreen,#seasonScreen{    
+ position:fixed;top:0;left:0;right:0;bottom:0;    
+ background:#fff;padding:14px;display:none;z-index:999;    
+ overflow-y:auto;    
+}    
+@media print {    
+    
+  /* HIDE EVERYTHING EXCEPT TABLE + TOTALS */    
+  select,    
+  #entryScreen,    
+  #seasonScreen,    
+  button,    
+  .searchBar,    
+  .actionBtn,    
+  thead th:last-child,    
+  tbody td:last-child {    
+    display: none !important;    
+  }    
+    
+  /* TABLE SCROLL REMOVE FOR PRINT */    
+  .tableBox {    
+    max-height: none !important;    
+    overflow: visible !important;    
+  }    
+    
+  body {    
+    background: white !important;    
+  }    
+    
+  /* CENTER TOTALS */    
+  div[style*="background:white"] {    
+    text-align: center !important;    
+  }    
+}    
+    
+    
+</style>    </head>    
+<body>    <select id="season" onchange="onSeasonChange()"></select>
+
+<div style="display:flex;gap:6px;">    
+ <button onclick="openSeasonScreen()">⚙ Season Setup</button>    
+ <button onclick="openEntryScreen()">➕ Add Entry</button>    
+</div>    <div class="searchBar">    
+  <input id="searchName" placeholder="Search by Customer Name" oninput="filterData()">    
+  <input type="date" id="fromDate" oninput="filterData()">    
+  <input type="date" id="toDate" oninput="filterData()">    
+</div>    <div style="display:flex;gap:6px;margin-bottom:6px;">    
+   <button onclick="sortNewest()">Newest First</button>    
+<button onclick="sortNameAZ()">A → Z</button>
+<button onclick="sortNameZA()">Z → A</button>
+   <button onclick="sortOldest()">Oldest First</button>    
+</div>    <div style="background:white;padding:10px;border-radius:6px;margin-bottom:10px;">    
+<b>Total Bore:</b> <span id="totalBore">0</span> |    
+<b>Total Quintal:</b> <span id="totalQtl">0</span>    
+<button onclick="window.print()">🖨 Print</button>    
+</div>    <div class="tableBox">    
+<table>    
+ <thead>    
+   <tr>    
+     <th>Date</th>    
+     <th>Customer</th>    
+     <th>Village</th>    
+     <th>Bore</th>    
+     <th>Qtl</th>    
+     <th>Actions</th>    
+   </tr>    
+ </thead>    
+ <tbody id="output"></tbody>    
+</table>    
+</div>    <div id="entryScreen">    
+  <h3>Add / Edit Entry</h3>   
+<div id="entrySeasonLabel"
+     style="font-weight:bold;margin-bottom:10px;color:#0d6efd;"></div>
+   <input list="customerList" id="customer" placeholder="Customer Name">    
+  <datalist id="customerList"></datalist>      <input id="father" placeholder="Father Name (optional)">    
+  <input id="village" placeholder="Village (optional)">    
+  <input type="date" id="entryDate">      <input id="defaultBW" readonly placeholder="Default Bore Weight">      <input id="bore" placeholder="Bore" oninput="autoCalc()">    
+  <input id="extra" placeholder="Extra Weight (optional)" oninput="autoCalc()">    
+  <input id="quintal" placeholder="Quintal" readonly>    <button onclick="saveEntry()">✔ Save Entry</button>
+<button onclick="closeEntryScreen()">⬅ Back</button>
+
+</div>    <div id="seasonScreen">    
+  <h3>Season Setup</h3>      <input id="seasonName" placeholder="Season Name">    
+  <input id="seasonWeight" placeholder="Default Bore Weight">    <button onclick="saveSeason()">✔ Save / Update</button>
+<button onclick="deleteSeason()">🗑 Delete</button>
+<button onclick="closeSeasonScreen()">⬅ Back</button>
+
+</div>    <script>    
+/******** FIREBASE *********/    
+const firebaseConfig = {    
+  apiKey:"AIzaSyAiwfHxzsreDK2RkYLXNjhb8DhMmpYZ-tY",    
+  authDomain:"fasal-9a05b.firebaseapp.com",    
+  databaseURL:"https://fasal-9a05b-default-rtdb.firebaseio.com",    
+  projectId:"fasal-9a05b",    
+  storageBucket:"fasal-9a05b.firebasestorage.app",    
+  messagingSenderId:"533524339542",    
+  appId:"1:533524339542:web:fce916adddcec0d5e714f7",    
+};    
+firebase.initializeApp(firebaseConfig);    
+const db=firebase.database();    
+    
+/******** ENTRY SCREEN OPEN *********/    
+function openEntryScreen(){    
+
+  // SHOW SEASON NAME
+  const s = document.getElementById("season").value;
+  document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
+
+  // SHOW ENTRY SCREEN
+  document.getElementById("entryScreen").style.display="block";    
+
+  // AUTO DATE
+  const today = new Date().toISOString().split("T")[0];    
+  document.getElementById("entryDate").value = today;    
+
+  // FETCH DEFAULT BORE WEIGHT
+  db.ref("seasonsInfo/"+s).once("value",snap=>{
+    const bw = Number(snap.val()?.defaultBw || 0);
+    window.defaultBW = bw;
+    document.getElementById("defaultBW").value = bw;
+  });
+
+}
+    
+function closeEntryScreen(){    
+ document.getElementById("entryScreen").style.display="none";    
+}    
+    
+function openSeasonScreen(){    
+ document.getElementById("seasonScreen").style.display="block";    
+    
+ const s = document.getElementById("season").value;    
+    
+ // if no season selected    
+ if(!s) return;    
+    
+ // load season DATA into input boxes    
+ db.ref("seasonsInfo/" + s).once("value", snap => {    
+     const d = snap.val();    
+     document.getElementById("seasonName").value = d.name || "";    
+     document.getElementById("seasonWeight").value = d.defaultBw || "";    
+ });    
+}    
+    
+function closeSeasonScreen(){    
+ document.getElementById("seasonScreen").style.display="none";    
+}    
+    
+/******** SAVE SEASON *********/    
+function saveSeason(){    
+ const oldName = document.getElementById("season").value;  // existing selected    
+ const newName = document.getElementById("seasonName").value.trim();    
+ const weight  = document.getElementById("seasonWeight").value.trim();    
+    
+ if(!newName || !weight){    
+    alert("Enter Season & Weight");    
+    return;    
+ }    
+    
+ // 🟢 CASE: name not changed → just update weight    
+ if(oldName === newName){    
+    db.ref("seasonsInfo/"+oldName).update({    
+      name:newName,    
+      defaultBw:weight    
+    });    
+    
+    alert("Season Updated Successfully");    
+    closeSeasonScreen();    
+    loadSeasons();    
+    return;    
+ }    
+    
+ // 🔴 CASE: name changed → migrate old entries into new season    
+ db.ref("seasons/"+oldName+"/entries").once("value", snap=>{    
+    const entries = snap.val() || {};    
+    
+    // create new season with same entries    
+    db.ref("seasons/"+newName+"/entries").set(entries);    
+    
+    // update season info    
+    db.ref("seasonsInfo/"+newName).set({    
+       name:newName,    
+       defaultBw:weight    
+    });    
+    
+    // delete old season    
+    db.ref("seasons/"+oldName).remove();    
+    db.ref("seasonsInfo/"+oldName).remove();    
+    
+    // remember new season    
+    localStorage.setItem("lastSeason", newName);    
+    
+    alert("Season Renamed Successfully");    
+    closeSeasonScreen();    
+    loadSeasons();    
+ });    
+}    
+    
+/******** DELETE SEASON *********/    
+function deleteSeason(){    
+ const s=document.getElementById("season").value;    
+ if(confirm("Delete?")){    
+   db.ref("seasonsInfo/"+s).remove();    
+   db.ref("seasons/"+s).remove();    
+   closeSeasonScreen();    
+   loadSeasons();    
+ }    
+}    
+    
+/******** LOAD SEASONS *********/    
+function loadSeasons(){    
+ const dd=document.getElementById("season");    
+ dd.innerHTML="";    
+ db.ref("seasonsInfo").once("value",snap=>{    
+   const data=snap.val();    
+   if(!data) return;    
+   for(let s in data){    
+     const opt=document.createElement("option");    
+     opt.value=s; opt.text=s;    
+     dd.appendChild(opt);    
+   }    
+   if(localStorage.getItem("lastSeason"))    
+     dd.value=localStorage.getItem("lastSeason");    
+    
+   loadDefaultWeight();    
+   loadSeason();    
+ });    
+}    
+    
+function onSeasonChange(){    
+ localStorage.setItem("lastSeason",season.value);    
+ loadDefaultWeight();    
+ loadSeason();    
+}    
+    
+/******** DEFAULT BW *********/    
+function loadDefaultWeight(){    
+ const s=document.getElementById("season").value;    
+ if(!s) return;    
+ db.ref("seasonsInfo/"+s).once("value",snap=>{    
+   const d=snap.val();    
+   window.defaultBW = Number(d.defaultBw);    
+   document.getElementById("defaultBW").value = window.defaultBW;    
+ });    
+}    
+    
+/******** AUTO CALC *********/    
+function autoCalc(){    
+ const bore = Number(document.getElementById("bore").value || 0);    
+ const extra = Number(document.getElementById("extra").value || 0);    
+ const bw = Number(window.defaultBW || 0);    
+ const total = (bore * bw) + extra;    
+ const q = total / 100;    
+ document.getElementById("quintal").value = q.toFixed(3);    
+}    
+    
+/******** SAVE ENTRY (TIMESTAMP FIX) *********/    
+function saveEntry(){    
+ const s=document.getElementById("season").value;    
+    
+ const customer=document.getElementById("customer").value;    
+ const father=document.getElementById("father").value;    
+ const village=document.getElementById("village").value;    
+ const bore=document.getElementById("bore").value;    
+ const extra=document.getElementById("extra").value;    
+ const quintal=document.getElementById("quintal").value;    
+ let date=document.getElementById("entryDate").value;    
+    
+ if(!customer || !bore){alert("Customer & Bore required");return;}    
+ if(!date){date = new Date().toISOString().split("T")[0];}    
+    
+ if(window.editID){    
+   db.ref("seasons/"+s+"/entries/"+window.editID).update({    
+     customer,father,village,bore,extra,quintal,date    
+   });    
+   window.editID=null;    
+ } else {    
+   db.ref("seasons/"+s+"/entries").push({    
+     customer,father,village,bore,extra,quintal,date,    
+     timestamp: Date.now()        // ⭐ FIX FOR NEW ENTRY ALWAYS TOP    
+   });    
+ }    
+    
+ // Clear    
+ document.getElementById("customer").value="";    
+ document.getElementById("father").value="";    
+ document.getElementById("village").value="";    
+ document.getElementById("bore").value="";    
+ document.getElementById("extra").value="";    
+ document.getElementById("quintal").value="";    
+ document.getElementById("entryDate").value="";    
+    
+ loadSeason();    
+}    
+    
+/******** FILTER *********/    
+function getFilteredArray(data){    
+  const name = document.getElementById("searchName").value.toLowerCase();    
+  const from = document.getElementById("fromDate").value;    
+  const to   = document.getElementById("toDate").value;    
+    
+  const arr = Object.entries(data).map(([id,item])=>({id,...item}));    
+    
+  return arr.filter(r=>{    
+    // NAME FILTER    
+    const cname = (r.customer || "").toLowerCase();    
+    const matchName = (name === "" || cname.includes(name));    
+    
+    // DATE FILTER (only when both selected)    
+    let matchDate = true;    
+    if(from && to){    
+        matchDate = r.date >= from && r.date <= to;    
+    }    
+    
+    return matchName && matchDate;    
+  });    
+}    
+      
+    
+/******** LOAD (TIMESTAMP SORT FIX) *********/    
+function loadSeason(){    
+ const s=document.getElementById("season").value;    
+ if(!s) return;    
+ db.ref("seasons/"+s+"/entries").once("value",snap=>{    
+   const val=snap.val();    
+   if(!val){    
+     document.getElementById("output").innerHTML="";    
+     document.getElementById("totalBore").innerText="0";    
+     document.getElementById("totalQtl").innerText="0";    
+     return;    
+   }    
+    
+   let arr=getFilteredArray(val);    
+    
+   // ⭐ ALWAYS NEWEST FIRST USING TIMESTAMP    
+   arr.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));    
+    
+   updateTable(arr);    
+ });    
+}    
+    
+/******** SORT *********/    
+function sortNewest(){loadSeason();}    
+    
+function sortOldest(){    
+function sortNameAZ(){
+ const s=document.getElementById("season").value;
+ db.ref("seasons/"+s+"/entries").once("value",snap=>{
+   const val=snap.val(); if(!val) return;
+   let arr=getFilteredArray(val);
+
+   arr.sort((a,b)=>{
+     const n1 = (a.customer || "").toLowerCase();
+     const n2 = (b.customer || "").toLowerCase();
+     return n1.localeCompare(n2);
+   });
+
+   updateTable(arr);
+ });
+}
+
+function sortNameZA(){
+ const s=document.getElementById("season").value;
+ db.ref("seasons/"+s+"/entries").once("value",snap=>{
+   const val=snap.val(); if(!val) return;
+   let arr=getFilteredArray(val);
+
+   arr.sort((a,b)=>{
+     const n1 = (a.customer || "").toLowerCase();
+     const n2 = (b.customer || "").toLowerCase();
+     return n2.localeCompare(n1);
+   });
+
+   updateTable(arr);
+ });
+}
+ const s=document.getElementById("season").value;    
+ db.ref("seasons/"+s+"/entries").once("value",snap=>{    
+   const val=snap.val(); if(!val) return;    
+   let arr=getFilteredArray(val);    
+   arr.sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));    
+   updateTable(arr);    
+ });    
+}    
+    
+/******** UPDATE TABLE *********/    
+function updateTable(arr){    
+ const tbody=document.getElementById("output");    
+ tbody.innerHTML="";    
+    
+ let totalB=0,totalQ=0;    
+    
+ arr.forEach(row=>{    
+   totalB+=Number(row.bore||0);    
+   totalQ+=Number(row.quintal||0);    
+    
+   document.getElementById("totalBore").innerText=totalB;    
+   document.getElementById("totalQtl").innerText=totalQ.toFixed(3);    
+    
+   tbody.insertAdjacentHTML("beforeend",`    
+     <tr>    
+       <td>${row.date||""}</td>    
+       <td>${row.customer||""}</td>    
+<td>${row.village||""}</td>    
+       <td>${row.bore||""}</td>    
+       <td>${row.quintal||""}</td>    
+       <td>    
+         <button class="actionBtn" onclick="editEntry('${row.id}')">✏</button>    
+         <button class="actionBtn" onclick="deleteEntry('${row.id}')">🗑</button>    
+       </td>    
+     </tr>    
+   `);    
+ });    
+}    
+    
+/******** EDIT *********/    
+function editEntry(id){    
+ const s=document.getElementById("season").value;    
+ openEntryScreen();    
+ db.ref("seasons/"+s+"/entries/"+id).once("value",snap=>{    
+   const d=snap.val();    
+   document.getElementById("customer").value = d.customer||"";    
+   document.getElementById("father").value   = d.father||"";    
+   document.getElementById("village").value  = d.village||"";    
+   document.getElementById("bore").value     = d.bore||"";    
+   document.getElementById("extra").value    = d.extra||"";    
+   document.getElementById("quintal").value  = d.quintal||"";    
+   document.getElementById("entryDate").value = d.date||"";    
+   window.editID=id;    
+ });    
+}    
+    
+/******** DELETE *********/    
+function deleteEntry(id){    
+ const s=document.getElementById("season").value;    
+ if(confirm("Delete?")){    
+   db.ref("seasons/"+s+"/entries/"+id).remove();    
+   loadSeason();    
+ }    
+}    
+function filterData(){
+    loadSeason();
+}
+    
+/******** INIT *********/    
+loadSeasons();    
+</script>    </body>    
+</html>
