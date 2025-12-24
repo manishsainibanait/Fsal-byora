@@ -95,11 +95,17 @@ th{background:#0d6efd;color:#fff;}
 <div id="entrySeasonLabel"
      style="font-weight:bold;margin-bottom:10px;color:#0d6efd;"></div>
    <input list="customerList" id="customer" placeholder="Customer Name">    
-  <datalist id="customerList"></datalist>      <input id="father" placeholder="Father Name (optional)">    
-  <input id="village" placeholder="Village (optional)">    
-  <input type="date" id="entryDate">      <input id="defaultBW" readonly placeholder="Default Bore Weight">      <input id="bore" placeholder="Bore" oninput="autoCalc()">    
-  <input id="extra" placeholder="Extra Weight (optional)" oninput="autoCalc()">    
-  <input id="quintal" placeholder="Quintal" readonly>    <button onclick="saveEntry()">✔ Save Entry</button>
+  <datalist id="customerList"></datalist>      <input id="father" list="fatherList" placeholder="Father Name (optional)">
+<datalist id="fatherList"></datalist>  
+ <input id="village" list="villageList" placeholder="Village (optional)">
+<datalist id="villageList"></datalist>    
+  <input type="date" id="entryDate">      <input id="defaultBW" readonly placeholder="Default Bore Weight">     <input id="bore" type="number" inputmode="numeric" placeholder="Bore" oninput="autoCalc()">    
+<input id="extra"
+       type="number"
+       inputmode="decimal"
+       placeholder="Extra Weight (optional)"
+       oninput="autoCalc()">
+  <input id="quintal" type="number" inputmode="decimal" placeholder="Quintal" readonly>    <button onclick="saveEntry()">✔ Save Entry</button>
 <button onclick="closeEntryScreen()">⬅ Back</button>
 
 </div>    <div id="seasonScreen">    
@@ -123,6 +129,7 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();    
     
 /******** ENTRY SCREEN OPEN *********/    
+window.editID = null;   // ⭐ FIX: new entry par old data na aaye
 function openEntryScreen(){    
 
   // SHOW SEASON NAME
@@ -321,7 +328,9 @@ function saveEntry(){
      timestamp: Date.now()        // ⭐ FIX FOR NEW ENTRY ALWAYS TOP    
    });    
  }    
-    
+    db.ref("suggestions/customers/"+customer).set(true);
+if(father)  db.ref("suggestions/fathers/"+father).set(true);
+if(village) db.ref("suggestions/villages/"+village).set(true);
  // Clear    
  document.getElementById("customer").value="";    
  document.getElementById("father").value="";    
@@ -436,7 +445,11 @@ function updateTable(arr){
    totalQ+=Number(row.quintal||0);    
     
    document.getElementById("totalBore").innerText=totalB;    
-   document.getElementById("totalQtl").innerText=totalQ.toFixed(3);    
+   // Quintal ko Qt + Kg me todna
+const qt = Math.floor(totalQ);
+const kg = Math.round((totalQ - qt) * 100);
+
+document.getElementById("totalQtl").innerText = qt + " Qt " + kg + " Kg";
     
    tbody.insertAdjacentHTML("beforeend",`    
      <tr>    
@@ -504,6 +517,25 @@ function newSeason(){
    // open screen
    document.getElementById("seasonScreen").style.display="block";
 }
+function loadSuggestions(){
+  const map = {
+    customers: "customerList",
+    fathers: "fatherList",
+    villages: "villageList"
+  };
+
+  Object.keys(map).forEach(k=>{
+    db.ref("suggestions/"+k).once("value",snap=>{
+      const dl = document.getElementById(map[k]);
+      if(!dl) return;
+      dl.innerHTML="";
+      Object.keys(snap.val()||{}).forEach(v=>{
+        dl.innerHTML += `<option value="${v}">`;
+      });
+    });
+  });
+}
+loadSuggestions();
 </script>
 </body>    
 </html>
