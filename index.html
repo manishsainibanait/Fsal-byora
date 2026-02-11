@@ -67,9 +67,17 @@ th{background:#0d6efd;color:#fff;}
 </div>  <!-- ENTRY SCREEN -->  <div id="entryScreen">  
 <h3>Add / Edit Entry</h3>  
 <div id="entrySeasonLabel" style="font-weight:bold;color:#0d6efd"></div>  
-<input id="customer" placeholder="Customer">  
-<input id="father" placeholder="Father (optional)">  
-<input id="village" placeholder="Village">  
+<!-- Customer -->
+<input id="customer" list="customerList" placeholder="Customer">
+<datalist id="customerList"></datalist>
+
+<!-- Father -->
+<input id="father" list="fatherList" placeholder="Father (optional)">
+<datalist id="fatherList"></datalist>
+
+<!-- Village -->
+<input id="village" list="villageList" placeholder="Village">
+<datalist id="villageList"></datalist>
 <input type="date" id="entryDate">  
 <input id="defaultBW" readonly placeholder="Bore Weight">  
 <input id="bore" type="number" placeholder="Bore"  
@@ -99,47 +107,44 @@ const db=firebase.database();
 let editID=null, defaultBW=0;  
 let sortMode = "newest";
   
-/* ENTRY */  
-function openEntryScreen(){      
-// ✅ NEW ENTRY MODE – PURANA DATA CLEAR  
-editID = null;  
-  
-customer.value = "";  
-father.value = "";  
-village.value = "";  
-bore.value = "";  
-extra.value = "";  
-quintal.value = "";  
-note.value = "";
-  const s = document.getElementById("season").value;  
-  if(!s){  
-    alert("Season select karo");  
-    return;  
-  }  
-  
-  // show season  
-  document.getElementById("entrySeasonLabel").innerText =  
-    "Season: " + s;  
-  
-  // open screen  
-  document.getElementById("entryScreen").style.display = "block";  
-  
-  // auto date  
-  document.getElementById("entryDate").value =  
-    new Date().toISOString().split("T")[0];  
-  
-  // ✅ AUTO BORE WEIGHT  
-  db.ref("seasonsInfo/" + s).once("value", snap => {  
-  const bw = Number(snap.val().defaultBw || 0);  
-  
-  defaultBW = bw;  
-  document.getElementById("defaultBW").value = bw;  
-  
-  autoCalc();   // ⭐ YE LINE ADD KARO ⭐  
-});  
-}  
-function closeEntryScreen(){entryScreen.style.display="none";editID=null;}  
-  
+/* ENTRY */  function openEntryScreen(){
+
+  const s = document.getElementById("season").value;
+  if(!s){
+    alert("Season select karo");
+    return;
+  }
+
+  editID = null;
+
+  customer.value = "";
+  father.value = "";
+  village.value = "";
+  bore.value = "";
+  extra.value = "";
+  quintal.value = "";
+  note.value = "";
+
+  document.getElementById("entrySeasonLabel").innerText =
+    "Season: " + s;
+
+  document.getElementById("entryScreen").style.display = "block";
+
+  loadSuggestions();   // ⭐ suggestions yahin load honge
+
+  document.getElementById("entryDate").value =
+    new Date().toISOString().split("T")[0];
+
+  db.ref("seasonsInfo/" + s).once("value", snap => {
+    defaultBW = Number(snap.val().defaultBw || 0);
+    document.getElementById("defaultBW").value = defaultBW;
+    autoCalc();
+  });
+}
+ function closeEntryScreen(){
+  document.getElementById("entryScreen").style.display = "none";
+  editID = null;
+}
 function autoCalc(){  
  const bore=Number(bore.value||0);  
  const extra=Number(extra.value||0);  
@@ -256,6 +261,7 @@ function editEntry(id){
   
   // open screen (direct)  
   document.getElementById("entryScreen").style.display = "block";  
+loadSuggestions();
   
   // season label  
   document.getElementById("entrySeasonLabel").innerText =  
@@ -457,6 +463,41 @@ else{
     });  
   });  
 }  
+function loadSuggestions(){
+
+  const s = document.getElementById("season").value;
+  if(!s) return;
+
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+
+    const data = Object.values(snap.val() || {});
+
+    const customers = [...new Set(data.map(d => d.customer).filter(Boolean))];
+    const fathers   = [...new Set(data.map(d => d.father).filter(Boolean))];
+    const villages  = [...new Set(data.map(d => d.village).filter(Boolean))];
+
+    const customerList = document.getElementById("customerList");
+    const fatherList   = document.getElementById("fatherList");
+    const villageList  = document.getElementById("villageList");
+
+    customerList.innerHTML = "";
+    fatherList.innerHTML = "";
+    villageList.innerHTML = "";
+
+    customers.forEach(name=>{
+      customerList.innerHTML += `<option value="${name}">`;
+    });
+
+    fathers.forEach(name=>{
+      fatherList.innerHTML += `<option value="${name}">`;
+    });
+
+    villages.forEach(name=>{
+      villageList.innerHTML += `<option value="${name}">`;
+    });
+
+  });
+}
 loadSeasons();  
 function deleteEntry(id){  
   
@@ -481,5 +522,6 @@ function deleteEntry(id){
 function closeSeasonScreen(){
   document.getElementById("seasonScreen").style.display = "none";
 }
-</script>  </body>  
+</script> 
+ </body>  
 </html>
