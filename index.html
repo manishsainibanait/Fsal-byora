@@ -146,11 +146,11 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; }
 <input id="extra" type="number" placeholder="Extra Kg" oninput="autoCalc()" onblur="autoCalc()">
 <input id="quintal" readonly placeholder="Quintal">
 <input id="rate" type="number" placeholder="Rate ₹ / Quintal" oninput="calcAmount()">
-<label><input type="checkbox" id="cutBag" onchange="calcAmount()"> Cut per Bag</label>
+<label><input type="checkbox" id="cutBag" onchange="calcAmount()"> Labour per bag</label>
 <input id="cutBagVal" type="number" value="60" oninput="calcAmount()">
-<label><input type="checkbox" id="cutQtl" onchange="calcAmount()"> Cut per Quintal</label>
+<label><input type="checkbox" id="cutQtl" onchange="calcAmount()"> Labour per Quintal</label>
 <input id="cutQtlVal" type="number" value="60" oninput="calcAmount()">
-<input id="cutTotal" readonly placeholder="Total Cut ₹">
+<input id="cutTotal" readonly placeholder="Total Labour ₹">
 <input id="amount" readonly placeholder="Final Amount ₹">
 <input id="note" placeholder="Note (optional)">
 <button onclick="saveEntry()">✔ Save</button>
@@ -196,20 +196,18 @@ function openCustomPreview() {
 
     let rowsToPrint = [];
     if(selectedChecks.length > 0) {
-        // Sirf selected rows uthao
         selectedChecks.forEach(chk => {
             rowsToPrint.push(chk.closest('tr'));
         });
     } else {
-        // Agar koi select nahi kiya to saari rows (select all default)
         rowsToPrint = Array.from(document.querySelectorAll('#output tr'));
     }
 
-    let printBore = 0, printKg = 0;
+    let printBore = 0;
 
     rowsToPrint.forEach(tr => {
         let cells = tr.querySelectorAll('td');
-        // cell[0] checkbox hai, cell[10] actions hai - inko chhod ke baaki data lo
+        // cell[0] checkbox, cell[10] actions
         tableHTML += `<tr>
             <td>${cells[1].innerText}</td>
             <td>${cells[2].innerText}</td>
@@ -219,12 +217,10 @@ function openCustomPreview() {
             <td>${cells[6].innerText}</td>
             <td>${cells[7].innerText}</td>
             <td>${cells[8].innerText}</td>
-            <td>${cells[9].innerText}</td>
+            <td>${cells[9].innerHTML.replace(/Cut/g, "Labour")}</td>
         </tr>`;
         
-        // Calculation for Footer
         printBore += Number(cells[5].innerText || 0);
-        // Quintal cell se data parse karna thoda complex hai isliye simply text dikha denge agar selected hai
     });
 
     tableHTML += `</tbody></table>`;
@@ -329,7 +325,7 @@ function updateTable(arr){
   <td><input type="checkbox" class="print-row-check"></td>
   <td>${r.date || ""}</td><td>${r.customer || ""}</td><td>${r.father || ""}</td><td>${r.village || ""}</td>  
   <td>${r.bore || ""}</td><td>${r.extra || 0}</td><td>${r.note || ""}</td><td>${qt} Qt ${kg} Kg</td>  
-  <td>Gross ₹ ${(Number(r.rate || 0) * (qKg / 100)).toFixed(2)}<br>Cut ₹ ${r.cut || 0} <br><b>Net ₹ ${r.amount || 0}</b></td>
+  <td>Gross ₹ ${(Number(r.rate || 0) * (qKg / 100)).toFixed(2)}<br>Labour ₹ ${r.cut || 0} <br><b>Net ₹ ${r.amount || 0}</b></td>
   <td><button class="actionBtn" onclick="editEntry('${r.id}')">✏</button> <button class="actionBtn" onclick="deleteEntry('${r.id}')">🗑</button></td></tr>`;  
   });  
   totalBore.innerText = totalB; totalQtl.innerText = Math.floor(totalKg / 100) + " Qt " + (totalKg % 100) + " Kg";  
