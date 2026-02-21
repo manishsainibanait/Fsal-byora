@@ -184,7 +184,6 @@ function openCustomPreview() {
     
     let content = `<h2 style="text-align:center;">${s}</h2>`;
     
-    // Create Table for Printing
     let tableHTML = `<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
         <thead>
             <tr style="background:#eee;">
@@ -196,9 +195,7 @@ function openCustomPreview() {
 
     let rowsToPrint = [];
     if(selectedChecks.length > 0) {
-        selectedChecks.forEach(chk => {
-            rowsToPrint.push(chk.closest('tr'));
-        });
+        selectedChecks.forEach(chk => { rowsToPrint.push(chk.closest('tr')); });
     } else {
         rowsToPrint = Array.from(document.querySelectorAll('#output tr'));
     }
@@ -207,10 +204,9 @@ function openCustomPreview() {
 
     rowsToPrint.forEach(tr => {
         let cells = tr.querySelectorAll('td');
-        // cell[0] checkbox, cell[10] actions
         tableHTML += `<tr>
             <td>${cells[1].innerText}</td>
-            <td>${cells[2].innerText}</td>
+            <td style="font-weight:bold; color:#0d6efd;">${cells[2].innerText}</td>
             <td>${cells[3].innerText}</td>
             <td>${cells[4].innerText}</td>
             <td>${cells[5].innerText}</td>
@@ -323,7 +319,9 @@ function updateTable(arr){
     const qt = Math.floor(qKg / 100); const kg = qKg % 100;  
     output.innerHTML += `<tr>
   <td><input type="checkbox" class="print-row-check"></td>
-  <td>${r.date || ""}</td><td>${r.customer || ""}</td><td>${r.father || ""}</td><td>${r.village || ""}</td>  
+  <td>${r.date || ""}</td>
+  <td style="font-weight:bold; color:#0d6efd;">${r.customer || ""}</td>
+  <td>${r.father || ""}</td><td>${r.village || ""}</td>  
   <td>${r.bore || ""}</td><td>${r.extra || 0}</td><td>${r.note || ""}</td><td>${qt} Qt ${kg} Kg</td>  
   <td>Gross ₹ ${(Number(r.rate || 0) * (qKg / 100)).toFixed(2)}<br>Labour ₹ ${r.cut || 0} <br><b>Net ₹ ${r.amount || 0}</b></td>
   <td><button class="actionBtn" onclick="editEntry('${r.id}')">✏</button> <button class="actionBtn" onclick="deleteEntry('${r.id}')">🗑</button></td></tr>`;  
