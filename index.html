@@ -178,8 +178,8 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
   <div>Total Cut: ₹<span id="cutTotalText">0</span></div>
   <div style="font-size:22px; font-weight:bold;">Net: ₹<span id="finalAmountText">0</span></div>
 </div>
-
-<input id="note" placeholder="Note">
+<input id="note" list="noteList" placeholder="Note" onblur="addNoteToSuggestion()">
+<datalist id="noteList"></datalist>
 
 <button onclick="saveEntry()" style="background: var(--success); font-size:18px;">SAVE ENTRY</button>
 <button onclick="closeEntryScreen()" style="background: var(--secondary);">BACK</button>
@@ -401,7 +401,11 @@ function loadSeasons(){
  });  
 }  
 
-function onSeasonChange(){ localStorage.lastSeason=document.getElementById("season").value; loadSeason(); }  
+function onSeasonChange(){
+  localStorage.lastSeason = document.getElementById("season").value;
+  loadSeason();
+  loadSuggestions(); // ✅ YE LINE ADD
+}
 
 function newSeason(){
   document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; 
@@ -460,6 +464,14 @@ function loadSuggestions(){
         const vals = [...new Set(data.map(d => d[f]).filter(Boolean))];
         document.getElementById(f+"List").innerHTML = vals.map(n=>`<option value="${n}">`).join("");
     });
+const noteList = document.getElementById("noteList");
+
+// season option ensure karo
+if(!Array.from(noteList.options).some(o => o.value === s)){
+  const opt = document.createElement("option");
+  opt.value = s;
+  noteList.appendChild(opt);
+}
   });
 }
 
@@ -492,6 +504,21 @@ updateTable(arr);
 }
 function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; }
 loadSeasons();  
+function addNoteToSuggestion(){
+  const noteInput = document.getElementById("note");
+  const list = document.getElementById("noteList");
+  const val = noteInput.value.trim();
+
+  if(!val) return;
+
+  // already hai ya nahi check
+  const exists = Array.from(list.options).some(o => o.value === val);
+  if(!exists){
+    const opt = document.createElement("option");
+    opt.value = val;
+    list.appendChild(opt);
+  }
+}
 </script> 
 </body>  
 </html>
