@@ -1,39 +1,42 @@
 <!DOCTYPE html>  <html lang="hi">  
 <head>  
 <meta charset="UTF-8">  
-<link rel="manifest" href="manifest.json">  
-<title>Mandi App Final</title>  
+<link rel="manifest" href="manifest.json">
+<title>Mandi App Pro</title>  
 <meta name="viewport" content="width=device-width, initial-scale=1">  
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
 <style>  
-body{font-family:Arial;padding:12px;background:#eef0f4;}  
+:root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; }
+body{font-family:'Segoe UI',Arial,sans-serif;padding:12px;background: var(--bg); color: #1e293b;}  
 button,input,select{  
- width:100%;padding:10px;margin:6px 0;border-radius:6px;  
- border:1px solid #aaa;font-size:15px;  
+ width:100%;padding:12px;margin:6px 0;border-radius:8px;  
+ border:1px solid #cbd5e1;font-size:15px; box-sizing: border-box;
 }  
-button{background:#0d6efd;color:#fff;border:none;}  
-.tableBox{background:#fff;border-radius:6px;overflow-y:auto;max-height:400px;}  
+button{background: var(--primary); color:#fff; border:none; cursor: pointer; font-weight: 600; transition: 0.3s;}  
+button:hover{opacity: 0.9;}
+.tableBox{background:#fff;border-radius:10px;overflow-y:auto;max-height:500px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);}  
 table{width:100%;border-collapse:collapse;}  
-th,td{border:1px solid #ccc;padding:8px;font-size:14px;}  
-th{background:#0d6efd;color:#fff;}  
-.actionBtn{padding:4px 8px;background:#444;color:#fff;border:none;border-radius:4px;}  
-.searchBar{background:#d9edff;padding:10px;border-radius:6px;margin-bottom:10px;}  
+th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}  
+th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
+.actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
+.searchBar{background:#dbeafe;padding:15px;border-radius:10px;margin-bottom:15px; border: 1px solid #bfdbfe;}  
 #entryScreen,#seasonScreen{  
  position:fixed;top:0;left:0;right:0;bottom:0;  
- background:#fff;padding:14px;display:none;z-index:999;overflow-y:auto;  
+ background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
 }  
 
-.print-check { width: 20px; height: 20px; cursor: pointer; }
+.print-check { width: 22px; height: 22px; cursor: pointer; }
+.card { background: #fff; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 5px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
 
 #printPreviewModal {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.9); z-index: 10000; display: none;
+  background: rgba(0,0,0,0.95); z-index: 10000; display: none;
   flex-direction: column;
 }
-.previewHeader { background: #fff; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: space-between;}
-.previewBody { flex: 1; overflow: auto; padding: 20px; background: #555; display: block; }
-#previewContent { background: #fff; padding: 20px; transform-origin: top left; width: fit-content; margin: 0 auto;}
+.previewHeader { background: #fff; padding: 15px; display: flex; gap: 10px; align-items: center; justify-content: space-between;}
+.previewBody { flex: 1; overflow: auto; padding: 20px; background: #334155; display: block; }
+#previewContent { background: #fff; padding: 30px; transform-origin: top left; width: fit-content; margin: 0 auto; box-shadow: 0 0 50px rgba(0,0,0,0.5);}
 
 @media print {
   @page{ size: A4 landscape; margin: 8mm; }
@@ -44,31 +47,39 @@ th{background:#0d6efd;color:#fff;}
 }
 
 .tableBox{ overflow-x:auto; }
-thead th:nth-child(3){ position: sticky; left: 0; background:#0d6efd; z-index: 2; }
-tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; }
+thead th:nth-child(3){ position: sticky; left: 0; background: var(--primary); z-index: 2; }
+tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; font-weight: bold; color: var(--primary);}
 </style>  </head>  
 <body>  
 
 <div class="no-print">
-<select id="season" onchange="onSeasonChange()"></select>
-<button onclick="newSeason()">➕ New Season</button>
+<div style="display: flex; gap: 8px;">
+    <select id="season" onchange="onSeasonChange()" style="flex: 2; background: #fff; font-weight: bold; border: 2px solid var(--primary);"></select>
+    <button onclick="newSeason()" style="flex: 1; background: var(--success);">➕ New</button>
+</div>
 
-<div style="display:flex;gap:6px;">  
-<button onclick="openSeasonScreen()">⚙ Season Setup</button>  
-<button onclick="openEntryScreen()">➕ Add Entry</button>  
-</div>  <div class="searchBar">  
-<input id="searchName" placeholder="Search Customer" oninput="filterData()">  
-<input type="date" id="fromDate" oninput="filterData()">  
-<input type="date" id="toDate" oninput="filterData()">  
-</div>  <div style="display:flex;gap:6px;">  
-<button onclick="sortNewest()">Newest</button>  
-<button onclick="sortOldest()">Oldest</button>  
-<button onclick="sortNameAZ()">A → Z</button>  
-<button onclick="sortNameZA()">Z → A</button>  
-</div>  <div style="background:white;padding:10px;border-radius:6px;margin:10px 0;">  
-<b>Total Bore:</b> <span id="totalBore">0</span> |  
-<b>Total Quintal:</b> <span id="totalQtl">0</span>  
-<button onclick="openCustomPreview()" style="background:#198754;">🖨 Print Selected / All</button>  
+<div style="display:flex;gap:8px;">  
+<button onclick="openSeasonScreen()" style="background: var(--secondary);">⚙ Setup</button>  
+<button onclick="openEntryScreen()" style="background: var(--primary); font-size: 18px;">➕ Add Entry</button>  
+</div>  
+
+<div class="searchBar">  
+<input id="searchName" placeholder="🔍 Search Customer..." oninput="filterData()">  
+<div style="display:flex; gap:6px;">
+    <input type="date" id="fromDate" oninput="filterData()">  
+    <input type="date" id="toDate" oninput="filterData()">  
+</div>
+</div>  
+
+<div style="display:flex;gap:6px; margin-bottom: 10px;">  
+<button onclick="sortNewest()" style="background: #fff; color: #444; border: 1px solid #ccc;">Newest</button>  
+<button onclick="sortOldest()" style="background: #fff; color: #444; border: 1px solid #ccc;">Oldest</button>
+<button onclick="openCustomPreview()" style="background: #000;">🖨 Print List</button>  
+</div>  
+
+<div class="card">  
+<b>Total Bore:</b> <span id="totalBore" style="color:var(--danger); font-size: 18px;">0</span> |  
+<b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span>
 </div>  
 </div>
 
@@ -79,14 +90,14 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; }
   <th style="width:30px;"><input type="checkbox" onclick="toggleAll(this)"></th>
   <th>Date</th>  
   <th>Customer</th>  
-<th>Father</th>
+  <th>Father</th>
   <th>Village</th>  
   <th>Bore</th>  
-  <th>Extra Kg</th>
-<th>Note</th>
-<th>Qtl</th>
-<th>Amount ₹</th>
-<th>Actions</th>
+  <th>Extra</th>
+  <th>Note</th>
+  <th>Qtl</th>
+  <th>Payment Details</th>
+  <th>Edit</th>
 </tr>  
 </thead>  
 <tbody id="output"></tbody>  
@@ -95,52 +106,96 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; }
 
 <div id="printPreviewModal">
     <div class="previewHeader no-print">
-        <button onclick="closePreview()" style="background:#dc3545; width:auto;">Cancel</button>
+        <button onclick="closePreview()" style="background:var(--danger); width:auto;">Cancel</button>
         <div style="display:flex; align-items:center; gap:8px;">
             <span>Zoom:</span>
             <input type="range" id="zoomRange" min="0.5" max="2.0" step="0.05" value="1.0" style="width:120px;" oninput="applyZoom()">
-            <b id="zoomVal">100%</b>
         </div>
-        <button onclick="window.print()" style="background:#198754; width:auto;">Print Now</button>
+        <button onclick="window.print()" style="background:var(--success); width:auto;">Print Now</button>
     </div>
     <div class="previewBody">
         <div id="previewContent"></div>
     </div>
 </div>
+<div id="entryScreen">
+<h3 style="color: var(--primary); margin-bottom:5px;">New Entry</h3>
+<div id="entrySeasonLabel" style="font-weight:bold; margin-bottom:12px;">Season:</div>
 
-<div id="entryScreen">  
-<h3>Add / Edit Entry</h3>  
-<div id="entrySeasonLabel" style="font-weight:bold;color:#0d6efd"></div>  
-<input id="customer" list="customerList" placeholder="Customer">
+<!-- Customer -->
+<input id="customer" list="customerList" placeholder="Customer Name">
 <datalist id="customerList"></datalist>
-<input id="father" list="fatherList" placeholder="Father (optional)">
-<datalist id="fatherList"></datalist>
-<input id="village" list="villageList" placeholder="Village">
-<datalist id="villageList"></datalist>
-<input type="date" id="entryDate">  
-<input id="defaultBW" readonly placeholder="Bore Weight">  
-<input id="bore" type="number" placeholder="Bore" oninput="autoCalc()">  
-<input id="extra" type="number" placeholder="Extra Kg" oninput="autoCalc()">
-<input id="quintal" readonly placeholder="Quintal">
-<input id="rate" type="number" placeholder="Rate ₹ / Quintal" oninput="calcAmount()">
-<label><input type="checkbox" id="cutBag" onchange="calcAmount()"> Labour per bag</label>
-<input id="cutBagVal" type="number" value="60" oninput="calcAmount()">
-<label><input type="checkbox" id="cutQtl" onchange="calcAmount()"> Labour per Quintal</label>
-<input id="cutQtlVal" type="number" value="60" oninput="calcAmount()">
-<input id="cutTotal" readonly placeholder="Total Labour ₹">
-<input id="amount" readonly placeholder="Final Amount ₹">
-<input id="note" placeholder="Note (optional)">
-<button onclick="saveEntry()">✔ Save</button>
-<button onclick="closeEntryScreen()">⬅ Back</button>
-</div>  
+
+<div style="display:flex; gap:8px;">
+  <input id="father" list="fatherList" placeholder="Father Name">
+  <datalist id="fatherList"></datalist>
+
+  <input id="village" list="villageList" placeholder="Village">
+  <datalist id="villageList"></datalist>
+</div>
+
+<input type="date" id="entryDate">
+
+<!-- Bags / Extra / Bore Weight -->
+<div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px;">
+  <div style="display:flex; gap:6px; font-weight:bold; margin-bottom:4px;">
+    <div style="flex:1;">Bags</div>
+    <div style="flex:1;">Extra Kg</div>
+    <div style="flex:1;">Bore Wt</div>
+  </div>
+
+  <div style="display:flex; gap:6px;">
+    <input id="bore" type="number" oninput="autoCalc()">
+    <input id="extra" type="number" oninput="autoCalc()">
+    <input id="defaultBWView" readonly
+           style="background:#e5e7eb;">
+  </div>
+</div>
+
+<!-- Total Quintal -->
+<div style="margin-top:8px;">
+  <label style="font-weight:bold;">Total Quintals</label>
+  <input id="quintal" readonly style="background:#e5e7eb;">
+</div>
+
+<!-- Rate / Deduction -->
+<div style="background:#fff7ed; padding:10px; border-radius:8px; margin-top:10px;">
+  <div style="display:flex; gap:6px;">
+    <input id="rate" type="number" placeholder="Rate ₹" oninput="calcAmount()">
+    <input id="extraDeduction" type="number" placeholder="Deduction ₹" oninput="calcAmount()">
+  </div>
+
+  <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
+    <label><input type="checkbox" id="cutBag" checked onchange="calcAmount()"> Lab/Bag</label>
+    <input id="cutBagVal" type="number" value="60" oninput="calcAmount()" style="width:80px;">
+
+    <label><input type="checkbox" id="cutQtl" onchange="calcAmount()"> Lab/Qtl</label>
+    <input id="cutQtlVal" type="number" value="0" oninput="calcAmount()" style="width:80px;">
+  </div>
+</div>
+
+<!-- Total Cut + Net -->
+<div style="background: var(--primary); color:#fff; padding:12px; border-radius:8px; margin-top:10px;">
+  <div>Total Cut: ₹<span id="cutTotalText">0</span></div>
+  <div style="font-size:22px; font-weight:bold;">Net: ₹<span id="finalAmountText">0</span></div>
+</div>
+
+<input id="note" placeholder="Note">
+
+<button onclick="saveEntry()" style="background: var(--success); font-size:18px;">SAVE ENTRY</button>
+<button onclick="closeEntryScreen()" style="background: var(--secondary);">BACK</button>
+
+<input type="hidden" id="cutTotal">
+<input type="hidden" id="amount">
+<input type="hidden" id="defaultBW">
+</div>
 
 <div id="seasonScreen">  
 <h3>Season Setup</h3>  
 <input id="seasonName" placeholder="Season Name">  
-<input id="seasonWeight" placeholder="Default Bore Weight">  
-<button onclick="saveSeason()">✔ Save</button>  
-<button onclick="deleteSeason()">🗑 Delete</button>  
-<button onclick="closeSeasonScreen()">⬅ Back</button>  
+<input id="seasonWeight" placeholder="Default Bore Weight (e.g. 50)">  
+<button onclick="saveSeason()" style="background: var(--success);">✔ Save Season</button>  
+<button onclick="deleteSeason()" style="background: var(--danger);">🗑 Delete</button>  
+<button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 
 <script>  
@@ -152,21 +207,21 @@ firebase.initializeApp({
  projectId:"fasal-9a05b"  
 });  
 const db=firebase.database();  
-let editID=null, currentDefaultBW=0, sortMode = "newest";
-let editOldTimestamp = null;
+let editID=null, currentDefaultBW=0, sortMode = "newest", editOldTimestamp = null;
 
 function openCustomPreview() {
     const s = document.getElementById("season").value;
     const selectedChecks = document.querySelectorAll('.print-row-check:checked');
     let content = `<h2 style="text-align:center;">${s}</h2>`;
     let tableHTML = `<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
-        <thead><tr style="background:#eee;"><th>Date</th><th>Customer</th><th>Father</th><th>Village</th><th>Bore</th><th>Extra Kg</th><th>Note</th><th>Qtl</th><th>Amount ₹</th></tr></thead><tbody>`;
+        <thead><tr style="background:#eee;"><th>Date</th><th>Customer</th><th>Father</th><th>Village</th><th>Bore</th><th>Extra</th><th>Note</th><th>Qtl</th><th>Amount ₹</th></tr></thead><tbody>`;
 
     let rowsToPrint = selectedChecks.length > 0 ? Array.from(selectedChecks).map(chk => chk.closest('tr')) : Array.from(document.querySelectorAll('#output tr'));
     let printBore = 0;
     rowsToPrint.forEach(tr => {
         let cells = tr.querySelectorAll('td');
-        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cells[2].innerText}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText}</td><td>${cells[8].innerText}</td><td>${cells[9].innerHTML.replace(/Cut/g, "Labour")}</td></tr>`;
+        // Print columns keep original logic
+        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cells[2].innerText}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText}</td><td>${cells[8].innerText}</td><td>${cells[9].innerText}</td></tr>`;
         printBore += Number(cells[5].innerText || 0);
     });
     tableHTML += `</tbody></table>`;
@@ -180,7 +235,6 @@ function openCustomPreview() {
 function toggleAll(master) { document.querySelectorAll('.print-row-check').forEach(chk => chk.checked = master.checked); }
 function applyZoom() {
     let z = document.getElementById('zoomRange').value;
-    document.getElementById('zoomVal').innerText = Math.round(z*100) + "%";
     document.getElementById('previewContent').style.transform = `scale(${z})`;
     document.documentElement.style.setProperty('--p-zoom', z);
 }
@@ -190,13 +244,15 @@ function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
   editID = null;
-  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount"].forEach(id=>document.getElementById(id).value="");
+  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("extraDeduction").value = 0;
   document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
   document.getElementById("entryScreen").style.display = "block";
   loadSuggestions();
   document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
   db.ref("seasonsInfo/" + s).once("value", snap => {
     currentDefaultBW = Number(snap.val().defaultBw || 0);
+document.getElementById("defaultBWView").value = currentDefaultBW;
     document.getElementById("defaultBW").value = currentDefaultBW;
     autoCalc();
   });
@@ -215,11 +271,19 @@ function calcAmount(){
   const rate = Number(document.getElementById("rate").value || 0);
   const b = Number(document.getElementById("bore").value || 0);
   const qtl = Number(document.getElementById("quintal").value || 0);
+  const exDed = Number(document.getElementById("extraDeduction").value || 0);
+  
   let cut = 0;
   if(document.getElementById("cutBag").checked) cut += b * Number(document.getElementById("cutBagVal").value || 0);
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
+  
+  const gross = rate * qtl;
+  const net = gross - cut - exDed;
+
   document.getElementById("cutTotal").value = cut.toFixed(2);
-  document.getElementById("amount").value = (rate * qtl - cut).toFixed(2);
+  document.getElementById("cutTotalText").innerText = cut.toFixed(2);
+  document.getElementById("amount").value = net.toFixed(2);
+  document.getElementById("finalAmountText").innerText = "₹ " + net.toFixed(2);
 }
   
 function saveEntry(){  
@@ -234,6 +298,7 @@ function saveEntry(){
   quintal: document.getElementById("quintal").value,
   rate: Number(document.getElementById("rate").value || 0),
   cut: document.getElementById("cutTotal").value,
+  extraDeduction: document.getElementById("extraDeduction").value || 0,
   amount: document.getElementById("amount").value,
   note: document.getElementById("note").value,
   date: document.getElementById("entryDate").value,
@@ -242,49 +307,96 @@ function saveEntry(){
  if(!data.customer || !data.bore){ alert("Customer aur Bore required hai"); return; }
  const ref = db.ref("seasons/"+s+"/entries");
  const promise = editID ? ref.child(editID).set(data) : ref.push(data);
- promise.then(()=>{ alert("Entry Saved ✅"); closeEntryScreen(); loadSeason(); });
+ promise.then(()=>{ alert("Saved ✅"); closeEntryScreen(); loadSeason(); });
 }
 
 function updateTable(arr){  
   const output = document.getElementById("output");
-  output.innerHTML = ""; let totalB = 0, totalKg = 0;  
+  output.innerHTML = ""; 
+  let totalB = 0, totalKg = 0;  
+
   arr.forEach(r => {  
     totalB += Number(r.bore || 0);  
+
     const qKg = Number(r.quintal || 0) * 100;
-    totalKg += qKg;  
-    output.innerHTML += `<tr>
-  <td><input type="checkbox" class="print-row-check"></td>
-  <td>${r.date || ""}</td><td style="font-weight:bold; color:#0d6efd;">${r.customer || ""}</td>
-  <td>${r.father || ""}</td><td>${r.village || ""}</td><td>${r.bore || ""}</td><td>${r.extra || 0}</td><td>${r.note || ""}</td>
-  <td>${Math.floor(qKg/100)} Qt ${(qKg%100).toFixed(1)} Kg</td>  
-  <td>Gross ₹ ${(Number(r.rate||0)*(qKg/100)).toFixed(2)}<br>Labour ₹ ${r.cut||0}<br><b>Net ₹ ${r.amount||0}</b></td>
-  <td><button class="actionBtn" onclick="editEntry('${r.id}')">✏</button> <button class="actionBtn" onclick="deleteEntry('${r.id}')">🗑</button></td></tr>`;  
+    totalKg += qKg;
+
+    const totalKgExact = Math.round(qKg);
+    const qtlPart = Math.floor(totalKgExact / 100);
+    const kgPart = totalKgExact % 100;
+
+    const rate = Number(r.rate || 0);
+    const gross = (rate * qKg / 100).toFixed(2);
+    const exDed = Number(r.extraDeduction || 0);
+
+    output.innerHTML += `
+    <tr>
+      <td><input type="checkbox" class="print-row-check"></td>
+      <td>${r.date || ""}</td>
+      <td>${r.customer || ""}</td>
+      <td>${r.father || ""}</td>
+      <td>${r.village || ""}</td>
+      <td>${r.bore || ""}</td>
+      <td>${r.extra || 0}</td>
+      <td><small>${r.note || ""}</small></td>
+
+      <td style="color:var(--success); font-weight:bold;">
+        ${qtlPart} Qtl ${kgPart} Kg
+      </td>
+
+      <td>
+        <div style="font-size:12px; line-height:1.4;">
+            Rate: ₹${rate}<br>
+            Gross: ₹${gross}<br>
+            Labour: ₹${r.cut || 0}<br>
+            ${exDed > 0 ? 'Deduct: ₹'+exDed+'<br>' : ''}
+            <b style="color:var(--danger); font-size:14px;">
+              Net: ₹${r.amount || 0}
+            </b>
+        </div>
+      </td>
+
+      <td>
+        <button class="actionBtn" onclick="editEntry('${r.id}')">✏</button>
+        <button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button>
+      </td>
+    </tr>`;
   });  
+
   document.getElementById("totalBore").innerText = totalB; 
-  document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Qt " + (totalKg%100).toFixed(1) + " Kg";  
-}  
+  const totalKgExact = Math.round(totalKg);
+const totalQtlPart = Math.floor(totalKgExact / 100);
+const totalKgPart = totalKgExact % 100;
+
+document.getElementById("totalQtl").innerText =
+  totalQtlPart + " Qtl " + totalKgPart + " Kg";
+}
   
 function sortNewest(){ sortMode = "newest"; filterData(); }
-function sortOldest(){ sortMode = "oldest"; filterData(); }
+function sortOldest(){
+  sortMode = "oldest";
+  filterData();
+}
 function sortNameAZ(){ sortMode = "az"; filterData(); }
-function sortNameZA(){ sortMode = "za"; filterData(); }
   
 function editEntry(id){  
   editID = id; const sName = document.getElementById("season").value;
   db.ref("seasons/"+sName+"/entries/"+id).once("value", s => {  
     const d = s.val(); editOldTimestamp = d.timestamp;
-    ["customer","father","village","bore","extra","quintal","entryDate","note"].forEach(f=>document.getElementById(f).value=d[f]);
+    ["customer","father","village","bore","extra","quintal","entryDate","note","extraDeduction"].forEach(f=>document.getElementById(f).value=d[f] || "");
     document.getElementById("rate").value = d.rate || "";
     document.getElementById("entryScreen").style.display = "block";
     loadSuggestions();
-    db.ref("seasonsInfo/"+sName).once("value", info => { currentDefaultBW = Number(info.val().defaultBw || 0); document.getElementById("defaultBW").value = currentDefaultBW; calcAmount(); });
+    db.ref("seasonsInfo/"+sName).once("value", info => { currentDefaultBW = Number(info.val().defaultBw || 0);
+document.getElementById("defaultBWView").value = currentDefaultBW;
+ document.getElementById("defaultBW").value = currentDefaultBW; calcAmount(); });
   });  
 }  
   
 function loadSeasons(){  
  const sD = document.getElementById("season"); sD.innerHTML="";  
  db.ref("seasonsInfo").once("value",s=>{  
-  Object.keys(s.val()||{}).forEach(n=>{ sD.innerHTML+=`<option>${n}</option>`; });  
+  Object.keys(s.val()||{}).forEach(n=>{ sD.innerHTML+=`<option value="${n}">${n}</option>`; });  
   sD.value=localStorage.lastSeason||sD.options[0]?.value; loadSeason();  
  });  
 }  
@@ -326,11 +438,16 @@ function filterData(){
     if(from) arr = arr.filter(r => r.date >= from);
     if(to) arr = arr.filter(r => r.date <= to);
     
-    // Yahan Date Sorting Fix Hai
-    if(sortMode === "oldest") arr.sort((a,b) => a.date.localeCompare(b.date) || a.timestamp - b.timestamp);
-    else if(sortMode === "az") arr.sort((a,b) => (a.customer||"").localeCompare(b.customer||""));
-    else if(sortMode === "za") arr.sort((a,b) => (b.customer||"").localeCompare(a.customer||""));
-    else arr.sort((a,b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
+    if(sortMode === "oldest"){
+  arr.sort((a,b) => 
+    a.date.localeCompare(b.date) || a.timestamp - b.timestamp
+  );
+}
+else { // newest default
+  arr.sort((a,b) => 
+    b.date.localeCompare(a.date) || b.timestamp - a.timestamp
+  );
+}
     updateTable(arr);
   });
 }
@@ -356,9 +473,20 @@ function loadSeason(){
   db.ref("seasonsInfo/" + s).once("value", snap => {
     currentDefaultBW = Number(snap.val()?.defaultBw || 0);
     db.ref("seasons/" + s + "/entries").once("value", eSnap => {
-      const arr = Object.entries(eSnap.val()||{}).map(([id, v]) => ({ id, ...v }))
-        .sort((a,b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
-      updateTable(arr);
+      let arr = Object.entries(eSnap.val()||{}).map(([id, v]) => ({ id, ...v }));
+
+// Sorting same as filterData
+if(sortMode === "oldest"){
+  arr.sort((a,b) =>
+    a.date.localeCompare(b.date) || a.timestamp - b.timestamp
+  );
+} else {
+  arr.sort((a,b) =>
+    b.date.localeCompare(a.date) || b.timestamp - a.timestamp
+  );
+}
+
+updateTable(arr);
     });
   });
 }
