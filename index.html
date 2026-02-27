@@ -302,7 +302,9 @@ function saveEntry(){
   amount: document.getElementById("amount").value,
   note: document.getElementById("note").value,
   date: document.getElementById("entryDate").value,
-  timestamp: editID ? editOldTimestamp : Date.now()
+  timestamp: editID
+  ? (editOldTimestamp || Date.parse(document.getElementById("entryDate").value))
+  : Date.now()
  };
  if(!data.customer || !data.bore){ alert("Customer aur Bore required hai"); return; }
  const ref = db.ref("seasons/"+s+"/entries");
@@ -382,10 +384,10 @@ function sortNameAZ(){ sortMode = "az"; filterData(); }
 function editEntry(id){  
   editID = id; const sName = document.getElementById("season").value;
   db.ref("seasons/"+sName+"/entries/"+id).once("value", s => {  
-    const d = s.val(); editOldTimestamp = d.timestamp;
+    const d = s.val(); editOldTimestamp = d.timestamp || Date.parse(d.date);
     ["customer","father","village","bore","extra","quintal","entryDate","note","extraDeduction"].forEach(f=>document.getElementById(f).value=d[f] || "");
     document.getElementById("rate").value = d.rate || "";
-    document.getElementById("entryScreen").style.display = "block";
+   document.getElementById("entryDate").value = d.date || ""; document.getElementById("entryScreen").style.display = "block";
     loadSuggestions();
     db.ref("seasonsInfo/"+sName).once("value", info => { currentDefaultBW = Number(info.val().defaultBw || 0);
 document.getElementById("defaultBWView").value = currentDefaultBW;
