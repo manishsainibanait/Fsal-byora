@@ -335,7 +335,13 @@ function updateTable(arr){
     <tr>
       <td><input type="checkbox" class="print-row-check"></td>
       <td>${r.date || ""}</td>
-      <td>${r.customer || ""}</td>
+      <td 
+  style="cursor:pointer; color:var(--primary); font-weight:bold;"
+  onclick="singleClickPrint('${r.id}')"
+  ondblclick="doubleClickEdit('${r.id}')"
+>
+  ${r.customer || ""}
+</td>
       <td>${r.father || ""}</td>
       <td>${r.village || ""}</td>
       <td>${r.bore || ""}</td>
@@ -520,6 +526,57 @@ function addNoteToSuggestion(){
     opt.value = val;
     list.appendChild(opt);
   }
+}
+// ===== SINGLE / DOUBLE CLICK (FINAL FIX) =====
+let clickTimer = null;
+
+// 1 bar OK → Print Preview
+function singleClickPrint(id){
+  clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => {
+    openSingleEntryPreview(id);
+    clickTimer = null;
+  }, 300);
+}
+
+// 2 bar OK → Sirf Edit
+function doubleClickEdit(id){
+  clearTimeout(clickTimer);
+  clickTimer = null;
+  editEntry(id);
+}
+
+// SINGLE ENTRY PRINT PREVIEW
+function openSingleEntryPreview(id){
+  const s = document.getElementById("season").value;
+  if(!s) return;
+
+  db.ref("seasons/"+s+"/entries/"+id).once("value", snap => {
+    const r = snap.val();
+    if(!r) return;
+
+    let content = `
+      <h2 style="text-align:center;">${s}</h2>
+      <table border="1" style="width:100%;border-collapse:collapse;">
+        <tr><th>Date</th><td>${r.date || ""}</td></tr>
+        <tr><th>Customer</th><td><b>${r.customer || ""}</b></td></tr>
+        <tr><th>Father</th><td>${r.father || ""}</td></tr>
+        <tr><th>Village</th><td>${r.village || ""}</td></tr>
+        <tr><th>Bore</th><td>${r.bore || 0}</td></tr>
+        <tr><th>Extra</th><td>${r.extra || 0}</td></tr>
+        <tr><th>Quintal</th><td>${r.quintal || 0}</td></tr>
+        <tr><th>Rate</th><td>₹${r.rate || 0}</td></tr>
+        <tr><th>Labour</th><td>₹${r.cut || 0}</td></tr>
+        <tr><th>Net</th><td><b>₹${r.amount || 0}</b></td></tr>
+        <tr><th>Note</th><td>${r.note || ""}</td></tr>
+      </table>
+    `;
+
+    document.getElementById("previewContent").innerHTML = content;
+    document.getElementById("printPreviewModal").style.display = "flex";
+    document.getElementById("zoomRange").value = 1.0;
+    applyZoom();
+  });
 }
 </script> 
 </body>  
