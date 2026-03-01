@@ -243,21 +243,33 @@ function closePreview() { document.getElementById('printPreviewModal').style.dis
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
+
   editID = null;
-  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction"].forEach(id=>document.getElementById(id).value="");
+
+  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction"]
+    .forEach(id=>document.getElementById(id).value="");
+
   document.getElementById("extraDeduction").value = 0;
   document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
   document.getElementById("entryScreen").style.display = "block";
+
   loadSuggestions();
   document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
+
   db.ref("seasonsInfo/" + s).once("value", snap => {
     currentDefaultBW = Number(snap.val().defaultBw || 0);
-document.getElementById("defaultBWView").value = currentDefaultBW;
+    document.getElementById("defaultBWView").value = currentDefaultBW;
     document.getElementById("defaultBW").value = currentDefaultBW;
     autoCalc();
   });
-}
 
+  // ✅ FINAL FIX — CURSOR ALWAYS CUSTOMER
+  setTimeout(()=>{
+    const c = document.getElementById("customer");
+    c.focus();
+    c.select();
+  }, 300);
+}
 function closeEntryScreen(){ document.getElementById("entryScreen").style.display = "none"; editID = null; }
 
 function autoCalc(){
@@ -578,6 +590,23 @@ function openSingleEntryPreview(id){
     applyZoom();
   });
 }
+let tapTimer = null;
+
+document.addEventListener("touchend", function(e){
+
+  if(document.getElementById("entryScreen").style.display === "block") return;
+  if(e.target.closest("table")) return;
+
+  if(tapTimer){
+    clearTimeout(tapTimer);
+    tapTimer = null;
+    openEntryScreen();   // sirf open karega
+  } else {
+    tapTimer = setTimeout(()=>{
+      tapTimer = null;
+    }, 300);
+  }
+});
 </script> 
 </body>  
 </html>
