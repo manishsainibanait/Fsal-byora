@@ -65,13 +65,14 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 <div id="lockScreen">
     <div class="lock-container">
         <h2 style="color:var(--primary); margin-bottom:10px;">🔐 Mandi App Pro</h2>
-        <p id="lockStatus">अनलॉक करने के लिए PIN डालें</p>
+        <p id="lockStatus">Unlock करने के लिए PIN या Fingerprint का उपयोग करें</p>
+        
         <input type="password" id="pinInput" class="pin-dot-input" placeholder="****" maxlength="6" inputmode="numeric">
-        <button onclick="handlePinSubmit()" style="margin-top:10px; background:var(--primary);">Unlock App</button>
+        <button onclick="handlePinSubmit()" style="margin-top:10px; background:var(--primary);">Unlock with PIN</button>
         
         <div id="biometricContainer" style="margin-top:15px;">
-            <button id="unlockFingerBtn" onclick="authenticateFingerprint()" style="background:var(--success); display:none;">🧬 फिंगरप्रिंट से खोलें</button>
-            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:var(--secondary); font-size:13px;">📝 फिंगरप्रिंट रजिस्टर करें</button>
+            <button id="unlockFingerBtn" onclick="authenticateFingerprint()" style="background:var(--success); display:none;">🧬 Unlock with Fingerprint</button>
+            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:var(--secondary); font-size:13px;">📝 Register Fingerprint</button>
         </div>
 
         <button onclick="handleForgotPin()" style="background:none; border:none; color:var(--danger); text-decoration:underline; font-size:13px; margin-top:15px;">Forgot PIN?</button>
@@ -239,7 +240,7 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 </div> <script>  
-/* --- UPDATED BIOMETRIC (WEBAUTHN) LOGIC --- */
+/* --- AUTOMATIC FINGERPRINT UNLOCK LOGIC --- */
 const MASTER_PASSWORD = "786786";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -247,6 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem("app_pin", "1234");
     }
     refreshBiometricUI();
+    
+    // AUTOMATIC START: Trigger fingerprint if credential exists
+    if(localStorage.getItem("fingerprintCredential")) {
+        setTimeout(() => {
+            authenticateFingerprint();
+        }, 500); // Small delay for UI load
+    }
 });
 
 function refreshBiometricUI() {
@@ -281,9 +289,9 @@ function handlePinSubmit() {
     }
 }
 
-// 1. REGISTER FINGERPRINT
+// REGISTER FINGERPRINT
 async function registerFingerprint() {
-    const pin = prompt("फिंगरप्रिंट रजिस्टर करने के लिए अपना PIN दर्ज करें:");
+    const pin = prompt("Fingerprint रजिस्टर करने के लिए अपना PIN दर्ज करें:");
     if (pin !== localStorage.getItem("app_pin")) {
         alert("गलत PIN!");
         return;
@@ -297,7 +305,6 @@ async function registerFingerprint() {
     try {
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
-
         const userID = new Uint8Array(16);
         window.crypto.getRandomValues(userID);
 
@@ -305,27 +312,17 @@ async function registerFingerprint() {
             publicKey: {
                 challenge: challenge,
                 rp: { name: "Mandi App Pro", id: window.location.hostname },
-                user: {
-                    id: userID,
-                    name: "user@mandi.app",
-                    displayName: "Mandi User"
-                },
+                user: { id: userID, name: "user@mandi.app", displayName: "Mandi User" },
                 pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-                authenticatorSelection: {
-                    authenticatorAttachment: "platform",
-                    userVerification: "required"
-                },
+                authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
                 timeout: 60000
             }
         };
 
         const credential = await navigator.credentials.create(createCredentialOptions);
-        
-        // Convert ID to String for LocalStorage
         const idString = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
         localStorage.setItem("fingerprintCredential", idString);
-        
-        alert("फिंगरप्रिंट रजिस्टर हो गया! ✅");
+        alert("Fingerprint रजिस्टर हो गया! ✅");
         refreshBiometricUI();
     } catch (err) {
         console.error(err);
@@ -333,7 +330,7 @@ async function registerFingerprint() {
     }
 }
 
-// 2. UNLOCK WITH FINGERPRINT
+// UNLOCK WITH FINGERPRINT
 async function authenticateFingerprint() {
     const idString = localStorage.getItem("fingerprintCredential");
     if (!idString) return;
@@ -341,17 +338,12 @@ async function authenticateFingerprint() {
     try {
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
-
         const rawId = Uint8Array.from(atob(idString), c => c.charCodeAt(0));
 
         const getCredentialOptions = {
             publicKey: {
                 challenge: challenge,
-                allowCredentials: [{
-                    id: rawId,
-                    type: 'public-key',
-                    transports: ['internal']
-                }],
+                allowCredentials: [{ id: rawId, type: 'public-key', transports: ['internal'] }],
                 userVerification: "required",
                 timeout: 60000
             }
@@ -362,8 +354,8 @@ async function authenticateFingerprint() {
             unlockApp();
         }
     } catch (err) {
-        console.error(err);
-        alert("प्रमाणीकरण विफल या रद्द किया गया।");
+        console.log("Fingerprint authentication canceled or failed. PIN fallback active.");
+        // We don't alert here to keep the PIN entry smooth
     }
 }
 
@@ -400,7 +392,7 @@ function logoutApp() {
     refreshBiometricUI();
 }
 
-/* --- EXISTING FIREBASE LOGIC --- */  
+/* --- EXISTING FIREBASE LOGIC (UNTOUCHED) --- */  
 firebase.initializeApp({  
  apiKey:"AIzaSyAiwfHxzsreDK2RkYLXNjhb8DhMmpYZ-tY",  
  authDomain:"fasal-9a05b.firebaseapp.com",  
@@ -409,6 +401,7 @@ firebase.initializeApp({
 });  
 const db=firebase.database();  
 let editID=null, currentDefaultBW=0, sortMode = "newest", editOldTimestamp = null;
+let clickTimer = null;
 
 function openCustomPreview() {
     const s = document.getElementById("season").value;
@@ -421,19 +414,7 @@ function openCustomPreview() {
     let printBore = 0;
     rowsToPrint.forEach(tr => {
         let cells = tr.querySelectorAll('td');
-        tableHTML += `<tr>
-<td>${cells[1].innerText}</td>
-<td style="font-weight:bold;">${cells[2].innerText}</td>
-<td>${cells[3].innerText}</td>
-<td>${cells[4].innerText}</td>
-<td>${cells[5].innerText}</td>
-<td>${cells[6].innerText}</td>
-<td>${cells[7].innerText}</td>
-<td>${cells[8].innerText}</td>
-<td>
-${cells[9].innerText.replace(/Comm:.*\n?/g,"")}
-</td>
-</tr>`;
+        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cells[2].innerText}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText}</td><td>${cells[8].innerText}</td><td>${cells[9].innerText.replace(/Comm:.*\n?/g,"")}</td></tr>`;
         printBore += Number(cells[5].innerText || 0);
     });
     tableHTML += `</tbody></table>`;
@@ -471,11 +452,7 @@ function openEntryScreen(){
     document.getElementById("defaultBW").value = currentDefaultBW;
     autoCalc();
   });
-  setTimeout(()=>{
-    const c = document.getElementById("customer");
-    c.focus();
-    c.select();
-  }, 300);
+  setTimeout(()=>{ const c = document.getElementById("customer"); c.focus(); c.select(); }, 300);
 }
 function closeEntryScreen(){ document.getElementById("entryScreen").style.display = "none"; editID = null; }
 
@@ -560,17 +537,8 @@ function updateTable(arr){
       <td>${r.extra || 0}</td>
       <td><small>${r.note || ""}</small></td>
       <td style="color:var(--success); font-weight:bold;">${qtlPart} Qtl ${kgPart} Kg</td>
-      <td>
-        <div style="font-size:12px;">
-            Rate: ₹${r.rate || 0}<br>
-            Labour: ₹${r.cut || 0}<br>
-            Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
-        </div>
-      </td>
-      <td>
-        <button class="actionBtn" onclick="editEntry('${r.id}')">✏</button>
-        <button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button>
-      </td>
+      <td><div style="font-size:12px;">Rate: ₹${r.rate || 0}<br>Labour: ₹${r.cut || 0}<br>Net: <b style="color:var(--danger)">₹${r.amount || 0}</b></div></td>
+      <td><button class="actionBtn" onclick="editEntry('${r.id}')">✏</button><button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button></td>
     </tr>`;
   });  
   document.getElementById("totalBore").innerText = totalB; 
@@ -641,7 +609,6 @@ function loadSuggestions(){
 function deleteEntry(id){ const s = document.getElementById("season").value; if(s && confirm("Delete?")){ db.ref("seasons/"+s+"/entries/"+id).remove().then(loadSeason); } }
 function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { currentDefaultBW = Number(snap.val()?.defaultBw || 0); filterData(); }); }
 function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; }
-function addNoteToSuggestion(){ const noteInput = document.getElementById("note"); const list = document.getElementById("noteList"); const val = noteInput.value.trim(); if(!val) return; const exists = Array.from(list.options).some(o => o.value === val); if(!exists){ const opt = document.createElement("option"); opt.value = val; list.appendChild(opt); } }
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
 function openSingleEntryPreview(id){
