@@ -49,10 +49,45 @@ th{background: var(--primary);color:#fff; position: sticky; top: 0;}
 .tableBox{ overflow-x:auto; }
 thead th:nth-child(3){ position: sticky; left: 0; background: var(--primary); z-index: 2; }
 tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; font-weight: bold; color: var(--primary);}
+
+/* --- SECURITY CSS --- */
+#lockScreen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #ffffff; z-index: 99999; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 30px; box-sizing: border-box;
+}
+.lock-container { width: 100%; max-width: 320px; text-align: center; }
+.pin-dot-input { letter-spacing: 12px; font-size: 28px; text-align: center; font-weight: bold; border: 2px solid var(--primary); }
+#mainAppWrapper { display: none; }
 </style>  </head>  
 <body>  
 
+<div id="lockScreen">
+    <div class="lock-container">
+        <h2 style="color:var(--primary); margin-bottom:10px;">🔐 Mandi App Pro</h2>
+        <p id="lockStatus">अनलॉक करने के लिए PIN डालें</p>
+        <input type="password" id="pinInput" class="pin-dot-input" placeholder="****" maxlength="6" inputmode="numeric">
+        <button onclick="handlePinSubmit()" style="margin-top:10px; background:var(--primary);">Unlock App</button>
+        
+        <div id="biometricContainer" style="margin-top:15px;">
+            <button id="unlockFingerBtn" onclick="authenticateFingerprint()" style="background:var(--success); display:none;">🧬 फिंगरप्रिंट से खोलें</button>
+            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:var(--secondary); font-size:13px;">📝 फिंगरप्रिंट रजिस्टर करें</button>
+        </div>
+
+        <button onclick="handleForgotPin()" style="background:none; border:none; color:var(--danger); text-decoration:underline; font-size:13px; margin-top:15px;">Forgot PIN?</button>
+    </div>
+</div>
+
+<div id="mainAppWrapper"> 
 <div class="no-print">
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+    <button onclick="logoutApp()" style="width:auto; padding:8px 15px; background:var(--danger); margin:0;">Logout 🚪</button>
+    <div style="display:flex; gap:5px;">
+        <button onclick="setupNewPin()" style="width:auto; padding:8px 10px; font-size:12px; background:var(--primary); margin:0;">Set PIN</button>
+    </div>
+</div>
+
 <div style="display: flex; gap: 8px;">
     <select id="season" onchange="onSeasonChange()" style="flex: 2; background: #fff; font-weight: bold; border: 2px solid var(--primary);"></select>
     <button onclick="newSeason()" style="flex: 1; background: var(--success);">➕ New</button>
@@ -203,9 +238,169 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 <button onclick="deleteSeason()" style="background: var(--danger);">🗑 Delete</button>  
 <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
+</div> <script>  
+/* --- UPDATED BIOMETRIC (WEBAUTHN) LOGIC --- */
+const MASTER_PASSWORD = "786786";
 
-<script>  
-/* FIREBASE */  
+document.addEventListener('DOMContentLoaded', () => {
+    if(!localStorage.getItem("app_pin")) {
+        localStorage.setItem("app_pin", "1234");
+    }
+    refreshBiometricUI();
+});
+
+function refreshBiometricUI() {
+    const credId = localStorage.getItem("fingerprintCredential");
+    const regBtn = document.getElementById("regFingerBtn");
+    const unlockBtn = document.getElementById("unlockFingerBtn");
+
+    if (credId) {
+        regBtn.style.display = "none";
+        unlockBtn.style.display = "block";
+    } else {
+        regBtn.style.display = "block";
+        unlockBtn.style.display = "none";
+    }
+}
+
+function unlockApp() {
+    document.getElementById("lockScreen").style.display = "none";
+    document.getElementById("mainAppWrapper").style.display = "block";
+    document.getElementById("pinInput").value = "";
+    loadSeasons(); 
+}
+
+function handlePinSubmit() {
+    const entered = document.getElementById("pinInput").value;
+    const saved = localStorage.getItem("app_pin");
+    if(entered === saved) {
+        unlockApp();
+    } else {
+        alert("गलत PIN!");
+        document.getElementById("pinInput").value = "";
+    }
+}
+
+// 1. REGISTER FINGERPRINT
+async function registerFingerprint() {
+    const pin = prompt("फिंगरप्रिंट रजिस्टर करने के लिए अपना PIN दर्ज करें:");
+    if (pin !== localStorage.getItem("app_pin")) {
+        alert("गलत PIN!");
+        return;
+    }
+
+    if (!window.PublicKeyCredential) {
+        alert("आपका डिवाइस बायोमेट्रिक्स का समर्थन नहीं करता है।");
+        return;
+    }
+
+    try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const userID = new Uint8Array(16);
+        window.crypto.getRandomValues(userID);
+
+        const createCredentialOptions = {
+            publicKey: {
+                challenge: challenge,
+                rp: { name: "Mandi App Pro", id: window.location.hostname },
+                user: {
+                    id: userID,
+                    name: "user@mandi.app",
+                    displayName: "Mandi User"
+                },
+                pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                authenticatorSelection: {
+                    authenticatorAttachment: "platform",
+                    userVerification: "required"
+                },
+                timeout: 60000
+            }
+        };
+
+        const credential = await navigator.credentials.create(createCredentialOptions);
+        
+        // Convert ID to String for LocalStorage
+        const idString = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+        localStorage.setItem("fingerprintCredential", idString);
+        
+        alert("फिंगरप्रिंट रजिस्टर हो गया! ✅");
+        refreshBiometricUI();
+    } catch (err) {
+        console.error(err);
+        alert("रजिस्ट्रेशन विफल: " + err.message);
+    }
+}
+
+// 2. UNLOCK WITH FINGERPRINT
+async function authenticateFingerprint() {
+    const idString = localStorage.getItem("fingerprintCredential");
+    if (!idString) return;
+
+    try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const rawId = Uint8Array.from(atob(idString), c => c.charCodeAt(0));
+
+        const getCredentialOptions = {
+            publicKey: {
+                challenge: challenge,
+                allowCredentials: [{
+                    id: rawId,
+                    type: 'public-key',
+                    transports: ['internal']
+                }],
+                userVerification: "required",
+                timeout: 60000
+            }
+        };
+
+        const assertion = await navigator.credentials.get(getCredentialOptions);
+        if (assertion) {
+            unlockApp();
+        }
+    } catch (err) {
+        console.error(err);
+        alert("प्रमाणीकरण विफल या रद्द किया गया।");
+    }
+}
+
+function handleForgotPin() {
+    const master = prompt("PIN रीसेट करने के लिए Master Password दर्ज करें:");
+    if(master === MASTER_PASSWORD) {
+        const n = prompt("नया PIN सेट करें:");
+        if(n && n.length >= 4) {
+            localStorage.setItem("app_pin", n);
+            alert("PIN रीसेट सफल!");
+        }
+    } else {
+        alert("गलत Master Password!");
+    }
+}
+
+function setupNewPin() {
+    const current = prompt("पुराना PIN दर्ज करें:");
+    if(current === localStorage.getItem("app_pin")) {
+        const n = prompt("नया 4-6 अंकों का PIN दर्ज करें:");
+        if(n && n.length >= 4) {
+            localStorage.setItem("app_pin", n);
+            alert("PIN बदल गया!");
+        }
+    } else {
+        alert("गलत PIN!");
+    }
+}
+
+function logoutApp() {
+    document.getElementById("mainAppWrapper").style.display = "none";
+    document.getElementById("lockScreen").style.display = "flex";
+    document.getElementById("lockStatus").innerText = "लॉग आउट। PIN दर्ज करें";
+    refreshBiometricUI();
+}
+
+/* --- EXISTING FIREBASE LOGIC --- */  
 firebase.initializeApp({  
  apiKey:"AIzaSyAiwfHxzsreDK2RkYLXNjhb8DhMmpYZ-tY",  
  authDomain:"fasal-9a05b.firebaseapp.com",  
@@ -260,30 +455,22 @@ function closePreview() { document.getElementById('printPreviewModal').style.dis
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
-
   editID = null;
-
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission"]
     .forEach(id=>document.getElementById(id).value="");
-
-  // Load auto-saved commission from localStorage
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
   if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
-
   document.getElementById("extraDeduction").value = 0;
   document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
   document.getElementById("entryScreen").style.display = "block";
-
   loadSuggestions();
   document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
-
   db.ref("seasonsInfo/" + s).once("value", snap => {
     currentDefaultBW = Number(snap.val().defaultBw || 0);
     document.getElementById("defaultBWView").value = currentDefaultBW;
     document.getElementById("defaultBW").value = currentDefaultBW;
     autoCalc();
   });
-
   setTimeout(()=>{
     const c = document.getElementById("customer");
     c.focus();
@@ -310,17 +497,10 @@ function calcAmount(){
   let cut = 0;
   if(document.getElementById("cutBag").checked) cut += b * Number(document.getElementById("cutBagVal").value || 0);
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
-  
   const gross = rate * qtl;
   let commission = 0;
-  if(commMode === "percent") {
-      commission = (gross * commInput) / 100;
-  } else {
-      commission = qtl * commInput;
-  }
-  
+  if(commMode === "percent") { commission = (gross * commInput) / 100; } else { commission = qtl * commInput; }
   const net = gross - cut - exDed - commission;
-
   document.getElementById("cutTotal").value = cut.toFixed(2);
   document.getElementById("cutTotalText").innerText = cut.toFixed(2);
   document.getElementById("commission").value = commission.toFixed(2);
@@ -332,11 +512,8 @@ function calcAmount(){
 function saveEntry(){  
  const s = document.getElementById("season").value;
  if(!s) return;
-
- // Auto-save commission settings for next time
  localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
-
  const data={
   customer: document.getElementById("customer").value,
   father: document.getElementById("father").value,
@@ -353,9 +530,7 @@ function saveEntry(){
   amount: document.getElementById("amount").value,
   note: document.getElementById("note").value,
   date: document.getElementById("entryDate").value,
-  timestamp: editID
-  ? (editOldTimestamp || Date.parse(document.getElementById("entryDate").value))
-  : Date.now()
+  timestamp: editID ? (editOldTimestamp || Date.now()) : Date.now()
  };
  if(!data.customer || !data.bore){ alert("Customer aur Bore required hai"); return; }
  const ref = db.ref("seasons/"+s+"/entries");
@@ -367,22 +542,13 @@ function updateTable(arr){
   const output = document.getElementById("output");
   output.innerHTML = ""; 
   let totalB = 0, totalKg = 0, totalC = 0;  
-
   arr.forEach(r => {  
     totalB += Number(r.bore || 0);  
     const qKg = Number(r.quintal || 0) * 100;
     totalKg += qKg;
-    const commAmt = Number(r.commission || 0);
-    totalC += commAmt;
-
-    const totalKgExact = Math.round(qKg);
-    const qtlPart = Math.floor(totalKgExact / 100);
-    const kgPart = totalKgExact % 100;
-
-    const rate = Number(r.rate || 0);
-    const gross = (rate * qKg / 100).toFixed(2);
-    const exDed = Number(r.extraDeduction || 0);
-
+    totalC += Number(r.commission || 0);
+    const qtlPart = Math.floor(qKg / 100);
+    const kgPart = Math.round(qKg % 100);
     output.innerHTML += `
     <tr>
       <td><input type="checkbox" class="print-row-check"></td>
@@ -395,13 +561,10 @@ function updateTable(arr){
       <td><small>${r.note || ""}</small></td>
       <td style="color:var(--success); font-weight:bold;">${qtlPart} Qtl ${kgPart} Kg</td>
       <td>
-        <div style="font-size:12px; line-height:1.4;">
-            Rate: ₹${rate}<br>
-            Gross: ₹${gross}<br>
+        <div style="font-size:12px;">
+            Rate: ₹${r.rate || 0}<br>
             Labour: ₹${r.cut || 0}<br>
-            ${commAmt > 0 ? 'Comm: ₹'+commAmt+' ('+(r.commMode === 'percent' ? r.commissionPercent+'%' : '₹'+r.commissionPercent+'/Qtl')+')<br>' : ''}
-            ${exDed > 0 ? 'Deduct: ₹'+exDed+'<br>' : ''}
-            <b style="color:var(--danger); font-size:14px;">Net: ₹${r.amount || 0}</b>
+            Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
         </div>
       </td>
       <td>
@@ -410,33 +573,26 @@ function updateTable(arr){
       </td>
     </tr>`;
   });  
-
   document.getElementById("totalBore").innerText = totalB; 
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
-  const totalKgExact = Math.round(totalKg);
-  const totalQtlPart = Math.floor(totalKgExact / 100);
-  const totalKgPart = totalKgExact % 100;
-  document.getElementById("totalQtl").innerText = totalQtlPart + " Qtl " + totalKgPart + " Kg";
+  document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Qtl " + Math.round(totalKg%100) + " Kg";
 }
   
 function sortNewest(){ sortMode = "newest"; filterData(); }
 function sortOldest(){ sortMode = "oldest"; filterData(); }
-function sortNameAZ(){ sortMode = "az"; filterData(); }
   
 function editEntry(id){  
   editID = id; const sName = document.getElementById("season").value;
   db.ref("seasons/"+sName+"/entries/"+id).once("value", s => {  
-    const d = s.val(); editOldTimestamp = d.timestamp || Date.parse(d.date);
+    const d = s.val(); editOldTimestamp = d.timestamp;
     ["customer","father","village","bore","extra","quintal","entryDate","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
     if(d.commMode) document.getElementById("commMode").value = d.commMode;
     document.getElementById("rate").value = d.rate || "";
-    document.getElementById("entryDate").value = d.date || ""; 
     document.getElementById("entryScreen").style.display = "block";
     loadSuggestions();
     db.ref("seasonsInfo/"+sName).once("value", info => { 
       currentDefaultBW = Number(info.val().defaultBw || 0);
       document.getElementById("defaultBWView").value = currentDefaultBW;
-      document.getElementById("defaultBW").value = currentDefaultBW; 
       calcAmount(); 
     });
   });  
@@ -450,36 +606,11 @@ function loadSeasons(){
  });  
 }  
 
-function onSeasonChange(){
-  localStorage.lastSeason = document.getElementById("season").value;
-  loadSeason();
-  loadSuggestions(); 
-}
-
-function newSeason(){
-  document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; 
-  document.getElementById("seasonScreen").style.display = "block";
-}
-
-function openSeasonScreen(){  
-  const s = document.getElementById("season").value; if(!s) return;
-  document.getElementById("seasonScreen").style.display = "block";  
-  db.ref("seasonsInfo/" + s).once("value", snap => {  
-    const d = snap.val() || {};  
-    document.getElementById("seasonName").value = d.name || s; document.getElementById("seasonWeight").value = d.defaultBw || "";  
-  });  
-}  
-
-function saveSeason(){  
-  const newN = document.getElementById("seasonName").value.trim(); const w = document.getElementById("seasonWeight").value;  
-  if(!newN || !w) return;
-  db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{ localStorage.lastSeason = newN; document.getElementById("seasonScreen").style.display = "none"; loadSeasons(); });
-}  
-
-function deleteSeason(){
-  const s = document.getElementById("seasonName").value.trim();
-  if(s && confirm("Season delete?")){ db.ref("seasonsInfo/"+s).remove(); db.ref("seasons/"+s).remove(); localStorage.removeItem("lastSeason"); document.getElementById("seasonScreen").style.display="none"; setTimeout(loadSeasons, 500); }
-}
+function onSeasonChange(){ localStorage.lastSeason = document.getElementById("season").value; loadSeason(); loadSuggestions(); }
+function newSeason(){ document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; document.getElementById("seasonScreen").style.display = "block"; }
+function openSeasonScreen(){ const s = document.getElementById("season").value; if(!s) return; document.getElementById("seasonScreen").style.display = "block"; db.ref("seasonsInfo/" + s).once("value", snap => { const d = snap.val() || {}; document.getElementById("seasonName").value = d.name || s; document.getElementById("seasonWeight").value = d.defaultBw || ""; }); }
+function saveSeason(){ const newN = document.getElementById("seasonName").value.trim(); const w = document.getElementById("seasonWeight").value; if(!newN || !w) return; db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{ localStorage.lastSeason = newN; document.getElementById("seasonScreen").style.display = "none"; loadSeasons(); }); }
+function deleteSeason(){ const s = document.getElementById("seasonName").value.trim(); if(s && confirm("Season delete?")){ db.ref("seasonsInfo/"+s).remove(); db.ref("seasons/"+s).remove(); localStorage.removeItem("lastSeason"); document.getElementById("seasonScreen").style.display="none"; setTimeout(loadSeasons, 500); } }
 
 function filterData(){  
   const name = document.getElementById("searchName").value.toLowerCase();
@@ -490,12 +621,8 @@ function filterData(){
     if(name) arr = arr.filter(r => (r.customer || "").toLowerCase().includes(name));
     if(from) arr = arr.filter(r => r.date >= from);
     if(to) arr = arr.filter(r => r.date <= to);
-    
-    if(sortMode === "oldest"){
-      arr.sort((a,b) => a.date.localeCompare(b.date) || a.timestamp - b.timestamp);
-    } else {
-      arr.sort((a,b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
-    }
+    if(sortMode === "oldest") arr.sort((a,b) => a.date.localeCompare(b.date) || (a.timestamp - b.timestamp));
+    else arr.sort((a,b) => b.date.localeCompare(a.date) || (b.timestamp - a.timestamp));
     updateTable(arr);
   });
 }
@@ -508,112 +635,25 @@ function loadSuggestions(){
         const vals = [...new Set(data.map(d => d[f]).filter(Boolean))];
         document.getElementById(f+"List").innerHTML = vals.map(n=>`<option value="${n}">`).join("");
     });
-    const noteList = document.getElementById("noteList");
-    if(!Array.from(noteList.options).some(o => o.value === s)){
-      const opt = document.createElement("option");
-      opt.value = s;
-      noteList.appendChild(opt);
-    }
   });
 }
 
-function deleteEntry(id){  
-  const s = document.getElementById("season").value;
-  if(s && confirm("Delete?")){ db.ref("seasons/"+s+"/entries/"+id).remove().then(loadSeason); }
-}  
-
-function loadSeason(){  
-  const s = document.getElementById("season").value; if(!s) return;
-  db.ref("seasonsInfo/" + s).once("value", snap => {
-    currentDefaultBW = Number(snap.val()?.defaultBw || 0);
-    db.ref("seasons/" + s + "/entries").once("value", eSnap => {
-      let arr = Object.entries(eSnap.val()||{}).map(([id, v]) => ({ id, ...v }));
-      if(sortMode === "oldest"){
-        arr.sort((a,b) => a.date.localeCompare(b.date) || a.timestamp - b.timestamp);
-      } else {
-        arr.sort((a,b) => b.date.localeCompare(a.date) || b.timestamp - a.timestamp);
-      }
-      updateTable(arr);
-    });
-  });
-}
+function deleteEntry(id){ const s = document.getElementById("season").value; if(s && confirm("Delete?")){ db.ref("seasons/"+s+"/entries/"+id).remove().then(loadSeason); } }
+function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { currentDefaultBW = Number(snap.val()?.defaultBw || 0); filterData(); }); }
 function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; }
-loadSeasons();  
-function addNoteToSuggestion(){
-  const noteInput = document.getElementById("note");
-  const list = document.getElementById("noteList");
-  const val = noteInput.value.trim();
-  if(!val) return;
-  const exists = Array.from(list.options).some(o => o.value === val);
-  if(!exists){
-    const opt = document.createElement("option");
-    opt.value = val;
-    list.appendChild(opt);
-  }
-}
-
-let clickTimer = null;
-function singleClickPrint(id){
-  clearTimeout(clickTimer);
-  clickTimer = setTimeout(() => {
-    openSingleEntryPreview(id);
-    clickTimer = null;
-  }, 300);
-}
-
-function doubleClickEdit(id){
-  clearTimeout(clickTimer);
-  clickTimer = null;
-  editEntry(id);
-}
-
+function addNoteToSuggestion(){ const noteInput = document.getElementById("note"); const list = document.getElementById("noteList"); const val = noteInput.value.trim(); if(!val) return; const exists = Array.from(list.options).some(o => o.value === val); if(!exists){ const opt = document.createElement("option"); opt.value = val; list.appendChild(opt); } }
+function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
+function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
 function openSingleEntryPreview(id){
-  const s = document.getElementById("season").value;
-  if(!s) return;
-
+  const s = document.getElementById("season").value; if(!s) return;
   db.ref("seasons/"+s+"/entries/"+id).once("value", snap => {
-    const r = snap.val();
-    if(!r) return;
-
-    let content = `
-      <h2 style="text-align:center;">${s}</h2>
-      <table border="1" style="width:100%;border-collapse:collapse;">
-        <tr><th>Date</th><td>${r.date || ""}</td></tr>
-        <tr><th>Customer</th><td><b>${r.customer || ""}</b></td></tr>
-        <tr><th>Father</th><td>${r.father || ""}</td></tr>
-        <tr><th>Village</th><td>${r.village || ""}</td></tr>
-        <tr><th>Bore</th><td>${r.bore || 0}</td></tr>
-        <tr><th>Extra</th><td>${r.extra || 0}</td></tr>
-        <tr><th>Quintal</th><td>${r.quintal || 0}</td></tr>
-        <tr><th>Rate</th><td>₹${r.rate || 0}</td></tr>
-        <tr><th>Labour</th><td>₹${r.cut || 0}</td></tr>
-        ${r.commission > 0 ? '<tr><th>Commission</th><td>₹'+r.commission+' ('+(r.commMode === 'percent' ? r.commissionPercent+'%' : '₹'+r.commissionPercent+'/Qtl')+')</td></tr>' : ''}
-        <tr><th>Net</th><td><b>₹${r.amount || 0}</b></td></tr>
-        <tr><th>Note</th><td>${r.note || ""}</td></tr>
-      </table>
-    `;
-
+    const r = snap.val(); if(!r) return;
+    let content = `<h2 style="text-align:center;">${s}</h2><table border="1" style="width:100%;border-collapse:collapse;"><tr><th>Date</th><td>${r.date || ""}</td></tr><tr><th>Customer</th><td><b>${r.customer || ""}</b></td></tr><tr><th>Bore</th><td>${r.bore || 0}</td></tr><tr><th>Net</th><td><b>₹${r.amount || 0}</b></td></tr></table>`;
     document.getElementById("previewContent").innerHTML = content;
     document.getElementById("printPreviewModal").style.display = "flex";
-    document.getElementById("zoomRange").value = 1.0;
     applyZoom();
   });
 }
-
-let tapTimer = null;
-document.addEventListener("touchend", function(e){
-  if(document.getElementById("entryScreen").style.display === "block") return;
-  if(e.target.closest("table")) return;
-  if(tapTimer){
-    clearTimeout(tapTimer);
-    tapTimer = null;
-    openEntryScreen();
-  } else {
-    tapTimer = setTimeout(()=>{
-      tapTimer = null;
-    }, 300);
-  }
-});
 </script> 
 </body>  
 </html>
