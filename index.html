@@ -214,11 +214,43 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
   </div>
 </div>
 
+<div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #bbf7d0;">
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+    <label style="font-weight: bold; cursor: pointer;">
+      <input type="checkbox" id="applyGst" onchange="calcAmount()" style="width: 18px; height: 18px; vertical-align: middle;"> Apply GST
+    </label>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <div style="flex: 1;">
+      <small>SGST (%)</small>
+      <input id="sgstPercent" type="number" value="2.5" oninput="calcAmount()">
+    </div>
+    <div style="flex: 1;">
+      <small>CGST (%)</small>
+      <input id="cgstPercent" type="number" value="2.5" oninput="calcAmount()">
+    </div>
+  </div>
+  <div style="font-size: 13px; margin-top: 5px; display: flex; justify-content: space-between; color: #166534;">
+    <span>SGST: ₹<span id="sgstAmountText">0</span></span>
+    <span>CGST: ₹<span id="cgstAmountText">0</span></span>
+    <span>Total GST: ₹<span id="totalGstText">0</span></span>
+  </div>
+</div>
+
 <div style="background: var(--primary); color:#fff; padding:12px; border-radius:8px; margin-top:10px;">
   <div>Total Cut (Lab): ₹<span id="cutTotalText">0</span></div>
   <div>Commission: ₹<span id="commissionText">0</span></div>
-  <div style="font-size:22px; font-weight:bold;">Net: ₹<span id="finalAmountText">0</span></div>
+  <div style="font-size:22px; font-weight:bold; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 5px;">Net: ₹<span id="finalAmountText">0</span></div>
+  
+  <div style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px;">
+    <div style="font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.3); margin-bottom: 5px; font-size: 14px;">AMOUNT BREAKDOWN (DISPLAY ONLY)</div>
+    <div style="font-size: 14px; line-height: 1.6;">
+      <div>Base for GST: ₹<span id="breakdownBase">0</span></div>
+      <div style="font-weight: bold; color: #fde047;">Final After GST + CST + Commission + Labour + Deduction: ₹<span id="breakdownFinal">0</span></div>
+    </div>
+  </div>
 </div>
+
 <input id="note" list="noteList" placeholder="Note" onblur="addNoteToSuggestion()">
 <datalist id="noteList"></datalist>
 
@@ -400,7 +432,7 @@ firebase.initializeApp({
  projectId:"fasal-9a05b"  
 });  
 const db=firebase.database();  
-let editID=null, currentDefaultBW=0, sortMode = "newest", editOldTimestamp = null;
+let editID=null, currentDefaultBW=0, sortMode = "newest", editOldTimestamp = null, editOldDate = null;
 let clickTimer = null;
 
 function openCustomPreview() {
@@ -437,6 +469,8 @@ function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
   editID = null;
+  editOldTimestamp = null; // Reset for new entry
+  editOldDate = null; // Reset for new entry
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission"]
     .forEach(id=>document.getElementById(id).value="");
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
@@ -478,6 +512,21 @@ function calcAmount(){
   let commission = 0;
   if(commMode === "percent") { commission = (gross * commInput) / 100; } else { commission = qtl * commInput; }
   const net = gross - cut - exDed - commission;
+
+  // --- ISSUE 1 FIX: AMOUNT BREAKDOWN (DISPLAY ONLY) ---
+  const baseForGst = gross + cut + exDed + commission;
+  const sgstP = Number(document.getElementById("sgstPercent").value || 0);
+  const cgstP = Number(document.getElementById("cgstPercent").value || 0);
+  const gstAmount = baseForGst * (sgstP + cgstP) / 100;
+  const finalAfter = baseForGst + gstAmount; // Assuming CST is 0 or part of logic not provided
+
+  document.getElementById("breakdownBase").innerText = baseForGst.toFixed(2);
+  document.getElementById("breakdownFinal").innerText = finalAfter.toFixed(2);
+  document.getElementById("sgstAmountText").innerText = (baseForGst * sgstP / 100).toFixed(2);
+  document.getElementById("cgstAmountText").innerText = (baseForGst * cgstP / 100).toFixed(2);
+  document.getElementById("totalGstText").innerText = gstAmount.toFixed(2);
+  // -----------------------------------------------------
+
   document.getElementById("cutTotal").value = cut.toFixed(2);
   document.getElementById("cutTotalText").innerText = cut.toFixed(2);
   document.getElementById("commission").value = commission.toFixed(2);
@@ -491,6 +540,11 @@ function saveEntry(){
  if(!s) return;
  localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
+ 
+ // --- BUG FIX: PRESERVE ORIGINAL DATE AND TIMESTAMP ---
+ const inputDate = document.getElementById("entryDate").value;
+ const finalDate = (editID && !inputDate) ? editOldDate : inputDate;
+
  const data={
   customer: document.getElementById("customer").value,
   father: document.getElementById("father").value,
@@ -506,9 +560,10 @@ function saveEntry(){
   extraDeduction: document.getElementById("extraDeduction").value || 0,
   amount: document.getElementById("amount").value,
   note: document.getElementById("note").value,
-  date: document.getElementById("entryDate").value,
+  date: finalDate,
   timestamp: editID ? (editOldTimestamp || Date.now()) : Date.now()
  };
+ 
  if(!data.customer || !data.bore){ alert("Customer aur Bore required hai"); return; }
  const ref = db.ref("seasons/"+s+"/entries");
  const promise = editID ? ref.child(editID).set(data) : ref.push(data);
@@ -552,8 +607,11 @@ function sortOldest(){ sortMode = "oldest"; filterData(); }
 function editEntry(id){  
   editID = id; const sName = document.getElementById("season").value;
   db.ref("seasons/"+sName+"/entries/"+id).once("value", s => {  
-    const d = s.val(); editOldTimestamp = d.timestamp;
-    ["customer","father","village","bore","extra","quintal","entryDate","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
+    const d = s.val(); 
+    editOldTimestamp = d.timestamp; // Store timestamp to preserve sorting
+    editOldDate = d.date; // BUG FIX: Store date to preserve sorting
+    ["customer","father","village","bore","extra","quintal","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
+    document.getElementById("entryDate").value = d.date || ""; // BUG FIX: Explicitly load stored date
     if(d.commMode) document.getElementById("commMode").value = d.commMode;
     document.getElementById("rate").value = d.rate || "";
     document.getElementById("entryScreen").style.display = "block";
