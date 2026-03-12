@@ -692,9 +692,50 @@ function onSeasonChange(){
 
 function newSeason(){ document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; document.getElementById("seasonScreen").style.display = "block"; }
 function openSeasonScreen(){ const s = document.getElementById("season").value; if(!s) return; document.getElementById("seasonScreen").style.display = "block"; db.ref("seasonsInfo/" + s).once("value", snap => { const d = snap.val() || {}; document.getElementById("seasonName").value = d.name || s; document.getElementById("seasonWeight").value = d.defaultBw || ""; }); }
-function saveSeason(){ const newN = document.getElementById("seasonName").value.trim(); const w = document.getElementById("seasonWeight").value; if(!newN || !w) return; db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{ localStorage.lastSeason = newN; document.getElementById("seasonScreen").style.display = "none"; loadSeasons(); }); }
-function deleteSeason(){ const s = document.getElementById("seasonName").value.trim(); if(s && confirm("Season delete?")){ db.ref("seasonsInfo/"+s).remove(); db.ref("seasons/"+s).remove(); localStorage.removeItem("lastSeason"); document.getElementById("seasonScreen").style.display="none"; setTimeout(loadSeasons, 500); } }
+function saveSeason(){
+ const oldName = document.getElementById("season").value;
+ const newN = document.getElementById("seasonName").value.trim();
+ const w = document.getElementById("seasonWeight").value;
 
+ if(!newN || !w) return;
+
+ if(oldName === newN){
+   db.ref("seasonsInfo/" + newN).update({ name:newN, defaultBw:w }).then(()=>{
+     document.getElementById("seasonScreen").style.display="none";
+     loadSeasons();
+   });
+   return;
+ }
+
+ db.ref("seasons/" + oldName).once("value").then(snap=>{
+   const data = snap.val() || {};
+   db.ref("seasons/" + newN).set(data).then(()=>{
+     db.ref("seasons/" + oldName).remove();
+   });
+ });
+
+ db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{
+   db.ref("seasonsInfo/" + oldName).remove();
+   localStorage.lastSeason=newN;
+   document.getElementById("seasonScreen").style.display="none";
+   loadSeasons();
+ });
+}
+function deleteSeason(){
+ const s = document.getElementById("season").value;
+ if(!s) return;
+
+ if(confirm("Season delete karna hai? Iske saare entries bhi delete ho jayenge.")){
+   db.ref("seasonsInfo/" + s).remove();
+   db.ref("seasons/" + s).remove();
+
+   localStorage.removeItem("lastSeason");
+
+   document.getElementById("seasonScreen").style.display="none";
+
+   setTimeout(loadSeasons,500);
+ }
+}
 function filterData(){  
   const name = document.getElementById("searchName").value.toLowerCase();
   const from = document.getElementById("fromDate").value; const to = document.getElementById("toDate").value;
