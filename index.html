@@ -59,6 +59,10 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 .lock-container { width: 100%; max-width: 320px; text-align: center; }
 .pin-dot-input { letter-spacing: 12px; font-size: 28px; text-align: center; font-weight: bold; border: 2px solid var(--primary); }
 #mainAppWrapper { display: none; }
+
+/* --- NEW TDS STYLE --- */
+.tds-calculator { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 10px; }
+.tds-calculator input { margin: 0; padding: 5px 8px; width: 80px; text-align: center; }
 </style>  </head>  
 <body>  
 
@@ -117,6 +121,11 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 <b>Total Bore:</b> <span id="totalBore" style="color:var(--danger); font-size: 18px;">0</span> |  
 <b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span> |
 <b>Total Comm:</b> <span id="totalComm" style="color:var(--warning); font-size: 18px;">0</span>
+
+<div class="tds-calculator">
+    <b>TDS %:</b> <input type="number" id="tdsPercentInput" value="0" oninput="saveTdsPercent()" step="0.01">
+    <b style="margin-left:5px;">TDS Amount:</b> <span id="tdsAmountDisplay" style="color:var(--danger); font-weight:bold;">0.00</span>
+</div>
 </div>  
 </div>
 
@@ -279,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!localStorage.getItem("app_pin")) {
         localStorage.setItem("app_pin", "1234");
     }
+
     refreshBiometricUI();
     
     // AUTOMATIC START: Trigger fingerprint if credential exists
@@ -424,6 +434,25 @@ function logoutApp() {
     refreshBiometricUI();
 }
 
+/* --- TDS CALCULATION LOGIC (FIXED PER SEASON) --- */
+function saveTdsPercent(){
+  const percent = document.getElementById("tdsPercentInput").value;
+  const season = document.getElementById("season").value;
+  if(!season) return;
+  
+  // Save using season-specific key
+  localStorage.setItem("mandiTdsPercent_" + season, percent);
+  calculateTdsAmount();
+}
+
+function calculateTdsAmount() {
+    const totalComm = parseFloat(document.getElementById("totalComm").innerText) || 0;
+    const tdsPercent = parseFloat(document.getElementById("tdsPercentInput").value) || 0;
+    const tdsAmount = (totalComm * tdsPercent) / 100;
+    document.getElementById("tdsAmountDisplay").innerText = tdsAmount.toFixed(2);
+}
+    
+
 /* --- EXISTING FIREBASE LOGIC (UNTOUCHED) --- */  
 firebase.initializeApp({  
  apiKey:"AIzaSyAiwfHxzsreDK2RkYLXNjhb8DhMmpYZ-tY",  
@@ -473,6 +502,10 @@ function openEntryScreen(){
   editOldDate = null; // Reset for new entry
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission"]
     .forEach(id=>document.getElementById(id).value="");
+  
+  // AUTO-REMEMBER RATE: Load from local storage
+  if(localStorage.getItem('mandiLastRate')) document.getElementById('rate').value = localStorage.getItem('mandiLastRate');
+
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
   if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
   document.getElementById("extraDeduction").value = 0;
@@ -538,6 +571,10 @@ function calcAmount(){
 function saveEntry(){  
  const s = document.getElementById("season").value;
  if(!s) return;
+ 
+ // AUTO-REMEMBER RATE: Store current value
+ localStorage.setItem('mandiLastRate', document.getElementById("rate").value);
+ 
  localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
  
@@ -599,6 +636,9 @@ function updateTable(arr){
   document.getElementById("totalBore").innerText = totalB; 
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
   document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Qtl " + Math.round(totalKg%100) + " Kg";
+  
+  // Trigger TDS recalc when total changes
+  calculateTdsAmount();
 }
   
 function sortNewest(){ sortMode = "newest"; filterData(); }
@@ -628,11 +668,28 @@ function loadSeasons(){
  const sD = document.getElementById("season"); sD.innerHTML="";  
  db.ref("seasonsInfo").once("value",s=>{  
   Object.keys(s.val()||{}).forEach(n=>{ sD.innerHTML+=`<option value="${n}">${n}</option>`; });  
-  sD.value=localStorage.lastSeason||sD.options[0]?.value; loadSeason();  
+  sD.value=localStorage.lastSeason||sD.options[0]?.value; 
+  
+  // Initial TDS load for first selected season
+  onSeasonChange();
  });  
 }  
 
-function onSeasonChange(){ localStorage.lastSeason = document.getElementById("season").value; loadSeason(); loadSuggestions(); }
+function onSeasonChange(){ 
+  const s = document.getElementById("season").value;
+  if(!s) return;
+  
+  localStorage.lastSeason = s;
+  
+  // FIXED: Load TDS specific to the selected season
+  const saved = localStorage.getItem("mandiTdsPercent_" + s);
+  document.getElementById("tdsPercentInput").value = saved || 0;
+
+  loadSeason(); 
+  loadSuggestions(); 
+  calculateTdsAmount(); // Recalculate based on new loaded TDS %
+}
+
 function newSeason(){ document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; document.getElementById("seasonScreen").style.display = "block"; }
 function openSeasonScreen(){ const s = document.getElementById("season").value; if(!s) return; document.getElementById("seasonScreen").style.display = "block"; db.ref("seasonsInfo/" + s).once("value", snap => { const d = snap.val() || {}; document.getElementById("seasonName").value = d.name || s; document.getElementById("seasonWeight").value = d.defaultBw || ""; }); }
 function saveSeason(){ const newN = document.getElementById("seasonName").value.trim(); const w = document.getElementById("seasonWeight").value; if(!newN || !w) return; db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{ localStorage.lastSeason = newN; document.getElementById("seasonScreen").style.display = "none"; loadSeasons(); }); }
