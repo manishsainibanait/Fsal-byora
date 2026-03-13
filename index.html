@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
 <style>  
+
 :root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; }
 body{font-family:'Segoe UI',Arial,sans-serif;padding:12px;background: var(--bg); color: #1e293b;}  
 button,input,select{  
@@ -21,7 +22,7 @@ th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}
 th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
 .actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
 .searchBar{background:#dbeafe;padding:15px;border-radius:10px;margin-bottom:15px; border: 1px solid #bfdbfe;}  
-#entryScreen,#seasonScreen{  
+#entryScreen,#seasonScreen,#reportScreen{  
  position:fixed;top:0;left:0;right:0;bottom:0;  
  background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
 }  
@@ -47,10 +48,16 @@ th{background: var(--primary);color:#fff; position: sticky; top: 0;}
 }
 
 .tableBox{ overflow-x:auto; }
-thead th:nth-child(3){ position: sticky; left: 0; background: var(--primary); z-index: 2; }
-tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; font-weight: bold; color: var(--primary);}
+thead th:nth-child(2){ position: sticky; left: 0; background: var(--primary); z-index: 2; }
+tbody td:nth-child(2){
+ position: sticky;
+ left: 0;
+ background:#fff;
+ z-index: 1;
+ font-weight: bold;
+ color: var(--primary);
+}
 
-/* --- SECURITY CSS --- */
 #lockScreen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #ffffff; z-index: 99999; display: flex; flex-direction: column;
@@ -60,9 +67,52 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 .pin-dot-input { letter-spacing: 12px; font-size: 28px; text-align: center; font-weight: bold; border: 2px solid var(--primary); }
 #mainAppWrapper { display: none; }
 
-/* --- NEW TDS STYLE --- */
 .tds-calculator { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 10px; }
 .tds-calculator input { margin: 0; padding: 5px 8px; width: 80px; text-align: center; }
+
+/* --- FIXED REPORT LAYOUT --- */
+#reportOutput { width: 100%; overflow: hidden; padding: 0; margin-top: 10px; }
+#reportOutput table { 
+    width: 100%; 
+    table-layout: fixed; /* Strict fit to screen width */
+    border-collapse: collapse; 
+    background: #fff;
+}
+#reportOutput th{
+font-size:13px;
+padding:10px 4px;
+background: var(--primary); 
+color: white; 
+text-align: center;
+position: sticky; 
+top: 0; 
+z-index: 10; 
+}
+
+#reportOutput td{
+font-size:13px;
+padding:8px 4px;
+text-align: center; 
+word-wrap: break-word; 
+overflow-wrap: break-word;
+border: 1px solid #e2e8f0;
+}
+
+#reportOutput th:nth-child(1), #reportOutput td:nth-child(1) { width: 8%; }  /* No */
+#reportOutput th:nth-child(2), #reportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; } /* Name */
+#reportOutput th:nth-child(3), #reportOutput td:nth-child(3) { width: 16%; } /* Father */
+#reportOutput th:nth-child(4), #reportOutput td:nth-child(4) { width: 15%; } /* Village */
+#reportOutput th:nth-child(5), #reportOutput td:nth-child(5) { width: 9%; }  /* Bore */
+#reportOutput th:nth-child(6), #reportOutput td:nth-child(6) { width: 9%; }  /* Extra */
+#reportOutput th:nth-child(7), #reportOutput td:nth-child(7) { width: 11%; } /* Kg */
+#reportOutput th:nth-child(8), #reportOutput td:nth-child(8) { width: 14%; } /* Quintal */
+
+.report-date-row{
+font-size:14px;
+font-weight:bold;
+padding:10px;
+background: #e2e8f0 !important; 
+}
 </style>  </head>  
 <body>  
 
@@ -89,6 +139,7 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
     <button onclick="logoutApp()" style="width:auto; padding:8px 15px; background:var(--danger); margin:0;">Logout 🚪</button>
     <div style="display:flex; gap:5px;">
+        <button onclick="openReport()" style="width:auto; padding:8px 15px; background:var(--warning); margin:0;">📊 Report</button>
         <button onclick="setupNewPin()" style="width:auto; padding:8px 10px; font-size:12px; background:var(--primary); margin:0;">Set PIN</button>
     </div>
 </div>
@@ -104,7 +155,7 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 </div>  
 
 <div class="searchBar">  
-<input id="searchName" placeholder="🔍 Search Customer..." oninput="filterData()">  
+<input id="searchName" placeholder="🔍 Search Customer..." oninput="handleSearch()">
 <div style="display:flex; gap:6px;">
     <input type="date" id="fromDate" oninput="filterData()">  
     <input type="date" id="toDate" oninput="filterData()">  
@@ -163,6 +214,33 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
         <div id="previewContent"></div>
     </div>
 </div>
+
+<div id="reportScreen">
+    <div class="no-print">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="color:var(--primary);">📊 Sales Report</h2>
+            <button onclick="closeReport()" style="width:auto; background:var(--secondary);">Close</button>
+        </div>
+        <div class="searchBar">
+        <input id="reportSearch" placeholder="🔍 Search Name, Father or Village..." oninput="generateReport()">
+
+<button onclick="clearReportSearch()" style="background:var(--danger); margin-top:6px;">❌ Clear Search</button>
+            <div style="display:flex; gap:6px;">
+                <div style="flex:1;"><small>From:</small><input type="date" id="repFrom" oninput="generateReport()"></div>
+                <div style="flex:1;"><small>To:</small><input type="date" id="repTo" oninput="generateReport()"></div>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:10px;">
+                <select id="reportSort" onchange="generateReport()" style="margin:0;">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                </select>
+                <button onclick="window.print()" style="margin:0; background: #000; width:auto;">🖨 Print</button>
+            </div>
+        </div>
+    </div>
+    <div id="reportOutput"></div>
+</div>
+
 <div id="entryScreen">
 <h3 style="color: var(--primary); margin-bottom:5px;">New Entry</h3>
 <div id="entrySeasonLabel" style="font-weight:bold; margin-bottom:12px;">Season:</div>
@@ -281,21 +359,15 @@ tbody td:nth-child(3){ position: sticky; left: 0; background:#fff; z-index: 1; f
 <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 </div> <script>  
-/* --- AUTOMATIC FINGERPRINT UNLOCK LOGIC --- */
 const MASTER_PASSWORD = "786786";
 
 document.addEventListener('DOMContentLoaded', () => {
     if(!localStorage.getItem("app_pin")) {
         localStorage.setItem("app_pin", "1234");
     }
-
     refreshBiometricUI();
-    
-    // AUTOMATIC START: Trigger fingerprint if credential exists
     if(localStorage.getItem("fingerprintCredential")) {
-        setTimeout(() => {
-            authenticateFingerprint();
-        }, 500); // Small delay for UI load
+        setTimeout(() => { authenticateFingerprint(); }, 500);
     }
 });
 
@@ -303,14 +375,8 @@ function refreshBiometricUI() {
     const credId = localStorage.getItem("fingerprintCredential");
     const regBtn = document.getElementById("regFingerBtn");
     const unlockBtn = document.getElementById("unlockFingerBtn");
-
-    if (credId) {
-        regBtn.style.display = "none";
-        unlockBtn.style.display = "block";
-    } else {
-        regBtn.style.display = "block";
-        unlockBtn.style.display = "none";
-    }
+    if (credId) { regBtn.style.display = "none"; unlockBtn.style.display = "block"; } 
+    else { regBtn.style.display = "block"; unlockBtn.style.display = "none"; }
 }
 
 function unlockApp() {
@@ -323,33 +389,17 @@ function unlockApp() {
 function handlePinSubmit() {
     const entered = document.getElementById("pinInput").value;
     const saved = localStorage.getItem("app_pin");
-    if(entered === saved) {
-        unlockApp();
-    } else {
-        alert("गलत PIN!");
-        document.getElementById("pinInput").value = "";
-    }
+    if(entered === saved) unlockApp();
+    else { alert("गलत PIN!"); document.getElementById("pinInput").value = ""; }
 }
 
-// REGISTER FINGERPRINT
 async function registerFingerprint() {
     const pin = prompt("Fingerprint रजिस्टर करने के लिए अपना PIN दर्ज करें:");
-    if (pin !== localStorage.getItem("app_pin")) {
-        alert("गलत PIN!");
-        return;
-    }
-
-    if (!window.PublicKeyCredential) {
-        alert("आपका डिवाइस बायोमेट्रिक्स का समर्थन नहीं करता है।");
-        return;
-    }
-
+    if (pin !== localStorage.getItem("app_pin")) { alert("गलत PIN!"); return; }
+    if (!window.PublicKeyCredential) { alert("आपका डिवाइस बायोमेट्रिक्स का समर्थन नहीं करता है।"); return; }
     try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-        const userID = new Uint8Array(16);
-        window.crypto.getRandomValues(userID);
-
+        const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+        const userID = new Uint8Array(16); window.crypto.getRandomValues(userID);
         const createCredentialOptions = {
             publicKey: {
                 challenge: challenge,
@@ -360,71 +410,46 @@ async function registerFingerprint() {
                 timeout: 60000
             }
         };
-
         const credential = await navigator.credentials.create(createCredentialOptions);
         const idString = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
         localStorage.setItem("fingerprintCredential", idString);
         alert("Fingerprint रजिस्टर हो गया! ✅");
         refreshBiometricUI();
-    } catch (err) {
-        console.error(err);
-        alert("रजिस्ट्रेशन विफल: " + err.message);
-    }
+    } catch (err) { alert("रजिस्ट्रेशन विफल: " + err.message); }
 }
 
-// UNLOCK WITH FINGERPRINT
 async function authenticateFingerprint() {
     const idString = localStorage.getItem("fingerprintCredential");
     if (!idString) return;
-
     try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
+        const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
         const rawId = Uint8Array.from(atob(idString), c => c.charCodeAt(0));
-
         const getCredentialOptions = {
             publicKey: {
                 challenge: challenge,
                 allowCredentials: [{ id: rawId, type: 'public-key', transports: ['internal'] }],
-                userVerification: "required",
-                timeout: 60000
+                userVerification: "required", timeout: 60000
             }
         };
-
         const assertion = await navigator.credentials.get(getCredentialOptions);
-        if (assertion) {
-            unlockApp();
-        }
-    } catch (err) {
-        console.log("Fingerprint authentication canceled or failed. PIN fallback active.");
-        // We don't alert here to keep the PIN entry smooth
-    }
+        if (assertion) unlockApp();
+    } catch (err) { console.log("Biometric failed. PIN active."); }
 }
 
 function handleForgotPin() {
     const master = prompt("PIN रीसेट करने के लिए Master Password दर्ज करें:");
     if(master === MASTER_PASSWORD) {
         const n = prompt("नया PIN सेट करें:");
-        if(n && n.length >= 4) {
-            localStorage.setItem("app_pin", n);
-            alert("PIN रीसेट सफल!");
-        }
-    } else {
-        alert("गलत Master Password!");
-    }
+        if(n && n.length >= 4) { localStorage.setItem("app_pin", n); alert("PIN रीसेट सफल!"); }
+    } else alert("गलत Master Password!");
 }
 
 function setupNewPin() {
     const current = prompt("पुराना PIN दर्ज करें:");
     if(current === localStorage.getItem("app_pin")) {
         const n = prompt("नया 4-6 अंकों का PIN दर्ज करें:");
-        if(n && n.length >= 4) {
-            localStorage.setItem("app_pin", n);
-            alert("PIN बदल गया!");
-        }
-    } else {
-        alert("गलत PIN!");
-    }
+        if(n && n.length >= 4) { localStorage.setItem("app_pin", n); alert("PIN बदल गया!"); }
+    } else alert("गलत PIN!");
 }
 
 function logoutApp() {
@@ -434,13 +459,10 @@ function logoutApp() {
     refreshBiometricUI();
 }
 
-/* --- TDS CALCULATION LOGIC (FIXED PER SEASON) --- */
 function saveTdsPercent(){
   const percent = document.getElementById("tdsPercentInput").value;
   const season = document.getElementById("season").value;
   if(!season) return;
-  
-  // Save using season-specific key
   localStorage.setItem("mandiTdsPercent_" + season, percent);
   calculateTdsAmount();
 }
@@ -452,8 +474,6 @@ function calculateTdsAmount() {
     document.getElementById("tdsAmountDisplay").innerText = tdsAmount.toFixed(2);
 }
     
-
-/* --- EXISTING FIREBASE LOGIC (UNTOUCHED) --- */  
 firebase.initializeApp({  
  apiKey:"AIzaSyAiwfHxzsreDK2RkYLXNjhb8DhMmpYZ-tY",  
  authDomain:"fasal-9a05b.firebaseapp.com",  
@@ -470,7 +490,6 @@ function openCustomPreview() {
     let content = `<h2 style="text-align:center;">${s}</h2>`;
     let tableHTML = `<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
         <thead><tr style="background:#eee;"><th>Date</th><th>Customer</th><th>Father</th><th>Village</th><th>Bore</th><th>Extra</th><th>Note</th><th>Qtl</th><th>Amount ₹</th></tr></thead><tbody>`;
-
     let rowsToPrint = selectedChecks.length > 0 ? Array.from(selectedChecks).map(chk => chk.closest('tr')) : Array.from(document.querySelectorAll('#output tr'));
     let printBore = 0;
     rowsToPrint.forEach(tr => {
@@ -497,15 +516,10 @@ function closePreview() { document.getElementById('printPreviewModal').style.dis
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
-  editID = null;
-  editOldTimestamp = null; // Reset for new entry
-  editOldDate = null; // Reset for new entry
+  editID = null; editOldTimestamp = null; editOldDate = null;
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission"]
     .forEach(id=>document.getElementById(id).value="");
-  
-  // AUTO-REMEMBER RATE: Load from local storage
   if(localStorage.getItem('mandiLastRate')) document.getElementById('rate').value = localStorage.getItem('mandiLastRate');
-
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
   if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
   document.getElementById("extraDeduction").value = 0;
@@ -537,29 +551,25 @@ function calcAmount(){
   const exDed = Number(document.getElementById("extraDeduction").value || 0);
   const commMode = document.getElementById("commMode").value;
   const commInput = Number(document.getElementById("commissionPercent").value || 0);
-  
   let cut = 0;
   if(document.getElementById("cutBag").checked) cut += b * Number(document.getElementById("cutBagVal").value || 0);
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
   const gross = rate * qtl;
   let commission = 0;
   if(commMode === "percent") { commission = (gross * commInput) / 100; } else { commission = qtl * commInput; }
-  const net = gross - cut - exDed - commission;
-
-  // --- ISSUE 1 FIX: AMOUNT BREAKDOWN (DISPLAY ONLY) ---
-  const baseForGst = gross + cut + exDed + commission;
+  const net = gross - cut - exDed;
+  const baseForGst = gross + cut + exDed + commission; 
+  
   const sgstP = Number(document.getElementById("sgstPercent").value || 0);
   const cgstP = Number(document.getElementById("cgstPercent").value || 0);
   const gstAmount = baseForGst * (sgstP + cgstP) / 100;
-  const finalAfter = baseForGst + gstAmount; // Assuming CST is 0 or part of logic not provided
-
+  const finalAfter = baseForGst + gstAmount;
+  
   document.getElementById("breakdownBase").innerText = baseForGst.toFixed(2);
   document.getElementById("breakdownFinal").innerText = finalAfter.toFixed(2);
   document.getElementById("sgstAmountText").innerText = (baseForGst * sgstP / 100).toFixed(2);
   document.getElementById("cgstAmountText").innerText = (baseForGst * cgstP / 100).toFixed(2);
   document.getElementById("totalGstText").innerText = gstAmount.toFixed(2);
-  // -----------------------------------------------------
-
   document.getElementById("cutTotal").value = cut.toFixed(2);
   document.getElementById("cutTotalText").innerText = cut.toFixed(2);
   document.getElementById("commission").value = commission.toFixed(2);
@@ -569,19 +579,12 @@ function calcAmount(){
 }
   
 function saveEntry(){  
- const s = document.getElementById("season").value;
- if(!s) return;
- 
- // AUTO-REMEMBER RATE: Store current value
+ const s = document.getElementById("season").value; if(!s) return;
  localStorage.setItem('mandiLastRate', document.getElementById("rate").value);
- 
  localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
- 
- // --- BUG FIX: PRESERVE ORIGINAL DATE AND TIMESTAMP ---
  const inputDate = document.getElementById("entryDate").value;
  const finalDate = (editID && !inputDate) ? editOldDate : inputDate;
-
  const data={
   customer: document.getElementById("customer").value,
   father: document.getElementById("father").value,
@@ -600,7 +603,6 @@ function saveEntry(){
   date: finalDate,
   timestamp: editID ? (editOldTimestamp || Date.now()) : Date.now()
  };
- 
  if(!data.customer || !data.bore){ alert("Customer aur Bore required hai"); return; }
  const ref = db.ref("seasons/"+s+"/entries");
  const promise = editID ? ref.child(editID).set(data) : ref.push(data);
@@ -628,16 +630,22 @@ function updateTable(arr){
       <td>${r.bore || ""}</td>
       <td>${r.extra || 0}</td>
       <td><small>${r.note || ""}</small></td>
-      <td style="color:var(--success); font-weight:bold;">${qtlPart} Qtl ${kgPart} Kg</td>
-      <td><div style="font-size:12px;">Rate: ₹${r.rate || 0}<br>Labour: ₹${r.cut || 0}<br>Net: <b style="color:var(--danger)">₹${r.amount || 0}</b></div></td>
+      <td style="color:var(--success); font-weight:bold;">${qtlPart} Quintal ${kgPart} Kg</td>
+<td>
+<div style="font-size:12px;">
+Gross: ₹${((r.rate || 0) * (r.quintal || 0)).toFixed(2)}<br>
+Rate: ₹${r.rate || 0}<br>
+Labour: ₹${r.cut || 0}<br>
+Deduction: ₹${r.extraDeduction || 0}<br>
+Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
+</div>
+</td>
       <td><button class="actionBtn" onclick="editEntry('${r.id}')">✏</button><button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button></td>
     </tr>`;
   });  
   document.getElementById("totalBore").innerText = totalB; 
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
-  document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Qtl " + Math.round(totalKg%100) + " Kg";
-  
-  // Trigger TDS recalc when total changes
+  document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Quintal " + Math.round(totalKg%100) + " Kg";
   calculateTdsAmount();
 }
   
@@ -648,10 +656,10 @@ function editEntry(id){
   editID = id; const sName = document.getElementById("season").value;
   db.ref("seasons/"+sName+"/entries/"+id).once("value", s => {  
     const d = s.val(); 
-    editOldTimestamp = d.timestamp; // Store timestamp to preserve sorting
-    editOldDate = d.date; // BUG FIX: Store date to preserve sorting
+    editOldTimestamp = d.timestamp;
+    editOldDate = d.date;
     ["customer","father","village","bore","extra","quintal","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
-    document.getElementById("entryDate").value = d.date || ""; // BUG FIX: Explicitly load stored date
+    document.getElementById("entryDate").value = d.date || "";
     if(d.commMode) document.getElementById("commMode").value = d.commMode;
     document.getElementById("rate").value = d.rate || "";
     document.getElementById("entryScreen").style.display = "block";
@@ -669,8 +677,6 @@ function loadSeasons(){
  db.ref("seasonsInfo").once("value",s=>{  
   Object.keys(s.val()||{}).forEach(n=>{ sD.innerHTML+=`<option value="${n}">${n}</option>`; });  
   sD.value=localStorage.lastSeason||sD.options[0]?.value; 
-  
-  // Initial TDS load for first selected season
   onSeasonChange();
  });  
 }  
@@ -678,16 +684,12 @@ function loadSeasons(){
 function onSeasonChange(){ 
   const s = document.getElementById("season").value;
   if(!s) return;
-  
   localStorage.lastSeason = s;
-  
-  // FIXED: Load TDS specific to the selected season
   const saved = localStorage.getItem("mandiTdsPercent_" + s);
   document.getElementById("tdsPercentInput").value = saved || 0;
-
   loadSeason(); 
   loadSuggestions(); 
-  calculateTdsAmount(); // Recalculate based on new loaded TDS %
+  calculateTdsAmount();
 }
 
 function newSeason(){ document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; document.getElementById("seasonScreen").style.display = "block"; }
@@ -696,24 +698,15 @@ function saveSeason(){
  const oldName = document.getElementById("season").value;
  const newN = document.getElementById("seasonName").value.trim();
  const w = document.getElementById("seasonWeight").value;
-
  if(!newN || !w) return;
-
  if(oldName === newN){
-   db.ref("seasonsInfo/" + newN).update({ name:newN, defaultBw:w }).then(()=>{
-     document.getElementById("seasonScreen").style.display="none";
-     loadSeasons();
-   });
+   db.ref("seasonsInfo/" + newN).update({ name:newN, defaultBw:w }).then(()=>{ document.getElementById("seasonScreen").style.display="none"; loadSeasons(); });
    return;
  }
-
  db.ref("seasons/" + oldName).once("value").then(snap=>{
    const data = snap.val() || {};
-   db.ref("seasons/" + newN).set(data).then(()=>{
-     db.ref("seasons/" + oldName).remove();
-   });
+   db.ref("seasons/" + newN).set(data).then(()=>{ db.ref("seasons/" + oldName).remove(); });
  });
-
  db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{
    db.ref("seasonsInfo/" + oldName).remove();
    localStorage.lastSeason=newN;
@@ -722,33 +715,167 @@ function saveSeason(){
  });
 }
 function deleteSeason(){
- const s = document.getElementById("season").value;
- if(!s) return;
-
- if(confirm("Season delete karna hai? Iske saare entries bhi delete ho jayenge.")){
+ const s = document.getElementById("season").value; if(!s) return;
+ if(confirm("Season delete karna hai?")){
    db.ref("seasonsInfo/" + s).remove();
    db.ref("seasons/" + s).remove();
-
    localStorage.removeItem("lastSeason");
-
    document.getElementById("seasonScreen").style.display="none";
-
    setTimeout(loadSeasons,500);
  }
 }
+
+/* --- FIXED: MAIN SCREEN SYNC & SEARCH RESET --- */
 function filterData(){  
-  const name = document.getElementById("searchName").value.toLowerCase();
-  const from = document.getElementById("fromDate").value; const to = document.getElementById("toDate").value;
-  const s = document.getElementById("season").value; if(!s) return;
-  db.ref("seasons/" + s + "/entries").once("value", eSnap => {
-    let arr = Object.entries(eSnap.val() || {}).map(([id,v]) => ({ id, ...v }));
-    if(name) arr = arr.filter(r => (r.customer || "").toLowerCase().includes(name));
+  const nameInput = document.getElementById("searchName").value.toLowerCase().trim();
+  const from = document.getElementById("fromDate").value; 
+  const to = document.getElementById("toDate").value;
+  const s = document.getElementById("season").value; 
+  if(!s) return;
+
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+
+    let arr = [];
+    snap.forEach(child=>{
+      arr.push({id:child.key, ...child.val()});
+    });
+
+    // search filter
+    if(nameInput){
+      arr = arr.filter(r =>
+        (r.customer || "").toLowerCase().includes(nameInput) ||
+        (r.father || "").toLowerCase().includes(nameInput) ||
+        (r.village || "").toLowerCase().includes(nameInput)
+      );
+    }
+
+    // date filter
     if(from) arr = arr.filter(r => r.date >= from);
     if(to) arr = arr.filter(r => r.date <= to);
-    if(sortMode === "oldest") arr.sort((a,b) => a.date.localeCompare(b.date) || (a.timestamp - b.timestamp));
-    else arr.sort((a,b) => b.date.localeCompare(a.date) || (b.timestamp - a.timestamp));
+
+    // sorting
+    if(sortMode === "oldest")
+      arr.sort((a,b)=> (a.timestamp||0)-(b.timestamp||0));
+    else
+      arr.sort((a,b)=> (b.timestamp||0)-(a.timestamp||0));
+
     updateTable(arr);
   });
+}
+/* --- FIXED: REPORT SCREEN SEARCH RESET --- */
+function openReport() {
+    document.getElementById("reportScreen").style.display = "block";
+    generateReport();
+}
+function closeReport() { document.getElementById("reportScreen").style.display = "none"; }
+
+function generateReport() {
+
+const query = document.getElementById("reportSearch").value.toLowerCase().trim();
+const from = document.getElementById("repFrom").value;
+const to = document.getElementById("repTo").value;
+const s = document.getElementById("season").value;
+const repSort = document.getElementById("reportSort").value;
+
+if(!s) return;
+
+db.ref("seasons/" + s + "/entries").once("value", snap => {
+
+let arr = Object.entries(snap.val() || {}).map(([id,v]) => ({ id, ...v }));
+
+if(query !== ""){
+arr = arr.filter(r =>
+(r.customer || "").toLowerCase().includes(query) ||
+(r.father || "").toLowerCase().includes(query) ||
+(r.village || "").toLowerCase().includes(query)
+);
+}
+
+if(from) arr = arr.filter(r => r.date >= from);
+if(to) arr = arr.filter(r => r.date <= to);
+
+if(repSort === "oldest")
+arr.sort((a,b)=> a.date.localeCompare(b.date) || a.timestamp-b.timestamp);
+else
+arr.sort((a,b)=> b.date.localeCompare(a.date) || b.timestamp-a.timestamp);
+
+let grouped = {};
+
+arr.forEach(r=>{
+if(!grouped[r.date]) grouped[r.date] = [];
+grouped[r.date].push(r);
+});
+
+let sortedDates = Object.keys(grouped).sort((a,b)=>
+repSort==="oldest" ? a.localeCompare(b) : b.localeCompare(a)
+);
+
+
+
+let html = `
+<table>
+<thead>
+<tr style="background:#2563eb;color:white">
+<th>No</th>
+<th>Name</th>
+<th>Father</th>
+<th>Village</th>
+<th>Bore</th>
+<th>Extra</th>
+<th>Quintal</th>
+<th>Kg</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+sortedDates.forEach(date=>{
+let dayBore = 0;
+let dayExtra = 0;
+let dayKg = 0;
+
+grouped[date].forEach(r=>{
+ dayBore += Number(r.bore || 0);
+ dayExtra += Number(r.extra || 0);
+ dayKg += Number(r.quintal || 0) * 100;
+});
+html += `
+<tr class="report-date-row">
+<td colspan="8">
+${date} | Entries: ${grouped[date].length} | Bore: ${dayBore} | Extra: ${dayExtra} | Total: ${Math.floor(dayKg/100)} Quintal ${Math.round(dayKg%100)} Kg
+</td>
+</tr>
+`;
+
+grouped[date].forEach((r,i)=>{
+
+const qKg = Number(r.quintal || 0) * 100;
+const qtlPart = Math.floor(qKg / 100);
+const kgPart = Math.round(qKg % 100);
+
+html += `
+<tr>
+<td>${i+1}</td>
+<td>${r.customer || ""}</td>
+<td>${r.father || ""}</td>
+<td>${r.village || ""}</td>
+<td>${r.bore || 0}</td>
+<td>${r.extra || 0}</td>
+<td>${qtlPart} Qtl</td>
+<td>${kgPart} Kg</td>
+</tr>
+`;
+
+});
+
+});
+
+html += `</tbody></table>`;
+document.getElementById("reportOutput").innerHTML =
+html || "<p style='text-align:center;padding:20px;'>No entries found</p>";
+
+});
+
 }
 
 function loadSuggestions(){
@@ -768,6 +895,7 @@ function closeSeasonScreen(){ document.getElementById("seasonScreen").style.disp
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
 function openSingleEntryPreview(id){
+
   const s = document.getElementById("season").value; if(!s) return;
   db.ref("seasons/"+s+"/entries/"+id).once("value", snap => {
     const r = snap.val(); if(!r) return;
@@ -776,6 +904,21 @@ function openSingleEntryPreview(id){
     document.getElementById("printPreviewModal").style.display = "flex";
     applyZoom();
   });
+}
+function handleSearch(){
+  const val = document.getElementById("searchName").value.trim();
+
+  if(val === ""){
+    loadSeason();   // search clear → full list
+  }else{
+    filterData();   // search text → filter
+  }
+}
+function clearReportSearch(){
+  document.getElementById("reportSearch").value = "";
+  document.getElementById("repFrom").value = "";
+  document.getElementById("repTo").value = "";
+  generateReport();
 }
 </script> 
 </body>  
