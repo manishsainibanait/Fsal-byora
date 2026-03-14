@@ -38,7 +38,43 @@ th{background: var(--primary);color:#fff; position: sticky; top: 0;}
 .previewHeader { background: #fff; padding: 15px; display: flex; gap: 10px; align-items: center; justify-content: space-between;}
 .previewBody { flex: 1; overflow: auto; padding: 20px; background: #334155; display: block; }
 #previewContent { background: #fff; padding: 30px; transform-origin: top left; width: fit-content; margin: 0 auto; box-shadow: 0 0 50px rgba(0,0,0,0.5);}
+#previewContent thead th{
+ position: sticky;
+ top: 0;
+ background: #2563eb;
+ color: white;
+ z-index: 10;
+}
+.previewBody{
+ overflow-y:auto;
+ height:100%;
+}
 
+#previewContent table{
+ border-collapse:collapse;
+ width:100%;
+}
+.previewBody{
+ overflow-y:auto;
+ height:100%;
+ max-height:80vh;
+}
+
+#previewContent thead th{
+ position: sticky;
+ top: 0;
+ background:#2563eb;
+ color:#fff;
+ z-index:999;
+}
+
+#previewContent thead th{
+ position: sticky;
+ top: 0;
+ background:#2563eb;
+ color:#fff;
+ z-index:999;
+}
 @media print {
   @page{ size: A4 landscape; margin: 8mm; }
   body * { visibility: hidden; }
@@ -488,8 +524,25 @@ function openCustomPreview() {
     const s = document.getElementById("season").value;
     const selectedChecks = document.querySelectorAll('.print-row-check:checked');
     let content = `<h2 style="text-align:center;">${s}</h2>`;
-    let tableHTML = `<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
-        <thead><tr style="background:#eee;"><th>Date</th><th>Customer</th><th>Father</th><th>Village</th><th>Bore</th><th>Extra</th><th>Note</th><th>Qtl</th><th>Amount ₹</th></tr></thead><tbody>`;
+    let tableHTML = `
+<div style="max-height:70vh; overflow:auto;">
+<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+<thead>
+<tr>
+<th>Date</th>
+<th>Customer</th>
+<th>Father</th>
+<th>Village</th>
+<th>Bore</th>
+<th>Extra</th>
+<th>Note</th>
+<th>Qtl</th>
+<th>Amount ₹</th>
+</tr>
+</thead>
+<tbody>
+`;
+       
     let rowsToPrint = selectedChecks.length > 0 ? Array.from(selectedChecks).map(chk => chk.closest('tr')) : Array.from(document.querySelectorAll('#output tr'));
     let printBore = 0;
     rowsToPrint.forEach(tr => {
@@ -497,7 +550,7 @@ function openCustomPreview() {
         tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cells[2].innerText}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText}</td><td>${cells[8].innerText}</td><td>${cells[9].innerText.replace(/Comm:.*\n?/g,"")}</td></tr>`;
         printBore += Number(cells[5].innerText || 0);
     });
-    tableHTML += `</tbody></table>`;
+    tableHTML += `</tbody></table></div>`;
     content += `<p style="text-align:center;"><b>Entries:</b> ${rowsToPrint.length} | <b>Total Bore:</b> ${printBore}</p>` + tableHTML;
     document.getElementById('previewContent').innerHTML = content;
     document.getElementById('printPreviewModal').style.display = 'flex';
@@ -753,12 +806,18 @@ function filterData(){
     if(from) arr = arr.filter(r => r.date >= from);
     if(to) arr = arr.filter(r => r.date <= to);
 
-    // sorting
-    if(sortMode === "oldest")
-      arr.sort((a,b)=> (a.timestamp||0)-(b.timestamp||0));
-    else
-      arr.sort((a,b)=> (b.timestamp||0)-(a.timestamp||0));
-
+// sorting by date + timestamp
+if(sortMode === "oldest"){
+  arr.sort((a,b)=>
+    (a.date || "").localeCompare(b.date || "") ||
+    (a.timestamp || 0) - (b.timestamp || 0)
+  );
+}else{
+  arr.sort((a,b)=>
+    (b.date || "").localeCompare(a.date || "") ||
+    (b.timestamp || 0) - (a.timestamp || 0)
+  );
+}
     updateTable(arr);
   });
 }
