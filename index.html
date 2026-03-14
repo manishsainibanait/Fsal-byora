@@ -605,7 +605,12 @@ function calcAmount(){
   const commMode = document.getElementById("commMode").value;
   const commInput = Number(document.getElementById("commissionPercent").value || 0);
   let cut = 0;
-  if(document.getElementById("cutBag").checked) cut += b * Number(document.getElementById("cutBagVal").value || 0);
+  if(document.getElementById("cutBag").checked){
+  const extra = Number(document.getElementById("extra").value || 0);
+  const bagWeight = currentDefaultBW || 50;
+  const totalBags = b + (extra / bagWeight);
+  cut += totalBags * Number(document.getElementById("cutBagVal").value || 0);
+}
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
   const gross = rate * qtl;
   let commission = 0;
