@@ -202,6 +202,7 @@ background: #e2e8f0 !important;
 <button onclick="sortNewest()" style="background: #fff; color: #444; border: 1px solid #ccc;">Newest</button>  
 <button onclick="sortOldest()" style="background: #fff; color: #444; border: 1px solid #ccc;">Oldest</button>
 <button onclick="openCustomPreview()" style="background: #000;">🖨 Print List</button>  
+<button onclick="showCombined()" style="background:#16a34a;">🧮 Combined हिसाब</button>
 </div>  
 
 <div class="card">  
@@ -983,6 +984,50 @@ function clearReportSearch(){
   document.getElementById("repFrom").value = "";
   document.getElementById("repTo").value = "";
   generateReport();
+}
+function showCombined(){
+  const selected = document.querySelectorAll('.print-row-check:checked');
+
+  if(selected.length === 0){
+    alert("पहले entries select करो");
+    return;
+  }
+
+  let totalBore = 0;
+  let totalQtl = 0;
+  let totalAmount = 0;
+
+  selected.forEach(chk=>{
+    const row = chk.closest("tr");
+    const cells = row.querySelectorAll("td");
+
+    const bore = Number(cells[5].innerText || 0);
+
+    const qtlText = cells[8].innerText;
+    const match = qtlText.match(/(\d+)\sQuintal\s(\d+)/);
+    let qtl = 0;
+    if(match){
+      qtl = Number(match[1]) + Number(match[2])/100;
+    }
+
+    const netText = cells[9].innerText.match(/₹([\d.]+)/g);
+    const net = netText ? Number(netText[netText.length-1].replace("₹","")) : 0;
+
+    totalBore += bore;
+    totalQtl += qtl;
+    totalAmount += net;
+  });
+
+  const qtlPart = Math.floor(totalQtl);
+  const kgPart = Math.round((totalQtl - qtlPart) * 100);
+
+  alert(
+`Combined हिसाब:
+
+Bore: ${totalBore}
+Total: ${qtlPart} Quintal ${kgPart} Kg
+Net: ₹${totalAmount.toFixed(2)}`
+  );
 }
 </script> 
 </body>  
