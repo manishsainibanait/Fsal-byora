@@ -335,7 +335,12 @@ background: #e2e8f0 !important;
 </div>
 
 <div style="background:#fff1f2; padding:10px; border-radius:8px; margin-top:10px; border:1px solid #fecdd3;">
-  <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cut (Per Bag)</div>
+  <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cut</div>
+
+<select id="fasalCutType" onchange="calcAmount()" style="margin-bottom:5px;">
+  <option value="bag">Per Bag</option>
+  <option value="quintal">Per Quintal</option>
+</select>
   <div style="display:flex; gap:8px;">
     <input id="fasalCutWeight" type="number" placeholder="Weight" oninput="calcAmount()" style="flex:2;">
     <select id="fasalCutUnit" onchange="calcAmount()" style="flex:1;">
@@ -678,14 +683,19 @@ function calcAmount(){
   // ✅ Fasal Cut → Weight me convert (₹ nahi katega)
 let fasalCutKg = 0;
 const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
+const cutType = document.getElementById("fasalCutType").value;
 
 if(fcWeightInput > 0){
    const unit = document.getElementById("fasalCutUnit").value;
-   let weightPerBagKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
+   let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
 
-   fasalCutKg = b * weightPerBagKg; // total kg cut
+   if(cutType === "bag"){
+      fasalCutKg = b * weightKg; // per bag
+   } 
+   else if(cutType === "quintal"){
+      fasalCutKg = qtl * weightKg; // per quintal
+   }
 }
-
 // Quintal me convert
 let fasalCutQtl = fasalCutKg / 100;
 
