@@ -348,7 +348,7 @@ background: #e2e8f0 !important;
       <option value="gram">Gram</option>
     </select>
   </div>
-  <div style="font-size:13px; margin-top:5px; color:#be123c;">Fasal Cut Amount: ₹<span id="fasalCutDisplay">0.00</span></div>
+  <div style="font-size:13px; margin-top:5px; color:#be123c;">Fasal Cut: <span id="fasalCutDisplay">0 Kg</span></div>
 </div>
 
 <div style="background:#fff7ed; padding:10px; border-radius:8px; margin-top:10px;">
@@ -614,7 +614,7 @@ function openEntryScreen(){
   document.getElementById("useCustomBW").checked = false;
   document.getElementById("customBWContainer").style.display = "none";
   document.getElementById("fasalCutUnit").value = "kg";
-  document.getElementById("fasalCutDisplay").innerText = "0.00";
+  document.getElementById("fasalCutDisplay").innerText = "0 Kg";
 
   if(localStorage.getItem('mandiLastRate')) document.getElementById('rate').value = localStorage.getItem('mandiLastRate');
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
@@ -653,14 +653,20 @@ function autoCalc(){
 
   const b = Number(document.getElementById("bore").value || 0);
   const e = Number(document.getElementById("extra").value || 0);
-  document.getElementById("quintal").value = ((b * bw + e) / 100).toFixed(3);
+  const totalQtl = (b * bw + e) / 100;
+window.currentQtl = totalQtl;
+const totalKg = totalQtl * 100;
+const qtlPart = Math.floor(totalKg / 100);
+const kgPart = Math.round(totalKg % 100);
+
+document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg";
   calcAmount();
 }
 
 function calcAmount(){
   const rate = Number(document.getElementById("rate").value || 0);
   const b = Number(document.getElementById("bore").value || 0);
-  const qtl = Number(document.getElementById("quintal").value || 0);
+  
   const exDed = Number(document.getElementById("extraDeduction").value || 0);
   const commMode = document.getElementById("commMode").value;
   const commInput = Number(document.getElementById("commissionPercent").value || 0);
@@ -679,8 +685,10 @@ function calcAmount(){
     cut += totalBags * Number(document.getElementById("cutBagVal").value || 0);
   }
 
-  // FEATURE 2: Fasal Cut Calculation (Add Only)
-  // ✅ Fasal Cut → Weight me convert (₹ nahi katega)
+  // ORIGINAL QTL
+const originalQtl = Number(((b * bwUsed + Number(document.getElementById("extra").value || 0)) / 100).toFixed(3));
+
+// Fasal Cut
 let fasalCutKg = 0;
 const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
 const cutType = document.getElementById("fasalCutType").value;
@@ -690,28 +698,35 @@ if(fcWeightInput > 0){
    let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
 
    if(cutType === "bag"){
-      fasalCutKg = b * weightKg; // per bag
+      fasalCutKg = b * weightKg;
    } 
    else if(cutType === "quintal"){
-      fasalCutKg = qtl * weightKg; // per quintal
+      fasalCutKg = originalQtl * weightKg;
    }
 }
-// Quintal me convert
-let fasalCutQtl = fasalCutKg / 100;
 
-// Display me dikhao kitna cut hua (Qtl + Kg)
+// Display
 const cutQtlPart = Math.floor(fasalCutKg / 100);
-const cutKgPart = Math.round(fasalCutKg % 100);
+const cutKgPart = (fasalCutKg % 100).toFixed(1);
 
 document.getElementById("fasalCutDisplay").innerText = 
   cutQtlPart + " Qtl " + cutKgPart + " Kg";
 
-// 👉 Final quintal se minus karo
-let finalQtl = qtl - fasalCutQtl;
+// Final QTL
+let finalQtl = originalQtl - (fasalCutKg / 100);
 if(finalQtl < 0) finalQtl = 0;
 
-// Update quintal input (real value)
-document.getElementById("quintal").value = finalQtl.toFixed(3); // Add to existing cut
+const totalKg = finalQtl * 100;
+
+const qtlPart = Math.floor(totalKg / 100);
+const kgPart = (totalKg % 100).toFixed(1);
+
+document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg";
+// आगे calculation में यही use करो
+const qtl = finalQtl;
+
+// 👉 आगे calculation में यही use करो
+
 
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
   const gross = rate * qtl;
