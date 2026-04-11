@@ -807,7 +807,7 @@ function updateTable(arr){
   let totalB = 0, totalKg = 0, totalC = 0;  
   arr.forEach(r => {  
     totalB += Number(r.bore || 0);  
-    const qKg = Number(r.qtlValue || 0) * 100;
+    const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
     totalKg += qKg;
     totalC += Number(r.commission || 0);
     const qtlPart = Math.floor(qKg / 100);
@@ -1060,44 +1060,48 @@ let html = `
 `;
 
 sortedDates.forEach(date=>{
-let dayBore = 0;
-let dayExtra = 0;
-let dayKg = 0;
+  let totalKg = 0;
 
-grouped[date].forEach(r=>{
-dayKg += Number(r.qtlValue || 0) * 100;
- dayBore += Number(r.bore || 0);
- dayExtra += Number(r.extra || 0);
- dayKg += Number(r.finalQtl || 0) * 100;;
-});
-html += `
-<tr class="report-date-row">
-<td colspan="8">
-${date} | Entries: ${grouped[date].length} | Bore: ${dayBore} | Extra: ${dayExtra} | Total: ${Math.floor(dayKg/100)} Quintal ${Math.round(dayKg%100)} Kg
-</td>
-</tr>
-`;
+  grouped[date].forEach(r=>{
+    const bw = Number(r.customBW || currentDefaultBW || 50);
+    const bore = Number(r.bore || 0);
+    const extra = Number(r.extra || 0);
 
-grouped[date].forEach((r,i)=>{
+    totalKg += (bore * bw) + extra;
+  });
 
-const qKg = Number(r.qtlValue || 0) * 100;
-const qtlPart = Math.floor(qKg / 100);
-const kgPart = Math.round(qKg % 100);
+  const bagWeight = currentDefaultBW || 50;
 
-html += `
-<tr>
-<td>${i+1}</td>
-<td>${r.customer || ""}</td>
-<td>${r.father || ""}</td>
-<td>${r.village || ""}</td>
-<td>${r.bore || 0}</td>
-<td>${r.extra || 0}</td>
-<td>${qtlPart} Qtl</td>
-<td>${kgPart} Kg</td>
-</tr>
-`;
+  const finalBore = Math.floor(totalKg / bagWeight);
+  const finalExtra = totalKg % bagWeight;
 
-});
+  html += `
+  <tr class="report-date-row">
+  <td colspan="8">
+  ${date} | Entries: ${grouped[date].length} | Bore: ${finalBore} | Extra: ${finalExtra} Kg
+  </td>
+  </tr>
+  `;
+
+  grouped[date].forEach((r,i)=>{
+
+    const qKg = Number(r.qtlValue || 0) * 100;
+    const qtlPart = Math.floor(qKg / 100);
+    const kgPart = Math.round(qKg % 100);
+
+    html += `
+    <tr>
+    <td>${i+1}</td>
+    <td>${r.customer || ""}</td>
+    <td>${r.father || ""}</td>
+    <td>${r.village || ""}</td>
+    <td>${r.bore || 0}</td>
+    <td>${r.extra || 0}</td>
+    <td>${qtlPart} Qtl</td>
+    <td>${kgPart} Kg</td>
+    </tr>
+    `;
+  });
 
 });
 
