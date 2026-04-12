@@ -664,8 +664,7 @@ const kgPart = Math.round(totalKg % 100);
 // सिर्फ final दिखाओ अलग से
 
 document.getElementById("fasalCutDisplay").innerText =
-cutQtlPart + " Qtl " + cutKgPart + " Kg" +
-" | Final: " + qtlPart + " Qtl " + kgPart + " Kg";
+qtlPart + " Qtl " + kgPart + " Kg";
   calcAmount();
 }
 
@@ -1173,11 +1172,13 @@ function showCombined(){
 
     const bore = Number(cells[5].innerText || 0);
 
+    // ✅ FIXED (no duplicate)
     const qtlText = cells[8].innerText;
-    const match = qtlText.match(/(\d+)\sQuintal\s(\d+)/);
+    const match = qtlText.match(/Final:\s*(\d+)\s*Qtl\s*(\d+)/);
+
     let qtl = 0;
     if(match){
-      qtl = Number(match[1]) + Number(match[2])/100;
+      qtl = Number(match[1]) + Number(match[2]) / 100;
     }
 
     const netText = cells[9].innerText.match(/₹([\d.]+)/g);
