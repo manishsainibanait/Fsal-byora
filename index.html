@@ -1240,7 +1240,9 @@ function fixAllOrder(){
     // Step 2: In each date, sort by timestamp and re-assign order
     Object.keys(groups).forEach(date => {
         // Sort by timestamp (oldest first for order calculation)
-        groups[date].sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+        groups[date].sort((a, b) => 
+  (a.order ?? a.timestamp ?? 0) - (b.order ?? b.timestamp ?? 0)
+);
         groups[date].forEach((r, index) => {
             updates[`seasons/${s}/entries/${r.id}/order`] = index + 1;
         });
