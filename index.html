@@ -563,6 +563,7 @@ firebase.initializeApp({
 });  
 const db=firebase.database();  
 let editID=null, currentDefaultBW=0, sortMode = "newest", editOldTimestamp = null, editOldDate = null;
+let editOldOrder = null;
 let clickTimer = null;
 
 function openCustomPreview() {
@@ -614,7 +615,10 @@ function closePreview() { document.getElementById('printPreviewModal').style.dis
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
-  editID = null; editOldTimestamp = null; editOldDate = null;
+  editID = null;
+editOldTimestamp = null;
+editOldDate = null;
+editOldOrder = null;
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight"]
     .forEach(id=>document.getElementById(id).value="");
   
@@ -795,7 +799,7 @@ cutQtl: window.cutQtl || 0,
   note: document.getElementById("note").value,
   date: finalDate,
   timestamp: editID ? (editOldTimestamp || Date.now()) : Date.now(),
-order: editID ? (allEntriesCount + 1) : Date.now(), // Fixed order logic
+order: editID ? (editOldOrder ?? editOldTimestamp ?? Date.now()) : Date.now() ,// Fixed order logic
   // New Fields
   customBW: document.getElementById("useCustomBW").checked ? document.getElementById("customBWInput").value : null,
   fasalCutWeight: document.getElementById("fasalCutWeight").value,
@@ -891,6 +895,7 @@ function editEntry(id){
     const d = s.val(); 
     editOldTimestamp = d.timestamp;
     editOldDate = d.date;
+editOldOrder = d.order || d.timestamp;
     ["customer","father","village","bore","extra","quintal","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
     
     // LOAD NEW FIELDS DURING EDIT
