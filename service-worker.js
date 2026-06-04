@@ -1,4 +1,4 @@
-const CACHE_NAME = "saini-trading-cache-v1";
+const CACHE_NAME = "saini-trading-cache-v2";
 const urlsToCache = [
   "index.html",
   "manifest.json",
