@@ -615,10 +615,14 @@ function closePreview() { document.getElementById('printPreviewModal').style.dis
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
+  
+  // Pehle check karein ki calendar me pehle se koi date chuni hui h ya nahi
+  const existingDate = document.getElementById("entryDate").value;
+
   editID = null;
-editOldTimestamp = null;
-editOldDate = null;
-editOldOrder = null;
+  editOldTimestamp = null;
+  editOldDate = null;
+  editOldOrder = null;
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight"]
     .forEach(id=>document.getElementById(id).value="");
   
@@ -635,7 +639,12 @@ editOldOrder = null;
   document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
   document.getElementById("entryScreen").style.display = "block";
   loadSuggestions();
-  document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
+  
+  // FIXED LOGIC: Agar calendar khali hai (yaani page refresh hua h), sirf tabhi Today ki date set karein, varna purani date locked rkhein.
+  if(!existingDate) {
+    document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
+  }
+
   db.ref("seasonsInfo/" + s).once("value", snap => {
     currentDefaultBW = Number(snap.val().defaultBw || 0);
     document.getElementById("defaultBWView").value = currentDefaultBW;
@@ -760,6 +769,7 @@ const qtl = finalQtl;
   document.getElementById("breakdownBase").innerText = baseForGst.toFixed(2);
   document.getElementById("breakdownFinal").innerText = finalAfter.toFixed(2);
   document.getElementById("sgstAmountText").innerText = (baseForGst * sgstP / 100).toFixed(2);
+  document.getElementById("checkbox-container");
   document.getElementById("cgstAmountText").innerText = (baseForGst * cgstP / 100).toFixed(2);
   document.getElementById("totalGstText").innerText = gstAmount.toFixed(2);
   document.getElementById("cutTotal").value = cut.toFixed(2);
@@ -1147,7 +1157,7 @@ function clearReportSearch(){
 }
 function showCombined(){
   const selected = document.querySelectorAll('.print-row-check:checked');
-  if(selected.length === 0){ alert("पहले entries select करो"); return; }
+  if(selected.length === 0){ alert("पहले entries select karo"); return; }
 
   let totalBore = 0, totalQtl = 0, totalAmount = 0;
   selected.forEach(chk=>{
