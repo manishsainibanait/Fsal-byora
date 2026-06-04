@@ -432,15 +432,16 @@ background: #e2e8f0 !important;
 </div>
 
 <div id="seasonScreen">  
-<h3>Season Setup</h3>  
+<h3 id="seasonScreenTitle">Season Setup</h3>  
 <input id="seasonName" placeholder="Season Name">  
 <input id="seasonWeight" placeholder="Default Bore Weight (e.g. 50)">  
 <button onclick="saveSeason()" style="background: var(--success);">✔ Save Season</button>  
-<button onclick="deleteSeason()" style="background: var(--danger);">🗑 Delete</button>  
+<button id="deleteSeasonBtn" onclick="deleteSeason()" style="background: var(--danger);">🗑 Delete</button>  
 <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 </div> <script>  
 const MASTER_PASSWORD = "786786";
+let isCreatingNewSeason = false; 
 
 document.addEventListener('DOMContentLoaded', () => {
     if(!localStorage.getItem("app_pin")) {
@@ -475,7 +476,7 @@ function handlePinSubmit() {
 }
 
 async function registerFingerprint() {
-    const pin = prompt("Fingerprint रजिस्टर करने के लिए अपना PIN दर्ज करें:");
+    const pin = prompt("Fingerprint रजिस्टर करने के लिए apna PIN दर्ज करें:");
     if (pin !== localStorage.getItem("app_pin")) { alert("गलत PIN!"); return; }
     if (!window.PublicKeyCredential) { alert("आपका डिवाइस बायोमेट्रिक्स का समर्थन नहीं करता है।"); return; }
     try {
@@ -616,7 +617,6 @@ function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
   
-  // Pehle check karein ki calendar me pehle se koi date chuni hui h ya nahi
   const existingDate = document.getElementById("entryDate").value;
 
   editID = null;
@@ -626,7 +626,6 @@ function openEntryScreen(){
   ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight"]
     .forEach(id=>document.getElementById(id).value="");
   
-  // RESET CUSTOM BW AND FASAL CUT UI
   document.getElementById("useCustomBW").checked = false;
   document.getElementById("customBWContainer").style.display = "none";
   document.getElementById("fasalCutUnit").value = "kg";
@@ -640,13 +639,13 @@ function openEntryScreen(){
   document.getElementById("entryScreen").style.display = "block";
   loadSuggestions();
   
-  // FIXED LOGIC: Agar calendar khali hai (yaani page refresh hua h), sirf tabhi Today ki date set karein, varna purani date locked rkhein.
   if(!existingDate) {
     document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
   }
 
   db.ref("seasonsInfo/" + s).once("value", snap => {
-    currentDefaultBW = Number(snap.val().defaultBw || 0);
+    let valData = snap.val() || {};
+    currentDefaultBW = Number(valData.defaultBw || 0);
     document.getElementById("defaultBWView").value = currentDefaultBW;
     document.getElementById("defaultBW").value = currentDefaultBW;
     autoCalc();
@@ -655,7 +654,6 @@ function openEntryScreen(){
 }
 function closeEntryScreen(){ document.getElementById("entryScreen").style.display = "none"; editID = null; }
 
-// FEATURE 1: Toggle UI for Custom BW
 function toggleCustomBW() {
   const container = document.getElementById("customBWContainer");
   const isChecked = document.getElementById("useCustomBW").checked;
@@ -664,7 +662,6 @@ function toggleCustomBW() {
 }
 
 function autoCalc(){
-  // FEATURE 1: Logic extension for BW
   let bw = currentDefaultBW;
   if(document.getElementById("useCustomBW").checked){
      const customVal = Number(document.getElementById("customBWInput").value);
@@ -680,9 +677,6 @@ const totalKg = totalQtl * 100;
 const qtlPart = Math.floor(totalKg / 100);
 const kgPart = Math.round(totalKg % 100);
 
-// ❌ quintal input change मत करो
-// सिर्फ final दिखाओ अलग से
-
 document.getElementById("fasalCutDisplay").innerText =
 qtlPart + " Qtl " + kgPart + " Kg";
   calcAmount();
@@ -697,7 +691,6 @@ function calcAmount(){
   const commInput = Number(document.getElementById("commissionPercent").value || 0);
   let cut = 0;
   
-  // Logic for BW for bag calculations
   let bwUsed = currentDefaultBW || 50;
   if(document.getElementById("useCustomBW").checked){
      const customVal = Number(document.getElementById("customBWInput").value);
@@ -710,10 +703,8 @@ function calcAmount(){
     cut += totalBags * Number(document.getElementById("cutBagVal").value || 0);
   }
 
-  // ORIGINAL QTL
 const originalQtl = Number(((b * bwUsed + Number(document.getElementById("extra").value || 0)) / 100).toFixed(3));
 
-// Fasal Cut
 let fasalCutKg = 0;
 const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
 const cutType = document.getElementById("fasalCutType").value;
@@ -730,14 +721,12 @@ if(fcWeightInput > 0){
    }
 }
 
-// Display
 const cutQtlPart = Math.floor(fasalCutKg / 100);
 const cutKgPart = (fasalCutKg % 100).toFixed(1);
 
 document.getElementById("fasalCutDisplay").innerText = 
   cutQtlPart + " Qtl " + cutKgPart + " Kg";
 
-// Final QTL
 let finalQtl = originalQtl - (fasalCutKg / 100);
 if(finalQtl < 0) finalQtl = 0;
 window.finalQtl = finalQtl;
@@ -748,11 +737,7 @@ const qtlPart = Math.floor(totalKg / 100);
 const kgPart = (totalKg % 100).toFixed(1);
 
 document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg";
-// आगे calculation में यही use करो
 const qtl = finalQtl;
-
-// 👉 आगे calculation में यही use करो
-
 
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
   const gross = rate * qtl;
@@ -788,7 +773,6 @@ function saveEntry(){
  const inputDate = document.getElementById("entryDate").value;
  const finalDate = (editID && !inputDate) ? editOldDate : inputDate;
  
- // ADD NEW FIELDS TO DATA OBJECT
  const data={
   customer: document.getElementById("customer").value,
   father: document.getElementById("father").value,
@@ -809,8 +793,7 @@ cutQtl: window.cutQtl || 0,
   note: document.getElementById("note").value,
   date: finalDate,
   timestamp: editID ? (editOldTimestamp || Date.now()) : Date.now(),
-order: editID ? (editOldOrder ?? editOldTimestamp ?? Date.now()) : Date.now() ,// Fixed order logic
-  // New Fields
+order: editID ? (editOldOrder ?? editOldTimestamp ?? Date.now()) : Date.now() ,
   customBW: document.getElementById("useCustomBW").checked ? document.getElementById("customBWInput").value : null,
   fasalCutWeight: document.getElementById("fasalCutWeight").value,
   fasalCutUnit: document.getElementById("fasalCutUnit").value
@@ -908,7 +891,6 @@ function editEntry(id){
 editOldOrder = d.order || d.timestamp;
     ["customer","father","village","bore","extra","quintal","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
     
-    // LOAD NEW FIELDS DURING EDIT
     if(d.customBW) {
        document.getElementById("useCustomBW").checked = true;
        document.getElementById("customBWInput").value = d.customBW;
@@ -926,7 +908,8 @@ editOldOrder = d.order || d.timestamp;
     document.getElementById("entryScreen").style.display = "block";
     loadSuggestions();
     db.ref("seasonsInfo/"+sName).once("value", info => { 
-      currentDefaultBW = Number(info.val().defaultBw || 0);
+      let infoVal = info.val() || {};
+      currentDefaultBW = Number(infoVal.defaultBw || 0);
       document.getElementById("defaultBWView").value = currentDefaultBW;
       autoCalc(); 
     });
@@ -936,7 +919,28 @@ editOldOrder = d.order || d.timestamp;
 function loadSeasons(){  
  const sD = document.getElementById("season"); sD.innerHTML="";  
  db.ref("seasonsInfo").once("value",s=>{  
-  Object.keys(s.val()||{}).forEach(n=>{ sD.innerHTML+=`<option value="${n}">${n}</option>`; });  
+  Object.keys(s.val()||{}).forEach(n=>{ 
+     // FIXED: Hindi Keywords mapping with strict non-duplication
+     let icon = "📅 "; 
+     let cleanName = n.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim(); // Removes pre-existing emoji data
+     let lowerN = cleanName.toLowerCase();
+
+     if(lowerN.includes("गेहूं") || lowerN.includes("गेहुँ") || lowerN.includes("gehu") || lowerN.includes("wheat")) {
+         icon = "🌾 ";
+     } else if(lowerN.includes("जीरी") || lowerN.includes("धान") || lowerN.includes("chawal") || lowerN.includes("jeeri") || lowerN.includes("rice")) {
+         icon = "🌾 ";
+     } else if(lowerN.includes("मक्की") || lowerN.includes("मक्का") || lowerN.includes("makki") || lowerN.includes("maize") || lowerN.includes("corn")) {
+         icon = "🌽 ";
+     } else if(lowerN.includes("सरसों") || lowerN.includes("सरसो") || lowerN.includes("sarso") || lowerN.includes("mustard")) {
+         icon = "🌱 ";
+     } else if(lowerN.includes("सूरजमुखी") || lowerN.includes("surajmukhi") || lowerN.includes("sunflower")) {
+         icon = "🌻 ";
+     } else if(lowerN.includes("तोरिया") || lowerN.includes("toriya")) {
+         icon = "🌿 ";
+     }
+     
+     sD.innerHTML+=`<option value="${n}">${icon}${cleanName}</option>`; 
+  });  
   sD.value=localStorage.lastSeason||sD.options[0]?.value; 
   onSeasonChange();
  });  
@@ -953,13 +957,48 @@ function onSeasonChange(){
   calculateTdsAmount();
 }
 
-function newSeason(){ document.getElementById("seasonName").value = ""; document.getElementById("seasonWeight").value = ""; document.getElementById("seasonScreen").style.display = "block"; }
-function openSeasonScreen(){ const s = document.getElementById("season").value; if(!s) return; document.getElementById("seasonScreen").style.display = "block"; db.ref("seasonsInfo/" + s).once("value", snap => { const d = snap.val() || {}; document.getElementById("seasonName").value = d.name || s; document.getElementById("seasonWeight").value = d.defaultBw || ""; }); }
+function newSeason(){ 
+  isCreatingNewSeason = true; 
+  document.getElementById("seasonName").value = ""; 
+  document.getElementById("seasonWeight").value = ""; 
+  document.getElementById("seasonScreenTitle").innerText = "➕ Create New Season";
+  document.getElementById("deleteSeasonBtn").style.display = "none";
+  document.getElementById("seasonScreen").style.display = "block"; 
+}
+
+function openSeasonScreen(){ 
+  const s = document.getElementById("season").value; 
+  if(!s) return; 
+  isCreatingNewSeason = false; 
+  document.getElementById("seasonScreenTitle").innerText = "⚙ Update Season Setup";
+  document.getElementById("deleteSeasonBtn").style.display = "block";
+  document.getElementById("seasonScreen").style.display = "block"; 
+  db.ref("seasonsInfo/" + s).once("value", snap => { 
+     const d = snap.val() || {}; 
+     document.getElementById("seasonName").value = d.name || s; 
+     document.getElementById("seasonWeight").value = d.defaultBw || ""; 
+  }); 
+}
+
 function saveSeason(){
  const oldName = document.getElementById("season").value;
- const newN = document.getElementById("seasonName").value.trim();
+ let newN = document.getElementById("seasonName").value.trim();
  const w = document.getElementById("seasonWeight").value;
  if(!newN || !w) return;
+
+ // Clean existing emoji elements before saving to prevent redundancy
+ newN = newN.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim();
+
+ if(isCreatingNewSeason) {
+    db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{
+       localStorage.lastSeason=newN;
+       document.getElementById("seasonScreen").style.display="none";
+       isCreatingNewSeason = false;
+       loadSeasons();
+    });
+    return;
+ }
+
  if(oldName === newN){
    db.ref("seasonsInfo/" + newN).update({ name:newN, defaultBw:w }).then(()=>{ document.getElementById("seasonScreen").style.display="none"; loadSeasons(); });
    return;
@@ -975,6 +1014,7 @@ function saveSeason(){
    loadSeasons();
  });
 }
+
 function deleteSeason(){
  const s = document.getElementById("season").value; if(!s) return;
  if(confirm("Season delete karna hai?")){
@@ -986,7 +1026,6 @@ function deleteSeason(){
  }
 }
 
-/* --- FIXED: MAIN SCREEN SYNC & ORDER LOGIC --- */
 function filterData(){  
   const nameInput = document.getElementById("searchName").value.toLowerCase().trim();
   const from = document.getElementById("fromDate").value; 
@@ -1000,7 +1039,6 @@ function filterData(){
       arr.push({id:child.key, ...child.val()});
     });
 
-    // search filter
     if(nameInput){
       arr = arr.filter(r =>
         (r.customer || "").toLowerCase().includes(nameInput) ||
@@ -1009,11 +1047,9 @@ function filterData(){
       );
     }
 
-    // date filter
     if(from) arr = arr.filter(r => r.date >= from);
     if(to) arr = arr.filter(r => r.date <= to);
 
-    // FIXED SORTING BY DATE + ORDER/TIMESTAMP
     if(sortMode === "oldest"){
       arr.sort((a,b)=>
         (a.date || "").localeCompare(b.date || "") ||
@@ -1030,7 +1066,6 @@ function filterData(){
   });
 }
 
-/* --- FIXED: REPORT SCREEN SEARCH RESET --- */
 function openReport() {
     document.getElementById("reportScreen").style.display = "block";
     generateReport();
@@ -1131,8 +1166,8 @@ function loadSuggestions(){
 }
 
 function deleteEntry(id){ const s = document.getElementById("season").value; if(s && confirm("Delete?")){ db.ref("seasons/"+s+"/entries/"+id).remove().then(loadSeason); } }
-function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { currentDefaultBW = Number(snap.val()?.defaultBw || 0); filterData(); }); }
-function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; }
+function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { let dataS = snap.val() || {}; currentDefaultBW = Number(dataS.defaultBw || 0); filterData(); }); }
+function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; isCreatingNewSeason = false; }
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
 function openSingleEntryPreview(id){
@@ -1202,7 +1237,6 @@ function openCutReport(){
   });
 }
 
-// FIXED MOVEMENT LOGIC WITH ORDER RE-ASSIGNMENT
 function moveEntry(direction) {
     const s = document.getElementById("season").value;
     const selected = document.querySelectorAll('.print-row-check:checked');
@@ -1218,7 +1252,6 @@ function moveEntry(direction) {
         for (let key in allData) {
             if (allData[key].date === selectedEntry.date) { sameDateEntries.push({ id: key, ...allData[key] }); }
         }
-        // Latest (Newest) logic for order
         sameDateEntries.sort((a, b) => (b.order ?? b.timestamp ?? 0) - (a.order ?? a.timestamp ?? 0));
         const index = sameDateEntries.findIndex(e => e.id === selectedId);
 
@@ -1236,7 +1269,6 @@ function moveEntry(direction) {
     });
 }
 
-// CORE FIX: This function fixes everything in one click
 function fixAllOrder(){
   const s = document.getElementById("season").value;
   if(!s) return;
@@ -1244,7 +1276,6 @@ function fixAllOrder(){
     let entries = [];
     snap.forEach(ch => { entries.push({ id: ch.key, ...ch.val() }); });
 
-    // Step 1: Group by date
     let groups = {};
     entries.forEach(e => {
         if(!groups[e.date]) groups[e.date] = [];
@@ -1252,12 +1283,10 @@ function fixAllOrder(){
     });
 
     let updates = {};
-    // Step 2: In each date, sort by timestamp and re-assign order
     Object.keys(groups).forEach(date => {
-        // Sort by timestamp (oldest first for order calculation)
         groups[date].sort((a, b) => 
-  (a.order ?? a.timestamp ?? 0) - (b.order ?? b.timestamp ?? 0)
-);
+          (a.order ?? a.timestamp ?? 0) - (b.order ?? b.timestamp ?? 0)
+        );
         groups[date].forEach((r, index) => {
             updates[`seasons/${s}/entries/${r.id}/order`] = index + 1;
         });
