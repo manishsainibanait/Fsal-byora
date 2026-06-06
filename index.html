@@ -337,7 +337,9 @@ background: #e2e8f0 !important;
 <h3 style="color: var(--primary); margin-bottom:5px;">New Entry</h3>
 <div id="entrySeasonLabel" style="font-weight:bold; margin-bottom:12px;">Season:</div>
 
-<input id="customer" list="customerList" placeholder="Customer Name">
+<input type="hidden" id="parchiType" value="khachi">
+
+<input id="customer" list="customerList" placeholder="Customer Name" oninput="calcAmount()">
 <datalist id="customerList"></datalist>
 
 <div style="display:flex; gap:8px;">
@@ -348,7 +350,7 @@ background: #e2e8f0 !important;
   <datalist id="villageList"></datalist>
 </div>
 
-<input type="date" id="entryDate">
+<input type="date" id="entryDate" onchange="calcAmount()">
 
 <div style="background:#e0f2fe; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #bae6fd;">
   <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:bold;">
@@ -369,8 +371,7 @@ background: #e2e8f0 !important;
   <div style="display:flex; gap:6px;">
     <input id="bore" type="number" oninput="autoCalc()">
     <input id="extra" type="number" oninput="autoCalc()">
-    <input id="defaultBWView" readonly
-           style="background:#e5e7eb;">
+    <input id="defaultBWView" readonly style="background:#e5e7eb;">
   </div>
 </div>
 
@@ -385,8 +386,7 @@ background: #e2e8f0 !important;
 <select id="fasalCutType" onchange="calcAmount()" style="margin-bottom:5px;">
   <option value="bag">Per Bag</option>
   <option value="quintal">Per Quintal</option>
-</select>
-  <div style="display:flex; gap:8px;">
+</select>  <div style="display:flex; gap:8px;">
     <input id="fasalCutWeight" type="number" placeholder="Weight" oninput="calcAmount()" style="flex:2;">
     <select id="fasalCutUnit" onchange="calcAmount()" style="flex:1;">
       <option value="kg">KG</option>
@@ -410,16 +410,19 @@ background: #e2e8f0 !important;
     <input id="commissionPercent" type="number" placeholder="Value" oninput="calcAmount()">
   </div>
 
-  <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
+  <div style="display:flex; gap:10px; margin-top:8px; align-items:center; flex-wrap: wrap;">
     <label><input type="checkbox" id="cutBag" checked onchange="calcAmount()"> Lab/Bag</label>
-    <input id="cutBagVal" type="number" value="60" oninput="calcAmount()" style="width:80px;">
+    <input id="cutBagVal" type="number" value="60" oninput="calcAmount()" style="width:70px;">
 
     <label><input type="checkbox" id="cutQtl" onchange="calcAmount()"> Lab/Qtl</label>
-    <input id="cutQtlVal" type="number" value="0" oninput="calcAmount()" style="width:80px;">
+    <input id="cutQtlVal" type="number" value="0" oninput="calcAmount()" style="width:70px;">
+    
+    <label style="color:var(--danger); font-weight:bold;"><input type="checkbox" id="cutManual" onchange="calcAmount()"> Manual Lab</label>
+    <input id="cutManualVal" type="number" value="0" placeholder="Katni ₹" oninput="calcAmount()" style="width:85px; border:1px solid var(--danger);">
   </div>
 </div>
 
-<div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #bbf7d0;">
+<div id="gstContainerBox" style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #bbf7d0;">
   <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
     <label style="font-weight: bold; cursor: pointer;">
       <input type="checkbox" id="applyGst" onchange="calcAmount()" style="width: 18px; height: 18px; vertical-align: middle;"> Apply GST
@@ -444,10 +447,10 @@ background: #e2e8f0 !important;
 
 <div style="background: var(--primary); color:#fff; padding:12px; border-radius:8px; margin-top:10px;">
   <div>Total Cut (Lab): ₹<span id="cutTotalText">0</span></div>
-  <div>Commission: ₹<span id="commissionText">0</span></div>
+  <div id="commissionDisplayBlock">Commission: ₹<span id="commissionText">0</span></div>
   <div style="font-size:22px; font-weight:bold; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 5px;">Net: ₹<span id="finalAmountText">0</span></div>
   
-  <div style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px;">
+  <div id="breakdownDisplayBlock" style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px;">
     <div style="font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.3); margin-bottom: 5px; font-size: 14px;">AMOUNT BREAKDOWN (DISPLAY ONLY)</div>
     <div style="font-size: 14px; line-height: 1.6;">
       <div>Base for GST: ₹<span id="breakdownBase">0</span></div>
@@ -455,6 +458,17 @@ background: #e2e8f0 !important;
     </div>
   </div>
 </div>
+
+<button type="button" onclick="toggleLivePreviewWindow()" style="background:#334155; margin-top:15px; border:1px solid #cbd5e1; font-size:14px;">👁️ Show/Hide Live Preview</button>
+
+<div id="liveParchiToggleWrapper" style="display: none; margin-top: 10px; background: #334155; padding: 15px; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
+  <h4 style="color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">🔍 Live Parchi Realtime Preview (Bina Save Kiye Dekho)</h4>
+  <div id="liveParchiContainer" style="background: #fff; padding: 15px; border-radius: 6px; overflow-x: auto;">
+     <p style="color: #64748b; text-align: center; margin: 10px 0; font-size: 14px;">Maal details ya Customer name likhna shuru karein...</p>
+  </div>
+</div>
+
+<div style="margin-top: 10px;"></div>
 
 <input id="note" list="noteList" placeholder="Note" onblur="addNoteToSuggestion()">
 <datalist id="noteList"></datalist>
@@ -490,7 +504,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Helper configuration function for unified metric calculations
 function getCalculatedSeasonMetrics(entries) {
   let totalKgRaw = 0, totalNet = 0, totalCutQtl = 0, totalCommVal = 0;
   let uniqueCust = new Set(), uniqueVill = new Set();
@@ -693,11 +706,14 @@ function openEntryScreen(){
   editOldTimestamp = null;
   editOldDate = null;
   editOldOrder = null;
-  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight"]
+  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight","cutManualVal"]
     .forEach(id=>document.getElementById(id).value="");
   
+  document.getElementById("liveParchiToggleWrapper").style.display = "none";
   document.getElementById("useCustomBW").checked = false;
   document.getElementById("customBWContainer").style.display = "none";
+  document.getElementById("cutManual").checked = false;
+  document.getElementById("applyGst").checked = false;
   document.getElementById("fasalCutUnit").value = "kg";
   document.getElementById("fasalCutDisplay").innerText = "0 Kg";
   document.getElementById("cutBagVal").value =
@@ -706,6 +722,7 @@ localStorage.getItem("lastLabour") || "60";
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
   if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
   document.getElementById("extraDeduction").value = 0;
+  document.getElementById("cutManualVal").value = 0;
   document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
   document.getElementById("entryScreen").style.display = "block";
   loadSuggestions();
@@ -753,6 +770,15 @@ qtlPart + " Qtl " + kgPart + " Kg";
   calcAmount();
 }
 
+function toggleLivePreviewWindow() {
+  const wrap = document.getElementById("liveParchiToggleWrapper");
+  if(wrap.style.display === "none") {
+     wrap.style.display = "block";
+  } else {
+     wrap.style.display = "none";
+  }
+}
+
 function calcAmount(){
   const rate = Number(document.getElementById("rate").value || 0);
   const b = Number(document.getElementById("bore").value || 0);
@@ -774,7 +800,7 @@ function calcAmount(){
     cut += totalBags * Number(document.getElementById("cutBagVal").value || 0);
   }
 
-const originalQtl = Number(((b * bwUsed + Number(document.getElementById("extra").value || 0)) / 100).toFixed(3));
+  const originalQtl = Number(((b * bwUsed + Number(document.getElementById("extra").value || 0)) / 100).toFixed(3));
 
 let fasalCutKg = 0;
 const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
@@ -811,21 +837,34 @@ document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg
 const qtl = finalQtl;
 
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
+  
+  if(document.getElementById("cutManual") && document.getElementById("cutManual").checked) {
+    cut += Number(document.getElementById("cutManualVal").value || 0);
+  }
+  
   const gross = rate * qtl;
   let commission = 0;
+  
   if(commMode === "percent") { commission = (gross * commInput) / 100; } else { commission = qtl * commInput; }
+  
   const net = gross - cut - Number(exDed || 0);
   const baseForGst = gross + cut + exDed + commission; 
   
-  const sgstP = Number(document.getElementById("sgstPercent").value || 0);
-  const cgstP = Number(document.getElementById("cgstPercent").value || 0);
-  const gstAmount = baseForGst * (sgstP + cgstP) / 100;
+  let sgstP = 0;
+  let cgstP = 0;
+  let gstAmount = 0;
+  
+  if (document.getElementById("applyGst") && document.getElementById("applyGst").checked) {
+     sgstP = Number(document.getElementById("sgstPercent").value || 0);
+     cgstP = Number(document.getElementById("cgstPercent").value || 0);
+     gstAmount = baseForGst * (sgstP + cgstP) / 100;
+  }
+  
   const finalAfter = baseForGst + gstAmount;
   
   document.getElementById("breakdownBase").innerText = baseForGst.toFixed(2);
   document.getElementById("breakdownFinal").innerText = finalAfter.toFixed(2);
   document.getElementById("sgstAmountText").innerText = (baseForGst * sgstP / 100).toFixed(2);
-  document.getElementById("checkbox-container");
   document.getElementById("cgstAmountText").innerText = (baseForGst * cgstP / 100).toFixed(2);
   document.getElementById("totalGstText").innerText = gstAmount.toFixed(2);
   document.getElementById("cutTotal").value = cut.toFixed(2);
@@ -834,6 +873,49 @@ const qtl = finalQtl;
   document.getElementById("commissionText").innerText = commission.toFixed(2);
   document.getElementById("amount").value = net.toFixed(2);
   document.getElementById("finalAmountText").innerText = "₹ " + net.toFixed(2);
+
+  renderLiveParchiView(gross, commission, cut, exDed, baseForGst, sgstP, cgstP, gstAmount, finalAfter);
+}
+
+function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP, cgstP, gstAmount, finalAfter) {
+  const container = document.getElementById("liveParchiContainer");
+  if(!container) return;
+
+  const s = document.getElementById("season").value || "Current Season";
+  const cust = document.getElementById("customer").value || "--- Kisan Name ---";
+  const entryDate = document.getElementById("entryDate").value || new Date().toISOString().split("T")[0];
+  const totalBags = document.getElementById("bore").value || 0;
+  const qtlTxt = document.getElementById("quintal").value || "0 Quintal";
+  const rateVal = document.getElementById("rate").value || 0;
+
+  let netKhachi = grossVal - labVal - dedVal;
+  let sgstAmt = baseGst * (sgstP / 100);
+  let cgstAmt = baseGst * (cgstP / 100);
+
+  container.innerHTML = `
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 280px; font-family:sans-serif; padding:10px; background:#fff; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <h5 style="text-align:center; margin:0 0 5px 0; color:#b7791f;">✍️ Khachi View Preview</h5>
+        <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; border-color:#e2e8f0;">
+          <tr><th style="background:#fffaf0; padding:5px; text-align:left; color:#1e293b; width:45%;">Customer</th><td style="padding:5px; font-weight:bold; color:#b7791f;">${cust}</td></tr>
+          <tr><th style="background:#fffaf0; padding:5px; text-align:left; color:#1e293b;">Bags / Weight</th><td style="padding:5px; color:#1e293b;">${totalBags} Bags (${qtlTxt})</td></tr>
+          <tr><th style="background:#fffaf0; padding:5px; text-align:left; color:#1e293b;">Labour Charge</th><td style="padding:5px; color:red;">₹${labVal.toFixed(2)}</td></tr>
+          <tr><th style="background:#fffaf0; padding:5px; text-align:left; color:#1e293b;">Extra Deduction</th><td style="padding:5px; color:red;">₹${dedVal.toFixed(2)}</td></tr>
+          <tr style="background:#fffaf0; font-weight:bold; color:#1e293b;"><th style="padding:5px; text-align:left; color:#1e293b;">Final Amount</th><td style="padding:5px; color:#b91c1c;">₹${netKhachi.toFixed(2)}</td></tr>
+        </table>
+      </div>
+      <div style="flex: 1; min-width: 280px; font-family:sans-serif; padding:10px; background:#fff; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <h5 style="text-align:center; margin:0 0 5px 0; color:#2563eb;">🏛️ Pakki View Preview</h5>
+        <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; border-color:#e2e8f0;">
+          <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b; width:45%;">Customer</th><td style="padding:5px; font-weight:bold; color:#2563eb;">${cust}</td></tr>
+          <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Base Gross</th><td style="padding:5px; color:#1e293b;">₹${grossVal.toFixed(2)}</td></tr>
+          <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Commission</th><td style="padding:5px; color:green; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
+          <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Total GST</th><td style="padding:5px; color:#1e293b;">₹${gstAmount.toFixed(2)}</td></tr>
+          <tr style="background:#eff6ff; font-weight:bold; color:#1e293b;"><th style="padding:5px; text-align:left; color:#1e293b;">Final Govt Amt</th><td style="padding:10px; color:#2563eb;">₹${finalAfter.toFixed(2)}</td></tr>
+        </table>
+      </div>
+    </div>
+  `;
 }
   
 function saveEntry(){  
@@ -844,6 +926,7 @@ localStorage.setItem(
   document.getElementById("cutBagVal").value
 ); localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
+
  const inputDate = document.getElementById("entryDate").value;
  const finalDate = (editID && !inputDate) ? editOldDate : inputDate;
  
@@ -864,6 +947,9 @@ cutQtl: window.cutQtl || 0,
   commMode: document.getElementById("commMode").value,
   commission: document.getElementById("commission").value || 0,
   extraDeduction: Number(document.getElementById("extraDeduction").value || 0),
+  cutManualChecked: document.getElementById("cutManual").checked,
+  cutManualVal: Number(document.getElementById("cutManualVal").value || 0),
+  applyGstChecked: document.getElementById("applyGst").checked,
   amount: document.getElementById("amount").value,
   note: document.getElementById("note").value,
   date: finalDate,
@@ -900,6 +986,7 @@ totalB += Math.round(finalBore);
     totalC += Number(r.commission || 0);
     const qtlPart = Math.floor(qKg / 100);
     const kgPart = Math.round(qKg % 100);
+
     output.innerHTML += `
     <tr data-id="${r.id}">
       <td><input type="checkbox" class="print-row-check"></td>
@@ -939,7 +1026,12 @@ Deduction: ₹${r.extraDeduction || 0}<br>
 Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
 </div>
 </td>
-      <td><button class="actionBtn" onclick="editEntry('${r.id}')">✏</button><button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button></td>
+      <td>
+        <button class="actionBtn" style="background:#b7791f; font-size:11px;" onclick="openForcedPreview('${r.id}', 'khachi')">📄 Kachhi</button>
+        <button class="actionBtn" style="background:#2563eb; font-size:11px;" onclick="openForcedPreview('${r.id}', 'pakki')">🏛️ Pakki</button>
+        <button class="actionBtn" onclick="editEntry('${r.id}')">✏</button>
+        <button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button>
+      </td>
     </tr>`;
   });  
   const bw = currentDefaultBW || 50;
@@ -976,6 +1068,21 @@ editOldOrder = d.order || d.timestamp;
        document.getElementById("useCustomBW").checked = false;
        document.getElementById("customBWContainer").style.display = "none";
     }
+    
+    if(d.cutManualChecked) {
+       document.getElementById("cutManual").checked = true;
+       document.getElementById("cutManualVal").value = d.cutManualVal || 0;
+    } else {
+       document.getElementById("cutManual").checked = false;
+       document.getElementById("cutManualVal").value = 0;
+    }
+
+    if(d.applyGstChecked) {
+       document.getElementById("applyGst").checked = true;
+    } else {
+       document.getElementById("applyGst").checked = false;
+    }
+    
     document.getElementById("fasalCutWeight").value = d.fasalCutWeight || "";
     document.getElementById("fasalCutUnit").value = d.fasalCutUnit || "kg";
 
@@ -1239,7 +1346,6 @@ function loadSuggestions(){
         document.getElementById(f+"List").innerHTML = vals.map(n=>`<option value="${n}">`).join("");
     });
 
-    // MASTER GEMINI AI AUTO-SUGGESTION SYSTEM
     let aiSugs = [];
     data.forEach(d => {
        if(d.customer) aiSugs.push(d.customer.trim());
@@ -1261,16 +1367,90 @@ function loadSeason(){ const s = document.getElementById("season").value; if(!s)
 function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; isCreatingNewSeason = false; }
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
-function openSingleEntryPreview(id){
+
+function openForcedPreview(id, forceType) {
   const s = document.getElementById("season").value; if(!s) return;
   db.ref("seasons/"+s+"/entries/"+id).once("value", snap => {
     const r = snap.val(); if(!r) return;
-    let content = `<h2 style="text-align:center;">${s}</h2><table border="1" style="width:100%;border-collapse:collapse;"><tr><th>Date</th><td>${r.date || ""}</td></tr><tr><th>Customer</th><td><b>${r.customer || ""}</b></td></tr><tr><th>Bore</th><td>${r.bore || 0}</td></tr><tr><th>Net</th><td><b>₹${r.amount || 0}</b></td></tr></table>`;
-    document.getElementById("previewContent").innerHTML = content;
+    
+    let previewHTML = "";
+    if(forceType === "pakki") {
+       let rateVal = Number(r.rate || 0);
+       let qtlVal = Number(r.finalQtl || r.qtlValue || 0);
+       let grossVal = rateVal * qtlVal;
+       
+       let commInput = Number(r.commissionPercent || localStorage.getItem('mandiCommPercent') || 0);
+       let commMode = r.commMode || localStorage.getItem('mandiCommMode') || "percent";
+       let commVal = (commMode === "percent") ? ((grossVal * commInput) / 100) : (qtlVal * commInput);
+       if(Number(r.commission) > 0) commVal = Number(r.commission);
+
+       let labVal = Number(r.cut || 0);
+       let dedVal = Number(r.extraDeduction || 0);
+       let baseGst = grossVal + labVal + dedVal + commVal;
+       
+       let sgstAmt = 0;
+       let cgstAmt = 0;
+       if(r.applyGstChecked) {
+          let sgstP = Number(r.sgstPercent || 2.5);
+          let cgstP = Number(r.cgstPercent || 2.5);
+          sgstAmt = baseGst * (sgstP / 100);
+          cgstAmt = baseGst * (cgstP / 100);
+       }
+       let finalGovtAmount = baseGst + sgstAmt + cgstAmt;
+
+       previewHTML = `
+         <div style="font-family:sans-serif; padding:10px; color:#1e293b;">
+           <h2 style="text-align:center; margin-bottom:2px; color:#2563eb;">🏛️ Pakki (Government) Parchi Hisab</h2>
+           <p style="text-align:center; font-size:12px; color:#475569; margin:0 0 10px 0;">Season: ${s}</p>
+           <table border="1" style="width:100%; border-collapse:collapse; font-size:13px; border-color:#e2e8f0;">
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold; width:45%;">Date</th><td style="padding:8px; color:#1e293b; font-weight:500;">${r.date || ""}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#2563eb; font-weight:bold;">${r.customer || ""}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags / Total Weight</th><td style="padding:8px; color:#1e293b;">${r.bore || 0} Bags (${r.quintal || ""})</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Base Gross Bhav</th><td style="padding:8px; color:#1e293b;">₹${grossVal.toFixed(2)} (@₹${rateVal}/Qtl)</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour (Katoti)</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Commission (Aadat)</th><td style="padding:8px; color:#16a34a; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">SGST</th><td style="padding:8px; color:#1e293b;">₹${sgstAmt.toFixed(2)}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">CGST</th><td style="padding:8px; color:#1e293b;">₹${cgstAmt.toFixed(2)}</td></tr>
+             <tr style="background:#eff6ff; font-size:15px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Govt Amount</th><td style="padding:10px; color:#2563eb;"><b>₹${finalGovtAmount.toFixed(2)}</b></td></tr>
+           </table>
+         </div>
+       `;
+    } else {
+       let rateVal = Number(r.rate || 0);
+       let qtlVal = Number(r.finalQtl || r.qtlValue || 0);
+       let grossVal = rateVal * qtlVal;
+       let labVal = Number(r.cut || 0);
+       let dedVal = Number(r.extraDeduction || 0);
+       let netKhachi = grossVal - labVal - dedVal;
+
+       previewHTML = `
+         <div style="font-family:sans-serif; padding:10px; color:#1e293b;">
+           <h2 style="text-align:center; margin-bottom:2px; color:#b7791f;">✍️ Khachi Parchi Hisab Slip</h2>
+           <p style="text-align:center; font-size:12px; color:#475569; margin:0 0 10px 0;">Season: ${s}</p>
+           <table border="1" style="width:100%; border-collapse:collapse; font-size:13px; border-color:#e2e8f0;">
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold; width:45%;">Date</th><td style="padding:8px; color:#1e293b; font-weight:500;">${r.date || ""}</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#b7791f; font-weight:bold;">${r.customer || ""}</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags (Bore)</th><td style="padding:8px; color:#1e293b;"><b>${r.bore || 0} Bags</b></td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Quintal Weight</th><td style="padding:8px; color:#1e293b;">${r.quintal || ""}</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
+             <tr style="background:#fffaf0; font-size:16px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Amount</th><td style="padding:10px; color:#b91c1c;"><b>₹${netKhachi.toFixed(2)}</b></td></tr>
+           </table>
+         </div>
+       `;
+    }
+    
+    document.getElementById("previewContent").innerHTML = previewHTML;
     document.getElementById("printPreviewModal").style.display = "flex";
     applyZoom();
   });
 }
+
+function openSingleEntryPreview(id) {
+  db.ref("seasons/"+document.getElementById("season").value+"/entries/"+id).once("value", snap => {
+    const r = snap.val(); if(r) openForcedPreview(id, r.applyGstChecked ? "pakki" : "khachi");
+  });
+}
+
 function handleSearch(){
   const val = document.getElementById("searchName").value.trim();
   if(val === ""){ loadSeason(); }else{ filterData(); }
@@ -1375,6 +1555,10 @@ function processBulkEditField(entries, s, fieldName, promptMessage) {
     let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
     cut += totalBags * cbVal;
     
+    if(updatedNode.cutManualChecked) {
+       cut += Number(updatedNode.cutManualVal || 0);
+    }
+    
     let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
     let fasalCutKg = 0;
     let fcWeightInput = Number(updatedNode.fasalCutWeight || 0);
@@ -1400,7 +1584,8 @@ function processBulkEditField(entries, s, fieldName, promptMessage) {
     updatedNode.quintal = qtlPart + " Quintal " + kgPart + " Kg";
 
     let gross = rate * finalQtl;
-    let commission = (commMode === "percent") ? ((gross * commInput) / 100) : (finalQtl * commInput);
+    let commission = 0;
+    commission = (commMode === "percent") ? ((gross * commInput) / 100) : (finalQtl * commInput);
     let net = gross - cut - exDed;
 
     updatedNode.cut = cut.toFixed(2);
@@ -1427,7 +1612,6 @@ function handleAIQuery() {
   let view = document.getElementById("aiResultView");
   view.innerHTML = "<div style='color:#64748b;'>Gemini Processing Query...</div>";
 
-  // MASTER APP INFORMATION / HELP COMMAND RESPONSE
   if(query === "" || query === "app info" || query === "help" || query === "info" || query === "app") {
      view.innerHTML = `
         <div style="line-height:1.6;">
@@ -1453,7 +1637,6 @@ function handleAIQuery() {
     
     if(entries.length === 0) { view.innerText = "Is season me data nahi hai."; return; }
 
-    // --- TRUE GEMINI STYLE NATURAL NLP ENGINE ---
     let percentageMatch = query.match(/(\d+)%/); 
     let extractedPercent = percentageMatch ? parseFloat(percentageMatch[1]) : null;
 
@@ -1461,7 +1644,6 @@ function handleAIQuery() {
     let hasTdsMath = query.includes("tds");
     let isLoneVillageQuery = (query === "village" || query === "villages" || query === "village list" || query === "gaon list");
 
-    // Clean text algorithm to extract target kisan name or village keywords perfectly
     let extractedSearchToken = "";
     if (!hasCommMath && !hasTdsMath && !extractedPercent) {
        let stopwordsForFind = ["labour", "edit", "change", "badlo", "rate", "commission", "com sion", "bag", "set", "value", "hisab", "report", "all", "sabka", "update", "palledari", "bhav", "bhaav", "katoti", "deduction", "bore", "total", "bora", "bori", "kisan", "gaon", "village", "everything", "print", "slip", "parchi", "name", "tds", "amount", "%", "rupee", "rupees"];
@@ -1470,13 +1652,11 @@ function handleAIQuery() {
        extractedSearchToken = rawKeywordExtract.trim();
     }
 
-    // Determine targeted entries (If math statement or empty string token, do NOT filter out data!)
     let targets = entries;
     if (extractedSearchToken.length > 1 && !isLoneVillageQuery) {
        targets = entries.filter(e => (e.customer || "").toLowerCase().includes(extractedSearchToken) || (e.village || "").toLowerCase().includes(extractedSearchToken));
     }
 
-    // Dynamic grid table synchronization interface trigger
     if(extractedSearchToken.length > 1 && !isLoneVillageQuery) {
        let searchBarInput = document.getElementById("searchName");
        if(searchBarInput) {
@@ -1485,7 +1665,6 @@ function handleAIQuery() {
        }
     }
 
-    // --- ACTION 1: PRINT PREVIEW INVOCATION SYSTEM ---
     if(isPrintAction) {
        if(targets.length === 0) {
           view.innerHTML = "❌ AI Action Error: Print ke liye koi data nahi mila!";
@@ -1501,7 +1680,7 @@ function handleAIQuery() {
        <th>Customer</th>
        <th>Father</th>
        <th>Village</th>
-       <th>Bore</th>
+       <th>Bore Mont</th>
        <th>Extra</th>
        <th>Note</th>
        <th>Qtl</th>
@@ -1537,7 +1716,6 @@ function handleAIQuery() {
        return;
     }
 
-    // --- ACTION 2: BULK FIELD INJECTIONS (CHANGE COMMANDS) ---
     if(query.includes("change") || query.includes("edit") || query.includes("badlo") || query.startsWith("set ")) {
       let targetFieldName = "";
       let targetPromptMessage = "";
@@ -1556,7 +1734,6 @@ function handleAIQuery() {
       }
     }
 
-    // --- ACTION 3: MATH REASONING LOGIC (1%, 2% OR ANY % MATH COMPUTATION) ---
     if(hasCommMath || hasTdsMath || extractedPercent !== null) {
        let m = getCalculatedSeasonMetrics(targets);
        let scopeText = (extractedSearchToken.length > 1) ? `Filtered: ${extractedSearchToken}` : "Pure Season Data";
@@ -1579,7 +1756,6 @@ function handleAIQuery() {
        return;
     }
 
-    // --- ACTION 4: READ QUERIES LOGIC RENDERING ---
     if(isLoneVillageQuery || (query.includes("village") && (query.includes("list") || query.includes("all") || query.includes("name")))) {
       let vMap = {};
       entries.forEach(e => {
