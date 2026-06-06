@@ -106,11 +106,11 @@ tbody td:nth-child(2){
 .tds-calculator { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 10px; }
 .tds-calculator input { margin: 0; padding: 5px 8px; width: 80px; text-align: center; }
 
-/* --- FIXED REPORT LAYOUT --- */
+/* --- REPORT LAYOUT --- */
 #reportOutput { width: 100%; overflow: hidden; padding: 0; margin-top: 10px; }
 #reportOutput table { 
     width: 100%; 
-    table-layout: fixed; /* Strict fit to screen width */
+    table-layout: fixed;
     border-collapse: collapse; 
     background: #fff;
 }
@@ -134,14 +134,14 @@ overflow-wrap: break-word;
 border: 1px solid #e2e8f0;
 }
 
-#reportOutput th:nth-child(1), #reportOutput td:nth-child(1) { width: 8%; }  /* No */
-#reportOutput th:nth-child(2), #reportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; } /* Name */
-#reportOutput th:nth-child(3), #reportOutput td:nth-child(3) { width: 16%; } /* Father */
-#reportOutput th:nth-child(4), #reportOutput td:nth-child(4) { width: 15%; } /* Village */
-#reportOutput th:nth-child(5), #reportOutput td:nth-child(5) { width: 9%; }  /* Bore */
-#reportOutput th:nth-child(6), #reportOutput td:nth-child(6) { width: 9%; }  /* Extra */
-#reportOutput th:nth-child(7), #reportOutput td:nth-child(7) { width: 11%; } /* Kg */
-#reportOutput th:nth-child(8), #reportOutput td:nth-child(8) { width: 14%; } /* Quintal */
+#reportOutput th:nth-child(1), #reportOutput td:nth-child(1) { width: 8%; }
+#reportOutput th:nth-child(2), #reportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; }
+#reportOutput th:nth-child(3), #reportOutput td:nth-child(3) { width: 16%; }
+#reportOutput th:nth-child(4), #reportOutput td:nth-child(4) { width: 15%; }
+#reportOutput th:nth-child(5), #reportOutput td:nth-child(5) { width: 9%; }
+#reportOutput th:nth-child(6), #reportOutput td:nth-child(6) { width: 9%; }
+#reportOutput th:nth-child(7), #reportOutput td:nth-child(7) { width: 11%; }
+#reportOutput th:nth-child(8), #reportOutput td:nth-child(8) { width: 14%; }
 
 .report-date-row{
 font-size:14px;
@@ -159,6 +159,22 @@ background: #e2e8f0 !important;
   font-size: 16px;
   margin: 5px 0;
 }
+
+/* --- AI STYLING --- */
+.ai-panel { display: none; background: #eff6ff; border: 2px solid #3b82f6; border-radius: 12px; padding: 15px; margin: 15px 0; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15); }
+.ai-header { display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #1e40af; font-size: 16px; margin-bottom: 8px; }
+.ai-chip { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #bfdbfe; font-weight: 500; display: inline-block; margin: 3px; width: auto;}
+.ai-chip:hover { background: #bfdbfe; }
+.ai-result { background: white; border-radius: 8px; padding: 12px; border: 1px solid #cbd5e1; margin-top: 10px; font-size: 14px; line-height: 1.6; color: #334155; max-height: 250px; overflow-y: auto;}
+
+/* Handwriting Desi Parchi Layout Theme */
+.desi-slip-card {
+    background: #fffef2; border: 2px dashed #b5a477; border-radius: 4px; box-shadow: 3px 3px 8px rgba(0,0,0,0.08);
+    padding: 16px; margin: 12px 0; font-family: 'Courier New', Courier, monospace, sans-serif; position: relative; overflow: hidden;
+}
+.desi-slip-card::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1px; background: rgba(239, 68, 68, 0.25); }
+.desi-slip-title { text-align: center; border-bottom: 1px solid #dcd1ab; padding-bottom: 4px; color: #854d0e; font-weight: bold; font-size: 16px; }
+.desi-slip-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e9e4c9; font-size: 13px; color: #4338ca; }
 </style>  </head>  
 <body>  
 
@@ -198,8 +214,29 @@ background: #e2e8f0 !important;
 
 <div style="display:flex;gap:8px;">  
 <button onclick="openSeasonScreen()" style="background: var(--secondary);">⚙ Setup</button>  
+<button onclick="toggleAIPanel()" style="background: #1e40af; font-weight: bold;">🤖 Ask AI / Bulk Edit</button>  
 <button onclick="openEntryScreen()" style="background: var(--primary); font-size: 18px;">➕ Add Entry</button>  
 </div>  
+
+<div class="ai-panel" id="mandiAiPanel">
+  <div class="ai-header">
+    <span>🤖 Mandi AI Master Engine (Gemini Pro Integrated)</span>
+    <button onclick="runAISummary()" style="width:auto; padding:5px 12px; margin:0; font-size:12px; background:var(--primary);">📊 Auto Summary</button>
+  </div>
+  <div style="margin-bottom: 5px;">
+    <span class="ai-chip" onclick="askAI('top_villages')">📍 Top 3 Village Maal</span>
+    <span class="ai-chip" onclick="askAI('top_customers')">👤 Top 3 Customer</span>
+    <span class="ai-chip" onclick="askAI('cut_summary')">📉 Cut Summary</span>
+    <span class="ai-chip" onclick="askAI('cash_flow')">💰 Total Net Payout</span>
+  </div>
+  <div style="display:flex; gap:6px;">
+    <input type="text" id="aiQueryInput" list="aiSuggestionsList" placeholder="Sawal ya command (e.g. app info)..." style="margin:0; padding:10px;">
+    <datalist id="aiSuggestionsList"></datalist>
+    <button onclick="handleAIQuery()" style="width:auto; background:#1e40af; margin:0; padding:0 15px;">Ask AI</button>
+  </div>
+  <div style="font-size:11px; margin-top:3px; color:#475569;">💡 <b>Help:</b> Type "app info" to check all hidden master prompt actions and commands.</div>
+  <div class="ai-result" id="aiResultView">Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.</div>
+</div>
 
 <div class="searchBar">  
 <input id="searchName" placeholder="🔍 Search Customer..." oninput="handleSearch()">
@@ -225,7 +262,7 @@ background: #e2e8f0 !important;
 
 <div class="card">  
 <b>Total Bore:</b> <span id="totalBore" style="color:var(--danger); font-size: 18px;">0</span> |  
-<b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span> |
+<b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span> |  
 <b>Total Comm:</b> <span id="totalComm" style="color:var(--warning); font-size: 18px;">0</span>
 
 <div class="tds-calculator">
@@ -370,7 +407,7 @@ background: #e2e8f0 !important;
         <option value="percent">Comm %</option>
         <option value="perQtl">Comm ₹/Qtl</option>
     </select>
-    <input id="commissionPercent" type="number" placeholder="Value" oninput="calcAmount()" style="flex:1;">
+    <input id="commissionPercent" type="number" placeholder="Value" oninput="calcAmount()">
   </div>
 
   <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
@@ -437,7 +474,7 @@ background: #e2e8f0 !important;
 <input id="seasonWeight" placeholder="Default Bore Weight (e.g. 50)">  
 <button onclick="saveSeason()" style="background: var(--success);">✔ Save Season</button>  
 <button id="deleteSeasonBtn" onclick="deleteSeason()" style="background: var(--danger);">🗑 Delete</button>  
-<button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
+  <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 </div> <script>  
 const MASTER_PASSWORD = "786786";
@@ -452,6 +489,39 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { authenticateFingerprint(); }, 500);
     }
 });
+
+// Helper configuration function for unified metric calculations
+function getCalculatedSeasonMetrics(entries) {
+  let totalKgRaw = 0, totalNet = 0, totalCutQtl = 0, totalCommVal = 0;
+  let uniqueCust = new Set(), uniqueVill = new Set();
+  
+  entries.forEach(e => {
+    let bw = Number(e.customBW || currentDefaultBW || 50);
+    let bore = Number(e.bore || 0);
+    let extra = Number(e.extra || 0);
+    totalKgRaw += (bore * bw) + extra;
+    totalNet += Number(e.amount || 0);
+    totalCutQtl += Number(e.cutQtl || 0);
+    totalCommVal += Number(e.commission || 0);
+    if(e.customer) uniqueCust.add(e.customer.trim());
+    if(e.village) uniqueVill.add(e.village.trim());
+  });
+
+  let bw = currentDefaultBW || 50;
+  let finalBoreCount = Math.floor(totalKgRaw / bw);
+  let extraKgPart = totalKgRaw % bw;
+
+  return {
+    entriesCount: entries.length,
+    finalBore: finalBoreCount,
+    extraKg: extraKgPart,
+    netPayout: totalNet,
+    cutQtl: totalCutQtl,
+    totalComm: totalCommVal,
+    customersCount: uniqueCust.size,
+    villagesCount: uniqueVill.size
+  };
+}
 
 function refreshBiometricUI() {
     const credId = localStorage.getItem("fingerprintCredential");
@@ -478,7 +548,7 @@ function handlePinSubmit() {
 async function registerFingerprint() {
     const pin = prompt("Fingerprint रजिस्टर करने के लिए apna PIN दर्ज करें:");
     if (pin !== localStorage.getItem("app_pin")) { alert("गलत PIN!"); return; }
-    if (!window.PublicKeyCredential) { alert("आपका डिवाइस बायोमेट्रिक्स का समर्थन नहीं करता है।"); return; }
+    if (!window.PublicKeyCredential) { alert("आपका DEVICE बायोमेट्रिक्स का समर्थन नहीं करता है।"); return; }
     try {
         const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
         const userID = new Uint8Array(16); window.crypto.getRandomValues(userID);
@@ -521,7 +591,7 @@ async function authenticateFingerprint() {
 function handleForgotPin() {
     const master = prompt("PIN रीसेट करने के लिए Master Password दर्ज करें:");
     if(master === MASTER_PASSWORD) {
-        const n = prompt("नया PIN सेट करें:");
+        const n = prompt("नया PIN SET करें:");
         if(n && n.length >= 4) { localStorage.setItem("app_pin", n); alert("PIN रीसेट सफल!"); }
     } else alert("गलत Master Password!");
 }
@@ -537,7 +607,7 @@ function setupNewPin() {
 function logoutApp() {
     document.getElementById("mainAppWrapper").style.display = "none";
     document.getElementById("lockScreen").style.display = "flex";
-    document.getElementById("lockStatus").innerText = "लॉग आउट। PIN दर्ज करें";
+    document.getElementById("lockStatus").innerText = "लॉग OUT। PIN दर्ज करें";
     refreshBiometricUI();
 }
 
@@ -630,7 +700,8 @@ function openEntryScreen(){
   document.getElementById("customBWContainer").style.display = "none";
   document.getElementById("fasalCutUnit").value = "kg";
   document.getElementById("fasalCutDisplay").innerText = "0 Kg";
-
+  document.getElementById("cutBagVal").value =
+localStorage.getItem("lastLabour") || "60";
   if(localStorage.getItem('mandiLastRate')) document.getElementById('rate').value = localStorage.getItem('mandiLastRate');
   if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
   if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
@@ -768,7 +839,10 @@ const qtl = finalQtl;
 function saveEntry(){  
  const s = document.getElementById("season").value; if(!s) return;
  localStorage.setItem('mandiLastRate', document.getElementById("rate").value);
- localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
+localStorage.setItem(
+  "lastLabour",
+  document.getElementById("cutBagVal").value
+); localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
  const inputDate = document.getElementById("entryDate").value;
  const finalDate = (editID && !inputDate) ? editOldDate : inputDate;
@@ -785,6 +859,7 @@ finalQtl: window.finalQtl || 0,
 cutQtl: window.cutQtl || 0,
   rate: Number(document.getElementById("rate").value || 0),
   cut: document.getElementById("cutTotal").value,
+  cutBagVal: Number(document.getElementById("cutBagVal").value || 60), 
   commissionPercent: document.getElementById("commissionPercent").value || 0,
   commMode: document.getElementById("commMode").value,
   commission: document.getElementById("commission").value || 0,
@@ -891,6 +966,8 @@ function editEntry(id){
 editOldOrder = d.order || d.timestamp;
     ["customer","father","village","bore","extra","quintal","note","extraDeduction", "commissionPercent"].forEach(f=>document.getElementById(f).value=d[f] || "");
     
+    document.getElementById("cutBagVal").value = (d.cutBagVal !== undefined) ? d.cutBagVal : "60";
+
     if(d.customBW) {
        document.getElementById("useCustomBW").checked = true;
        document.getElementById("customBWInput").value = d.customBW;
@@ -920,9 +997,8 @@ function loadSeasons(){
  const sD = document.getElementById("season"); sD.innerHTML="";  
  db.ref("seasonsInfo").once("value",s=>{  
   Object.keys(s.val()||{}).forEach(n=>{ 
-     // FIXED: Hindi Keywords mapping with strict non-duplication
      let icon = "📅 "; 
-     let cleanName = n.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim(); // Removes pre-existing emoji data
+     let cleanName = n.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim(); 
      let lowerN = cleanName.toLowerCase();
 
      if(lowerN.includes("गेहूं") || lowerN.includes("गेहुँ") || lowerN.includes("gehu") || lowerN.includes("wheat")) {
@@ -986,7 +1062,6 @@ function saveSeason(){
  const w = document.getElementById("seasonWeight").value;
  if(!newN || !w) return;
 
- // Clean existing emoji elements before saving to prevent redundancy
  newN = newN.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim();
 
  if(isCreatingNewSeason) {
@@ -1158,15 +1233,31 @@ function loadSuggestions(){
   const s = document.getElementById("season").value; if(!s) return;
   db.ref("seasons/" + s + "/entries").once("value", snap => {
     const data = Object.values(snap.val() || {});
+    
     ["customer","father","village"].forEach(f=>{
         const vals = [...new Set(data.map(d => d[f]).filter(Boolean))];
         document.getElementById(f+"List").innerHTML = vals.map(n=>`<option value="${n}">`).join("");
     });
+
+    // MASTER GEMINI AI AUTO-SUGGESTION SYSTEM
+    let aiSugs = [];
+    data.forEach(d => {
+       if(d.customer) aiSugs.push(d.customer.trim());
+       if(d.village) aiSugs.push(d.village.trim() + " village");
+       if(d.customer) {
+          aiSugs.push(d.customer.trim() + " village");
+          aiSugs.push(d.customer.trim() + " parchi print");
+          aiSugs.push(d.customer.trim() + " labour change");
+       }
+    });
+    aiSugs.push("app info", "village list", "change labour all", "total net payout", "total amount 1% commission", "total amount 2% commission", "tds amount calculate");
+    let uniqAiSugs = [...new Set(aiSugs)];
+    document.getElementById("aiSuggestionsList").innerHTML = uniqAiSugs.map(n => `<option value="${n}">`).join("");
   });
 }
 
 function deleteEntry(id){ const s = document.getElementById("season").value; if(s && confirm("Delete?")){ db.ref("seasons/"+s+"/entries/"+id).remove().then(loadSeason); } }
-function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { let dataS = snap.val() || {}; currentDefaultBW = Number(dataS.defaultBw || 0); filterData(); }); }
+function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { let dataS = snap.val() || {}; currentDefaultBW = Number(dataS.defaultBw || 0); filterData(); loadSuggestions(); }); }
 function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; isCreatingNewSeason = false; }
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
@@ -1184,6 +1275,368 @@ function handleSearch(){
   const val = document.getElementById("searchName").value.trim();
   if(val === ""){ loadSeason(); }else{ filterData(); }
 }
+
+/* --- AI TOGGLE BUTTON PANELS --- */
+function toggleAIPanel() {
+  const panel = document.getElementById("mandiAiPanel");
+  panel.style.display = (panel.style.display === "block") ? "none" : "block";
+}
+
+function runAISummary() {
+  const s = document.getElementById("season").value;
+  if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
+  
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+    const entries = Object.values(snap.val() || {});
+    if(entries.length === 0) { document.getElementById("aiResultView").innerText = "Is season me abhi koi data nahi hai."; return; }
+    
+    let m = getCalculatedSeasonMetrics(entries);
+    
+    document.getElementById("aiResultView").innerHTML = `
+      <b>📊 Season Summary (AI Calculated):</b><br>
+      • Total Entries: <b>${m.entriesCount}</b><br>
+      • Total Bore Count: <b>${m.finalBore} Bags | Extra: ${m.extraKg} Kg</b><br>
+      • Net Payout Amount: <b>₹${m.netPayout.toFixed(2)}</b><br>
+      • Total Fasal Cut: <b>${m.cutQtl.toFixed(2)} Qtl</b><br>
+      • Active Customers: <b>${m.customersCount}</b> | Villages Covered: <b>${m.villagesCount}</b>
+    `;
+  });
+}
+
+function askAI(type) {
+  const s = document.getElementById("season").value;
+  if(!s) return;
+  
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+    const entries = Object.values(snap.val() || {});
+    if(entries.length === 0) return;
+    
+    let view = document.getElementById("aiResultView");
+    view.innerHTML = ""; 
+    
+    if(type === 'top_villages') {
+      let vMap = {};
+      entries.forEach(e => {
+        if(e.village) {
+          let bw = Number(e.customBW || currentDefaultBW || 50);
+          vMap[e.village] = (vMap[e.village] || 0) + (Number(e.bore || 0) * bw + Number(e.extra || 0));
+        }
+      });
+      let bw = currentDefaultBW || 50;
+      let sorted = Object.entries(vMap).sort((a,b) => b[1] - a[1]).slice(0, 3);
+      let res = "<b>📍 Sabse Jyada Maal Wale Top 3 Gaon:</b><br>";
+      sorted.forEach(([v, totalKg], i) => { 
+        res += `${i+1}. Gaon: <b>${v}</b> — Total: <b>${Math.floor(totalKg/bw)} Bags</b> (${(totalKg/100).toFixed(2)} Qtl)<br>`; 
+      });
+      view.innerHTML = res;
+    }
+    else if(type === 'top_customers') {
+      let cMap = {};
+      entries.forEach(e => { if(e.customer) cMap[e.customer] = (cMap[e.customer] || 0) + Number(e.finalQtl || e.qtlValue || 0); });
+      let sorted = Object.entries(cMap).sort((a,b) => b[1] - a[1]).slice(0, 3);
+      let res = "<b>👤 Sabse Zyada Qtl Wale Top 3 Vyapari/Kisan:</b><br>";
+      sorted.forEach(([c, q], i) => { res += `${i+1}. Name: <b>${c}</b> — Total: <b>${q.toFixed(2)} Qtl</b><br>`; });
+      view.innerHTML = res;
+    }
+    else if(type === 'cut_summary') {
+      let labTotal = 0, cutQtlTotal = 0;
+      entries.forEach(e => { labTotal += Number(e.cut || 0); cutQtlTotal += Number(e.cutQtl || 0); });
+      view.innerHTML = `<b>📉 Cut & Labour Summary:</b><br>• Total Fasal Weight Deduction: <b>${cutQtlTotal.toFixed(2)} Qtl</b><br>• Total Labour/Katoti Amount Charged: <b>₹${labTotal.toFixed(2)}</b>`;
+    }
+    else if(type === 'cash_flow') {
+      let cash = 0; entries.forEach(e => { cash += Number(e.amount || 0); });
+      view.innerHTML = `<b>💰 Total Net Payments Distributed:</b><br>• Mudda Value: <span style="color:var(--success); font-weight:bold; font-size:16px;">₹${cash.toFixed(2)}</span>`;
+    }
+  });
+}
+
+function processBulkEditField(entries, s, fieldName, promptMessage) {
+  let valInput = prompt(promptMessage);
+  if (valInput === null || valInput === "") return;
+  let updateValue = Number(valInput);
+  if (isNaN(updateValue) || updateValue < 0) { alert("Invalid Number Entered!"); return; }
+
+  let updates = {};
+  entries.forEach(t => {
+    let updatedNode = { ...t };
+    if (fieldName === "cutBagVal") { updatedNode.cutBagVal = updateValue; } 
+    else { updatedNode[fieldName] = updateValue; }
+    
+    let b = Number(updatedNode.bore || 0);
+    let extra = Number(updatedNode.extra || 0);
+    let rate = Number(updatedNode.rate || 0);
+    let exDed = Number(updatedNode.extraDeduction || 0);
+    let commMode = updatedNode.commMode || "percent";
+    let commInput = Number(updatedNode.commissionPercent || 0);
+    let bwUsed = Number(updatedNode.customBW || currentDefaultBW || 50);
+    
+    let cut = 0;
+    let totalBags = b + (extra / bwUsed);
+    let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
+    cut += totalBags * cbVal;
+    
+    let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
+    let fasalCutKg = 0;
+    let fcWeightInput = Number(updatedNode.fasalCutWeight || 0);
+    let cutType = updatedNode.fasalCutType || "bag";
+
+    if(fcWeightInput > 0){
+       let unit = updatedNode.fasalCutUnit || "kg";
+       let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
+       if(cutType === "bag"){ fasalCutKg = b * weightKg; } 
+       else if(cutType === "quintal"){ fasalCutKg = originalQtl * weightKg; }
+    }
+
+    let finalQtl = originalQtl - (fasalCutKg / 100);
+    if(finalQtl < 0) finalQtl = 0;
+    
+    updatedNode.qtlValue = originalQtl;
+    updatedNode.finalQtl = finalQtl;
+    updatedNode.cutQtl = originalQtl - finalQtl;
+
+    let totalKg = finalQtl * 100;
+    let qtlPart = Math.floor(totalKg / 100);
+    let kgPart = (totalKg % 100).toFixed(1);
+    updatedNode.quintal = qtlPart + " Quintal " + kgPart + " Kg";
+
+    let gross = rate * finalQtl;
+    let commission = (commMode === "percent") ? ((gross * commInput) / 100) : (finalQtl * commInput);
+    let net = gross - cut - exDed;
+
+    updatedNode.cut = cut.toFixed(2);
+    updatedNode.commission = commission.toFixed(2);
+    updatedNode.amount = net.toFixed(2);
+
+    let id = t.id;
+    delete updatedNode.id;
+    updates[`seasons/${s}/entries/${id}`] = updatedNode;
+  });
+
+  db.ref().update(updates).then(() => {
+    document.getElementById("aiResultView").innerHTML = `✅ AI Bulk Edit Success: <b>${entries.length} entries</b> change ho gayi hain!`;
+    loadSeason();
+  });
+}
+
+function handleAIQuery() {
+  const origQuery = document.getElementById("aiQueryInput").value;
+  let query = origQuery.toLowerCase().trim();
+  const s = document.getElementById("season").value;
+  if(!s) return;
+  
+  let view = document.getElementById("aiResultView");
+  view.innerHTML = "<div style='color:#64748b;'>Gemini Processing Query...</div>";
+
+  // MASTER APP INFORMATION / HELP COMMAND RESPONSE
+  if(query === "" || query === "app info" || query === "help" || query === "info" || query === "app") {
+     view.innerHTML = `
+        <div style="line-height:1.6;">
+        <b>ℹ️ Mandi App Pro — AI Master Engine Manual Information:</b><br>
+        Aap is Smart Input Engine se seedhe niche diye gaye commands chala sakte hain:<br>
+        <hr style='border:none; border-top:1px dashed #cbd5e1; margin:6px 0;'>
+        🔹 <b>Math Calculations:</b> Type <i>"2% total commission"</i> ya <i>"tds amount"</i> poore season ka ledger bina disturb kiye live numeric report dekhne ke liye.<br>
+        🔹 <b>Kisan / Gaon Filter:</b> Type <i>"Mohit village"</i> ya <i>"Shahzadpur"</i> niche chal rahi table ko live trace aur sync karne ke liye.<br>
+        🔹 <b>All Villages List:</b> Type <i>"village list"</i> sabhi gaon ke total bag aur entries dekhne ke liye.<br>
+        🔹 <b>Direct Slip Print:</b> Type <i>"Mohit parchi print"</i> pure data ki landscape table ko direct print preview popup modal mein kholne ke liye.<br>
+        🔹 <b>Bulk Changing Actions:</b> Type <i>"change labour all"</i> ya <i>"change rate"</i> selected parameters ko ek sath badalne ke liye.
+        </div>
+     `;
+     return;
+  }
+
+  let isImageMode = (query.includes("image") || query.includes("parchi") || query.includes("photo") || query.includes("parchi layout") || query.includes("dekhe") || query.includes("dekho"));
+  let isPrintAction = (query.includes("print") || query.includes("slip print") || query.includes("parchi print") || query.includes("hisab print"));
+
+  db.ref("seasons/" + s + "/entries").once("value", async (snap) => {
+    let rawData = snap.val() || {};
+    const entries = Object.entries(rawData).map(([id, val]) => ({ id, ...val }));
+    
+    if(entries.length === 0) { view.innerText = "Is season me data nahi hai."; return; }
+
+    // --- TRUE GEMINI STYLE NATURAL NLP ENGINE ---
+    let percentageMatch = query.match(/(\d+)%/); 
+    let extractedPercent = percentageMatch ? parseFloat(percentageMatch[1]) : null;
+
+    let hasCommMath = query.includes("commission") || query.includes("com sion") || query.includes("aadat");
+    let hasTdsMath = query.includes("tds");
+    let isLoneVillageQuery = (query === "village" || query === "villages" || query === "village list" || query === "gaon list");
+
+    // Clean text algorithm to extract target kisan name or village keywords perfectly
+    let extractedSearchToken = "";
+    if (!hasCommMath && !hasTdsMath && !extractedPercent) {
+       let stopwordsForFind = ["labour", "edit", "change", "badlo", "rate", "commission", "com sion", "bag", "set", "value", "hisab", "report", "all", "sabka", "update", "palledari", "bhav", "bhaav", "katoti", "deduction", "bore", "total", "bora", "bori", "kisan", "gaon", "village", "everything", "print", "slip", "parchi", "name", "tds", "amount", "%", "rupee", "rupees"];
+       let rawKeywordExtract = query;
+       stopwordsForFind.forEach(w => rawKeywordExtract = rawKeywordExtract.split(w).join(""));
+       extractedSearchToken = rawKeywordExtract.trim();
+    }
+
+    // Determine targeted entries (If math statement or empty string token, do NOT filter out data!)
+    let targets = entries;
+    if (extractedSearchToken.length > 1 && !isLoneVillageQuery) {
+       targets = entries.filter(e => (e.customer || "").toLowerCase().includes(extractedSearchToken) || (e.village || "").toLowerCase().includes(extractedSearchToken));
+    }
+
+    // Dynamic grid table synchronization interface trigger
+    if(extractedSearchToken.length > 1 && !isLoneVillageQuery) {
+       let searchBarInput = document.getElementById("searchName");
+       if(searchBarInput) {
+          searchBarInput.value = extractedSearchToken;
+          handleSearch();
+       }
+    }
+
+    // --- ACTION 1: PRINT PREVIEW INVOCATION SYSTEM ---
+    if(isPrintAction) {
+       if(targets.length === 0) {
+          view.innerHTML = "❌ AI Action Error: Print ke liye koi data nahi mila!";
+          return;
+       }
+       let content = `<h2 style="text-align:center;">${s} - AI Generated Hisab Slip</h2>`;
+       let tableHTML = `
+       <div style="width:100%;">
+       <table style="width:100%; border-collapse:collapse; border:1px solid #000;" border="1">
+       <thead>
+       <tr style="background:#2563eb; color:white;">
+       <th>Date</th>
+       <th>Customer</th>
+       <th>Father</th>
+       <th>Village</th>
+       <th>Bore</th>
+       <th>Extra</th>
+       <th>Note</th>
+       <th>Qtl</th>
+       <th>Amount ₹</th>
+       </tr>
+       </thead>
+       <tbody>
+       `;
+       let printBore = 0;
+       targets.forEach(t => {
+           let qKg = Number(t.finalQtl || t.qtlValue || 0) * 100;
+           tableHTML += `<tr>
+             <td>${t.date || ""}</td>
+             <td style="font-weight:bold;">${t.customer || ""}</td>
+             <td>${t.father || ""}</td>
+             <td>${t.village || ""}</td>
+             <td>${t.bore || 0}</td>
+             <td>${t.extra || 0}</td>
+             <td><small>${t.note || ""}</small></td>
+             <td>${Math.floor(qKg / 100)} Qtl ${Math.round(qKg % 100)} Kg</td>
+             <td><b>₹${t.amount || 0}</b></td>
+           </tr>`;
+           printBore += Number(t.bore || 0);
+       });
+       tableHTML += `</tbody></table></div>`;
+       content += `<p style="text-align:center;"><b>Total:</b> ${targets.length} Entries | <b>Total Bore:</b> ${printBore}</p>` + tableHTML;
+       
+       document.getElementById('previewContent').innerHTML = content;
+       document.getElementById('printPreviewModal').style.display = 'flex';
+       document.getElementById('zoomRange').value = 0.8;
+       applyZoom();
+       view.innerHTML = `✅ <b>Gemini Action Core:</b> Generated layout for <b>${targets.length} rows</b> and launched preview modal.`;
+       return;
+    }
+
+    // --- ACTION 2: BULK FIELD INJECTIONS (CHANGE COMMANDS) ---
+    if(query.includes("change") || query.includes("edit") || query.includes("badlo") || query.startsWith("set ")) {
+      let targetFieldName = "";
+      let targetPromptMessage = "";
+
+      if(query.includes("labour") || query.includes("mazdoori")) {
+        targetFieldName = "cutBagVal";
+        targetPromptMessage = `👷 AI Core: Selected [${targets.length}] entries ke liye Labour Per Bag (₹) kitna set karna hai?`;
+      } else if(query.includes("rate") || query.includes("price") || query.includes("bhav")) {
+        targetFieldName = "rate";
+        targetPromptMessage = `🌾 AI Core: Selected [${targets.length}] entries ke liye naya Bhaav/Rate (₹) kitna set karna hai?`;
+      }
+
+      if(targetFieldName !== "") {
+         processBulkEditField(targets, s, targetFieldName, targetPromptMessage);
+         return;
+      }
+    }
+
+    // --- ACTION 3: MATH REASONING LOGIC (1%, 2% OR ANY % MATH COMPUTATION) ---
+    if(hasCommMath || hasTdsMath || extractedPercent !== null) {
+       let m = getCalculatedSeasonMetrics(targets);
+       let scopeText = (extractedSearchToken.length > 1) ? `Filtered: ${extractedSearchToken}` : "Pure Season Data";
+       
+       let activePercent = extractedPercent !== null ? extractedPercent : 1; 
+       let calculatedCommValue = m.netPayout * (activePercent / 100);
+       
+       let computedTdsPercent = parseFloat(document.getElementById("tdsPercentInput").value) || 0;
+       let calculatedTdsVal = (m.totalComm * computedTdsPercent) / 100;
+
+       view.innerHTML = `
+          <div style="line-height:1.7;">
+          <b>🧮 Gemini Advanced Math Core Breakdown [${scopeText}]:</b><br>
+          • Scope Net Payout P&L: <b>₹${m.netPayout.toFixed(2)}</b><br>
+          • Amount Par Calculated <b>${activePercent}% Commission</b>: <b style="color:var(--success); font-size:15px;">₹${calculatedCommValue.toFixed(2)}</b><br>
+          • Default System Commission Sum: <b>₹${m.totalComm.toFixed(2)}</b><br>
+          • Current TDS Outflow (${computedTdsPercent}%): <b style="color:var(--danger); font-size:15px;">₹${calculatedTdsVal.toFixed(2)}</b>
+          </div>
+       `;
+       return;
+    }
+
+    // --- ACTION 4: READ QUERIES LOGIC RENDERING ---
+    if(isLoneVillageQuery || (query.includes("village") && (query.includes("list") || query.includes("all") || query.includes("name")))) {
+      let vMap = {};
+      entries.forEach(e => {
+        let v = (e.village || "Bina Gaon Ki Entry").trim();
+        let bw = Number(e.customBW || currentDefaultBW || 50);
+        if(!vMap[v]) vMap[v] = { totalKg: 0, customers: new Set() };
+        vMap[v].totalKg += (Number(e.bore || 0) * bw) + Number(e.extra || 0);
+        if(e.customer) vMap[v].customers.add(e.customer.trim());
+      });
+
+      let bw = currentDefaultBW || 50;
+      let resHtml = `<b>📍 Pure Season Ke Sabhi Gaon Ki List (${Object.keys(vMap).length}):</b><br><table style='width:100%; border-collapse:collapse; font-size:13px; margin-top:8px;'>`;
+      resHtml += `<tr style='background:#2563eb; color:white;'><th>Gaon Name</th><th>Total Bags</th><th>Kisan Count</th></tr>`;
+      Object.entries(vMap).forEach(([vName, vData]) => {
+        resHtml += `<tr style='border-bottom:1px solid #e2e8f0; background:white;'>
+          <td style='padding:8px;'>🏡 <b>${vName}</b></td>
+          <td><b>${Math.floor(vData.totalKg / bw)} Bags</b> | Extra: ${vData.totalKg % bw} Kg</td>
+          <td>${vData.customers.size} Kisan</td>
+        </tr>`;
+      });
+      resHtml += `</table>`;
+      view.innerHTML = resHtml;
+      return;
+    }
+
+    if(isImageMode) {
+      let slipHtml = `<b>✍️ Mandi Desi Parchee Style View:</b><br>`;
+      targets.forEach((f, idx) => {
+         slipHtml += `
+           <div class="desi-slip-card">
+              <div class="desi-slip-title">📄 Hisab Parchi #0${idx+1}</div>
+              <div class="desi-slip-row"><span>Kisan/Vyapari:</span> <b>${f.customer}</b></div>
+              <div class="desi-slip-row"><span>Gaon/Pata:</span> <span>${f.village || "-"}</span></div>
+              <div class="desi-slip-row"><span>Bore Count:</span> <span>${f.bore || 0} Bags</span></div>
+              <div class="desi-slip-row"><span>Fasal Bhaav:</span> <span>₹${f.rate || 0} / Qtl</span></div>
+              <div class="desi-slip-row"><span>Net Weight:</span> <b style='color:#16a34a;'>${f.quintal || "0 Qtl"}</b></div>
+              <div class="desi-slip-row"><span>Katoti/Cut:</span> <span style='color:#dc2626;'>${Number(f.cutQtl || 0).toFixed(2)} Qtl</span></div>
+              <div class="desi-slip-row" style='border-bottom:none; margin-top:5px; font-size:15px;'><span>Net Amount:</span> <b style='color:#b91c1c;'>₹${f.amount || 0}</b></div>
+           </div>
+         `;
+      });
+      view.innerHTML = slipHtml;
+      return;
+    }
+
+    let m = getCalculatedSeasonMetrics(targets);
+    let matchedText = (extractedSearchToken.length > 1) ? `Filtered: ${extractedSearchToken}` : "Pure Season Data";
+    view.innerHTML = `
+      <b>🤖 AI Master Engine Dynamic Analysis (${matchedText}):</b><br>
+      • Selected Rows Matched: <b>${m.entriesCount} entries</b><br>
+      • Combined Bores/Bags: <b>${m.finalBore} Bags | Extra: ${m.extraKg} Kg</b><br>
+      • Combined Net Payout Amount: <b style="color:var(--danger)">₹${m.netPayout.toFixed(2)}</b>
+      <br>• Total Fasal Cut Deduction: <b>${m.cutQtl.toFixed(2)} Qtl</b>
+    `;
+  });
+}
+
 function clearReportSearch(){
   document.getElementById("reportSearch").value = "";
   document.getElementById("repFrom").value = "";
