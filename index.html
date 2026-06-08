@@ -94,13 +94,94 @@ tbody td:nth-child(2){
  color: var(--primary);
 }
 
+/* --- ADVANCED SECURITY LOCK UI STYLING --- */
 #lockScreen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #ffffff; z-index: 99999; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 30px; box-sizing: border-box;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    z-index: 99999; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
 }
-.lock-container { width: 100%; max-width: 320px; text-align: center; }
-.pin-dot-input { letter-spacing: 12px; font-size: 28px; text-align: center; font-weight: bold; border: 2px solid var(--primary); }
+.lock-card { 
+    background: rgba(30, 41, 59, 0.75); 
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 40px 25px; 
+    border-radius: 28px; 
+    width: 100%; 
+    max-width: 350px; 
+    text-align: center; 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lock-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: -0.5px;
+}
+.lock-status {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+.pin-dot-input { 
+    letter-spacing: 16px; 
+    font-size: 32px; 
+    text-align: center; 
+    font-weight: bold; 
+    border: 2px solid #334155; 
+    border-radius: 14px;
+    background: #0f172a;
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 12px;
+}
+.pin-dot-input:focus {
+    border-color: #3b82f6;
+    background: #0f172a;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+    outline: none;
+}
+.lock-btn {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    transition: all 0.2s ease;
+}
+.lock-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 20px -3px rgba(37, 99, 235, 0.4);
+}
+.lock-footer-dev {
+    margin-top: 35px;
+    border-top: 1px solid #334155;
+    padding-top: 20px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+.lock-footer-dev span {
+    color: #3b82f6;
+    font-weight: 700;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-top: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
 #mainAppWrapper { display: none; }
 
 .tds-calculator { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 10px; }
@@ -179,19 +260,23 @@ background: #e2e8f0 !important;
 <body>  
 
 <div id="lockScreen">
-    <div class="lock-container">
-        <h2 style="color:var(--primary); margin-bottom:10px;">🔐 Mandi App Pro</h2>
-        <p id="lockStatus">Unlock करने के लिए PIN या Fingerprint का उपयोग करें</p>
+    <div class="lock-card">
+        <h2 class="lock-title">🔐 Mandi App Pro</h2>
+        <p id="lockStatus" class="lock-status">Unlock करने के लिए PIN या Fingerprint का उपयोग करें</p>
         
-        <input type="password" id="pinInput" class="pin-dot-input" placeholder="****" maxlength="6" inputmode="numeric">
-        <button onclick="handlePinSubmit()" style="margin-top:10px; background:var(--primary);">Unlock with PIN</button>
+        <input type="password" id="pinInput" class="pin-dot-input" placeholder="••••" maxlength="6" inputmode="numeric">
+        <button onclick="handlePinSubmit()" class="lock-btn" style="margin-top:16px; width:100%;">Unlock with PIN</button>
         
-        <div id="biometricContainer" style="margin-top:15px;">
-            <button id="unlockFingerBtn" onclick="authenticateFingerprint()" style="background:var(--success); display:none;">🧬 Unlock with Fingerprint</button>
-            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:var(--secondary); font-size:13px;">📝 Register Fingerprint</button>
+        <div id="biometricContainer" style="margin-top:12px; width:100%;">
+            <button id="unlockFingerBtn" onclick="authenticateFingerprint()" class="lock-btn" style="background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); display:none; margin: 0; width:100%; box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3);">🧬 Unlock with Fingerprint</button>
+            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:#334155; color:#fff; border:none; width:100%; font-size:13px; border-radius:14px; padding:12px; font-weight:600; cursor:pointer; transition:0.3s; box-sizing:border-box;">📝 Register Fingerprint</button>
         </div>
 
-        <button onclick="handleForgotPin()" style="background:none; border:none; color:var(--danger); text-decoration:underline; font-size:13px; margin-top:15px;">Forgot PIN?</button>
+        <button onclick="handleForgotPin()" style="background:none; border:none; color:#ef4444; text-decoration:underline; font-size:13px; margin-top:20px; width:auto; padding:0; display:inline-block; cursor:pointer; font-weight:500;">Forgot PIN?</button>
+
+        <div class="lock-footer-dev">
+            🛠️ App Developed by:<br><span>Manish Saini Dhanani</span>
+        </div>
     </div>
 </div>
 
@@ -220,8 +305,11 @@ background: #e2e8f0 !important;
 
 <div class="ai-panel" id="mandiAiPanel">
   <div class="ai-header">
-    <span>🤖 Mandi AI Master Engine (Gemini Pro Integrated)</span>
-    <button onclick="runAISummary()" style="width:auto; padding:5px 12px; margin:0; font-size:12px; background:var(--primary);">📊 Auto Summary</button>
+    <span>🤖 Mandi AI Master Engine</span>
+    <div style="display:flex; gap:5px;">
+      <button onclick="runAISummary()" style="width:auto; padding:5px 12px; margin:0; font-size:12px; background:var(--primary);">📊 Summary</button>
+      <button onclick="clearAIResult()" style="width:auto; padding:5px 12px; margin:0; font-size:12px; background:var(--danger);">❌ Clear</button>
+    </div>
   </div>
   <div style="margin-bottom: 5px;">
     <span class="ai-chip" onclick="askAI('top_villages')">📍 Top 3 Village Maal</span>
@@ -240,8 +328,7 @@ background: #e2e8f0 !important;
         <option value="single">👤 Ek Person Ki (Single)</option>
       </select>
       <select id="commCustomerSelect" style="flex: 12; min-width: 150px; display: none; padding:8px; margin:0; border:1px solid #7c3aed;">
-        <!-- active customers automatically loaded here -->
-      </select>
+        </select>
       <select id="commModeSelect" style="width: 110px; padding:8px; margin:0;">
         <option value="percent">Comm %</option>
         <option value="perQtl">Comm ₹/Qtl</option>
@@ -1172,7 +1259,7 @@ function loadSeasons(){
          icon = "🌽 ";
      } else if(lowerN.includes("सरसों") || lowerN.includes("सरसो") || lowerN.includes("sarso") || lowerN.includes("mustard")) {
          icon = "🌱 ";
-     } else if(lowerN.includes("सूरजमुखी") || lowerN.includes("surajmukhi") || lowerN.includes("sunflower")) {
+     } else if(lowerN.includes("सूरजमुखी") || lowerN.includes("surajmukhi") || openCustomPreview) {
          icon = "🌻 ";
      } else if(lowerN.includes("तोरिया") || lowerN.includes("toriya")) {
          icon = "🌿 ";
@@ -1687,7 +1774,7 @@ function handleAIQuery() {
      view.innerHTML = `
         <div style="line-height:1.6;">
         <b>ℹ️ Mandi App Pro — AI Master Engine Manual Information:</b><br>
-        Aap is Smart Input Engine se seedhe niche diye gaye commands chala sakte hain:<br>
+        Aap is Smart Input Engine se seedhe niche gaye commands chala sakte hain:<br>
         <hr style='border:none; border-top:1px dashed #cbd5e1; margin:6px 0;'>
         🔹 <b>Math Calculations:</b> Type <i>"2% total commission"</i> ya <i>"tds amount"</i> poore season ka ledger bina disturb kiye live numeric report dekhne ke liye.<br>
         🔹 <b>Kisan / Gaon Filter:</b> Type <i>"Mohit village"</i> ya <i>"Shahzadpur"</i> niche chal rahi table ko live trace aur sync karne ke liye.<br>
@@ -1927,7 +2014,7 @@ function openCutReport(){
       grouped[date].forEach(r=>{
         if(!r.cutQtl || r.cutQtl == 0) return;
         const cutKg = Number(r.cutQtl || 0) * 100; dayCutKg += cutKg;
-        html += `<tr><td>${date}</td><td>${r.customer || ""}</td><td>${Math.floor(cutKg/100)}</td><td>${Math.round(cutKg%100)}</td></tr>`;
+        html += `<tr><td>${date}</td><td>${r.customer || ""}</td><td>${Math.floor(dayCutKg/100)}</td><td>${Math.round(dayCutKg%100)}</td></tr>`;
       });
       if(dayCutKg > 0) html += `<tr style="background:#fee2e2; font-weight:bold;"><td colspan="2">${date} Total</td><td>${Math.floor(dayCutKg/100)}</td><td>${Math.round(dayCutKg%100)}</td></tr>`;
     });
@@ -2001,12 +2088,16 @@ function fixAllOrder(){
 
 /* --- BILKUL NAYE INJECTED FUNCTIONS --- */
 
-// Tax List wise interactive launcher with internal dynamic date pickers
+// Naya close controller panel click context trigger function
+function clearAIResult() {
+  document.getElementById("aiResultView").innerHTML = "Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.";
+  document.getElementById("aiQueryInput").value = "";
+}
+
 function viewTaxListWise() {
   const s = document.getElementById("season").value;
   if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
   
-  // Get main screen initial search date limits as pre-filled values
   const mainFrom = document.getElementById("fromDate").value;
   const mainTo = document.getElementById("toDate").value;
   
@@ -2014,7 +2105,6 @@ function viewTaxListWise() {
     window.currentTaxEntries = [];
     snap.forEach(child => { window.currentTaxEntries.push({ id: child.key, ...child.val() }); });
     
-    // Inject custom dedicated Start/End live inputs directly inside panel view
     let html = `
       <div style="background:#fff3e0; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ffe0b2;">
         <b style="color:#e65100; font-size:14px;">📅 Live Date Range Filter for Tax:</b>
@@ -2027,11 +2117,10 @@ function viewTaxListWise() {
     `;
     
     document.getElementById("aiResultView").innerHTML = html;
-    filterTaxListByDate(); // Render initial list state immediately
+    filterTaxListByDate(); 
   });
 }
 
-// Inner filter controller execution context for localized instant UI redraw
 function filterTaxListByDate() {
   const from = document.getElementById("taxFromDate").value;
   const to = document.getElementById("taxToDate").value;
@@ -2041,7 +2130,6 @@ function filterTaxListByDate() {
   
   let entries = [...window.currentTaxEntries];
   
-  // Process the local dataset filter array on value updates
   if(from) entries = entries.filter(r => r.date >= from);
   if(to) entries = entries.filter(r => r.date <= to);
   
@@ -2194,7 +2282,7 @@ function applyQuickCommission() {
     });
 
     if(matchedCount === 0) {
-      alert("Koi matching entry nahi mila!");
+      alert("Koi matching entry nahi mili!");
       return;
     }
 
