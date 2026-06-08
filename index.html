@@ -8,7 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
 <style>  
 
-:root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; }
+:root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; color: #1e293b; }
 body{font-family:'Segoe UI',Arial,sans-serif;padding:12px;background: var(--bg); color: #1e293b;}  
 button,input,select{  
  width:100%;padding:12px;margin:6px 0;border-radius:8px;  
@@ -228,7 +228,29 @@ background: #e2e8f0 !important;
     <span class="ai-chip" onclick="askAI('top_customers')">👤 Top 3 Customer</span>
     <span class="ai-chip" onclick="askAI('cut_summary')">📉 Cut Summary</span>
     <span class="ai-chip" onclick="askAI('cash_flow')">💰 Total Net Payout</span>
+    <span class="ai-chip" onclick="viewTaxListWise()" style="background:#d97706; color:#fff;">📋 Tax List-Wise</span>
+    <span class="ai-chip" onclick="viewCommissionTracker()" style="background:#7c3aed; color:#fff;">⚠️ Missing Comm Tracker</span>
   </div>
+
+  <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin: 8px 0; border: 1px solid #cbd5e1;">
+    <b style="color: #4338ca; font-size: 13px;">📊 Quick Commission Modifier (No Typing):</b>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px;">
+      <select id="commTargetSelect" style="flex: 1; min-width: 120px; padding:8px; margin:0;" onchange="toggleCommTargetView()">
+        <option value="all">👥 Sabki Ek Sath (Bulk)</option>
+        <option value="single">👤 Ek Person Ki (Single)</option>
+      </select>
+      <select id="commCustomerSelect" style="flex: 12; min-width: 150px; display: none; padding:8px; margin:0; border:1px solid #7c3aed;">
+        <!-- active customers automatically loaded here -->
+      </select>
+      <select id="commModeSelect" style="width: 110px; padding:8px; margin:0;">
+        <option value="percent">Comm %</option>
+        <option value="perQtl">Comm ₹/Qtl</option>
+      </select>
+      <input type="number" id="commValueInput" placeholder="Value" style="width: 80px; padding:8px; margin:0;">
+      <button onclick="applyQuickCommission()" style="width: auto; background: var(--success); margin: 0; padding: 0 15px; font-size:13px;">Apply</button>
+    </div>
+  </div>
+
   <div style="display:flex; gap:6px;">
     <input type="text" id="aiQueryInput" list="aiSuggestionsList" placeholder="Sawal ya command (e.g. app info)..." style="margin:0; padding:10px;">
     <datalist id="aiSuggestionsList"></datalist>
@@ -731,8 +753,8 @@ function openEntryScreen(){
   document.getElementById("customBWContainer").style.display = "none";
   document.getElementById("cutManual").checked = false;
   document.getElementById("applyGst").checked = false;
-  document.getElementById("applyMandiTax").checked = false; // Reset Tax Checkbox
-  document.getElementById("mandiTaxPercent").value = "1"; // Default tax value
+  document.getElementById("applyMandiTax").checked = false; 
+  document.getElementById("mandiTaxPercent").value = "1"; 
   document.getElementById("fasalCutUnit").value = "kg";
   document.getElementById("fasalCutDisplay").innerText = "0 Kg";
   document.getElementById("cutBagVal").value =
@@ -869,7 +891,6 @@ const qtl = finalQtl;
   const net = gross - cut - Number(exDed || 0);
   const baseForGst = gross + cut + exDed + commission; 
   
-  // MANDI TAX CALCULATION (Sirf Crop Gross Amount par bina extra add kiye)
   let mandiTaxAmount = 0;
   let taxPercentVal = 0;
   if(document.getElementById("applyMandiTax") && document.getElementById("applyMandiTax").checked) {
@@ -938,7 +959,7 @@ function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP,
           <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Commission</th><td style="padding:5px; color:green; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
           <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Tax (${taxPercent}%)</th><td style="padding:5px; color:#d97706; font-weight:bold;">₹${taxAmt.toFixed(2)}</td></tr>
           <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Total GST</th><td style="padding:5px; color:#1e293b;">₹${gstAmount.toFixed(2)}</td></tr>
-          <tr style="background:#eff6ff; font-weight:bold; color:#1e293b;"><th style="padding:5px; text-align:left; color:#1e293b;">Final Govt Amt</th><td style="padding:10px; color:#2563eb;">₹${(finalAfter + taxAmt).toFixed(2)}</td></tr>
+          <tr style="background:#eff6ff; font-weight:bold; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b;">Final Govt Amt</th><td style="padding:10px; color:#2563eb;">₹${(finalAfter + taxAmt).toFixed(2)}</td></tr>
         </table>
       </div>
     </div>
@@ -977,8 +998,8 @@ cutQtl: window.cutQtl || 0,
   cutManualChecked: document.getElementById("cutManual").checked,
   cutManualVal: Number(document.getElementById("cutManualVal").value || 0),
   applyGstChecked: document.getElementById("applyGst").checked,
-  applyMandiTaxChecked: document.getElementById("applyMandiTax").checked, // Save Tax checkbox state
-  mandiTaxPercent: Number(document.getElementById("mandiTaxPercent").value || 0), // Save Tax percent value
+  applyMandiTaxChecked: document.getElementById("applyMandiTax").checked, 
+  mandiTaxPercent: Number(document.getElementById("mandiTaxPercent").value || 0), 
   amount: document.getElementById("amount").value,
   note: document.getElementById("note").value,
   date: finalDate,
@@ -1381,6 +1402,12 @@ function loadSuggestions(){
         document.getElementById(f+"List").innerHTML = vals.map(n=>`<option value="${n}">`).join("");
     });
 
+    const uniqueCustomers = [...new Set(data.map(d => d.customer).filter(Boolean))].sort();
+    const commCustSel = document.getElementById("commCustomerSelect");
+    if(commCustSel) {
+      commCustSel.innerHTML = uniqueCustomers.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
     let aiSugs = [];
     data.forEach(d => {
        if(d.customer) aiSugs.push(d.customer.trim());
@@ -1423,7 +1450,6 @@ function openForcedPreview(id, forceType) {
        let dedVal = Number(r.extraDeduction || 0);
        let baseGst = grossVal + labVal + dedVal + commVal;
        
-       // Dynamic Mandi Tax for Pakki Parchi Output
        let taxAmt = 0;
        let taxPercentText = "";
        if(r.applyMandiTaxChecked) {
@@ -1968,6 +1994,213 @@ function fixAllOrder(){
 
     db.ref().update(updates).then(() => {
       alert("All Dates and Orders Fixed Successfully ✅");
+      loadSeason();
+    });
+  });
+}
+
+/* --- BILKUL NAYE INJECTED FUNCTIONS --- */
+
+// Tax List wise interactive launcher with internal dynamic date pickers
+function viewTaxListWise() {
+  const s = document.getElementById("season").value;
+  if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
+  
+  // Get main screen initial search date limits as pre-filled values
+  const mainFrom = document.getElementById("fromDate").value;
+  const mainTo = document.getElementById("toDate").value;
+  
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+    window.currentTaxEntries = [];
+    snap.forEach(child => { window.currentTaxEntries.push({ id: child.key, ...child.val() }); });
+    
+    // Inject custom dedicated Start/End live inputs directly inside panel view
+    let html = `
+      <div style="background:#fff3e0; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ffe0b2;">
+        <b style="color:#e65100; font-size:14px;">📅 Live Date Range Filter for Tax:</b>
+        <div style="display:flex; gap:8px; margin-top:5px;">
+          <div style="flex:1;"><small>Start Date (Se):</small><input type="date" id="taxFromDate" value="${mainFrom}" oninput="filterTaxListByDate()"></div>
+          <div style="flex:1;"><small>End Date (Tak):</small><input type="date" id="taxToDate" value="${mainTo}" oninput="filterTaxListByDate()"></div>
+        </div>
+      </div>
+      <div id="taxListTableContainer"></div>
+    `;
+    
+    document.getElementById("aiResultView").innerHTML = html;
+    filterTaxListByDate(); // Render initial list state immediately
+  });
+}
+
+// Inner filter controller execution context for localized instant UI redraw
+function filterTaxListByDate() {
+  const from = document.getElementById("taxFromDate").value;
+  const to = document.getElementById("taxToDate").value;
+  const container = document.getElementById("taxListTableContainer");
+  
+  if(!container || !window.currentTaxEntries) return;
+  
+  let entries = [...window.currentTaxEntries];
+  
+  // Process the local dataset filter array on value updates
+  if(from) entries = entries.filter(r => r.date >= from);
+  if(to) entries = entries.filter(r => r.date <= to);
+  
+  if(entries.length === 0) {
+    container.innerHTML = `<div style="color:red; font-weight:bold; padding:15px; text-align:center; background:white; border-radius:6px;">Is select kiye gaye time frame/dates me koi data nahi mila!</div>`;
+    return;
+  }
+  
+  let totalTaxSum = 0;
+  let html = `<table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">`;
+  html += `<tr style="background:#d97706; color:white;"><th style="padding:6px;">Date</th><th style="padding:6px;">Customer Name</th><th style="padding:6px;">Tax %</th><th style="padding:6px;">Tax Amt (₹)</th></tr>`;
+  
+  entries.forEach(e => {
+    let gross = Number(e.rate || 0) * Number(e.finalQtl || e.qtlValue || 0);
+    let taxAmt = 0;
+    if (e.applyMandiTaxChecked) {
+      taxAmt = (gross * Number(e.mandiTaxPercent || 0)) / 100;
+    }
+    totalTaxSum += taxAmt;
+    
+    html += `<tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
+      <td style="padding:6px;">${e.date || "-"}</td>
+      <td style="padding:6px;"><b>${e.customer || "-"}</b> <small style="color:#64748b;">(${e.village || ""})</small></td>
+      <td style="padding:6px;">${e.applyMandiTaxChecked ? (e.mandiTaxPercent + '%') : '0%'}</td>
+      <td style="padding:6px; font-weight:bold; color:#b45309;">₹${taxAmt.toFixed(2)}</td>
+    </tr>`;
+  });
+  
+  html += `<tr style="background:#fef3c7; font-weight:bold;">
+    <td colspan="3" style="padding:8px; text-align:right;">Grand Total Tax Amount:</td>
+    <td style="padding:8px; color:#b45309; font-size:14px;">₹${totalTaxSum.toFixed(2)}</td>
+  </tr>`;
+  html += `</table>`;
+  
+  container.innerHTML = html;
+}
+
+function viewCommissionTracker() {
+  const s = document.getElementById("season").value;
+  if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
+  
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+    let entries = [];
+    snap.forEach(child => { entries.push({ id: child.key, ...child.val() }); });
+    
+    if(entries.length === 0) { document.getElementById("aiResultView").innerText = "Is season me koi data nahi hai."; return; }
+    
+    let totalCommSum = 0;
+    let missingCommEntries = [];
+    
+    entries.forEach(e => {
+      let comm = Number(e.commission || 0);
+      totalCommSum += comm;
+      if(comm === 0) { missingCommEntries.push(e); }
+    });
+    
+    let html = `<b>💰 Commission Analyzer Tracker:</b><br>`;
+    html += `• Total System Commission Added: <b style="color:var(--success); font-size:15px;">₹${totalCommSum.toFixed(2)}</b><br><br>`;
+    html += `<b>⚠️ Entries Jinki Commission Add Nahi Hui (${missingCommEntries.length}):</b>`;
+    
+    if(missingCommEntries.length === 0) {
+      html += `<div style="color:var(--success); margin-top:5px; font-weight:bold;">🎉 Mubarak ho! Sabhi entries me commission properly added hai.</div>`;
+    } else {
+      html += `<table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; text-align:left;">`;
+      html += `<tr style="background:#7c3aed; color:white;"><th style="padding:6px;">Date</th><th style="padding:6px;">Customer Name</th><th style="padding:6px;">Village</th><th style="padding:6px;">Bore</th></tr>`;
+      
+      missingCommEntries.forEach(e => {
+        html += `<tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
+          <td style="padding:6px;">${e.date || "-"}</td>
+          <td style="padding:6px; font-weight:bold; color:#7c3aed;">${e.customer || "-"}</td>
+          <td style="padding:6px;">${e.village || "-"}</td>
+          <td style="padding:6px;">${e.bore || 0} Bags</td>
+        </tr>`;
+      });
+      html += `</table>`;
+    }
+    document.getElementById("aiResultView").innerHTML = html;
+  });
+}
+
+function toggleCommTargetView() {
+  const target = document.getElementById("commTargetSelect").value;
+  const custDropdown = document.getElementById("commCustomerSelect");
+  if(target === "single") {
+    custDropdown.style.display = "inline-block";
+  } else {
+    custDropdown.style.display = "none";
+  }
+}
+
+function applyQuickCommission() {
+  const s = document.getElementById("season").value;
+  if(!s) return;
+
+  const targetMode = document.getElementById("commTargetSelect").value;
+  const selectedCustomer = document.getElementById("commCustomerSelect").value;
+  const commMode = document.getElementById("commModeSelect").value;
+  const commValue = parseFloat(document.getElementById("commValueInput").value);
+
+  if(isNaN(commValue) || commValue < 0) {
+    alert("Kripya ek valid numeric Commission value enter karein!");
+    return;
+  }
+
+  let confMessage = targetMode === "all" 
+    ? `Kya aap SURE hain ki pure season ke SABHI customers ka commission badalkar ${commValue} karna chahte hain?`
+    : `Kya aap SURE hain ki sirf [ ${selectedCustomer} ] ka commission badalkar ${commValue} karna chahte hain?`;
+
+  if(!confirm(confMessage)) return;
+
+  db.ref("seasons/" + s + "/entries").once("value", snap => {
+    let updates = {};
+    let matchedCount = 0;
+
+    snap.forEach(child => {
+      let entryId = child.key;
+      let entryData = child.val();
+
+      if(targetMode === "all" || (targetMode === "single" && entryData.customer === selectedCustomer)) {
+        matchedCount++;
+        let updatedNode = { ...entryData };
+        
+        updatedNode.commMode = commMode;
+        updatedNode.commissionPercent = commValue;
+
+        let b = Number(updatedNode.bore || 0);
+        let extra = Number(updatedNode.extra || 0);
+        let rate = Number(updatedNode.rate || 0);
+        let exDed = Number(updatedNode.extraDeduction || 0);
+        let bwUsed = Number(updatedNode.customBW || currentDefaultBW || 50);
+
+        let cut = 0;
+        let totalBags = b + (extra / bwUsed);
+        let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
+        cut += totalBags * cbVal;
+        if(updatedNode.cutManualChecked) cut += Number(updatedNode.cutManualVal || 0);
+
+        let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
+        let gross = rate * (updatedNode.finalQtl || originalQtl);
+        
+        let commission = (commMode === "percent") ? ((gross * commValue) / 100) : ((updatedNode.finalQtl || originalQtl) * commValue);
+        let net = gross - cut - exDed;
+
+        updatedNode.cut = cut.toFixed(2);
+        updatedNode.commission = commission.toFixed(2);
+        updatedNode.amount = net.toFixed(2);
+
+        updates[`seasons/${s}/entries/${entryId}`] = updatedNode;
+      }
+    });
+
+    if(matchedCount === 0) {
+      alert("Koi matching entry nahi mila!");
+      return;
+    }
+
+    db.ref().update(updates).then(() => {
+      alert(`Success! Total ${matchedCount} entries ka commission update ho gaya hai. ✅`);
+      document.getElementById("commValueInput").value = "";
       loadSeason();
     });
   });
