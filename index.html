@@ -800,14 +800,23 @@ function openCustomPreview() {
 `;
        
     let rowsToPrint = selectedChecks.length > 0 ? Array.from(selectedChecks).map(chk => chk.closest('tr')) : Array.from(document.querySelectorAll('#output tr'));
-    let printBore = 0;
+    let totalKgRaw = 0;
     rowsToPrint.forEach(tr => {
         let cells = tr.querySelectorAll('td');
         tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cells[2].innerText}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText}</td><td>${cells[8].innerText}</td><td>${cells[9].innerText.replace(/Comm:.*\n?/g,"")}</td></tr>`;
-        printBore += Number(cells[5].innerText || 0);
+        
+        let b = Number(tr.getAttribute('data-bore') || 0);
+        let e = Number(tr.getAttribute('data-extra') || 0);
+        let w = Number(tr.getAttribute('data-bw') || currentDefaultBW || 50);
+        totalKgRaw += (b * w) + e;
     });
     tableHTML += `</tbody></table></div>`;
-    content += `<p style="text-align:center;"><b>Entries:</b> ${rowsToPrint.length} | <b>Total Bore:</b> ${printBore}</p>` + tableHTML;
+    
+    let bw = currentDefaultBW || 50;
+    let finalBoreCount = Math.floor(totalKgRaw / bw);
+    let finalExtraKg = Math.round(totalKgRaw % bw);
+
+    content += `<p style="text-align:center;"><b>Entries:</b> ${rowsToPrint.length} | <b>Total Bore:</b> ${finalBoreCount} Bore | <b>Extra:</b> ${finalExtraKg} Kg</p>` + tableHTML;
     document.getElementById('previewContent').innerHTML = content;
     document.getElementById('printPreviewModal').style.display = 'flex';
     document.getElementById('zoomRange').value = 0.7;
@@ -1139,7 +1148,7 @@ let totalKgRaw = 0;
     const kgPart = Math.round(qKg % 100);
 
     output.innerHTML += `
-    <tr data-id="${r.id}">
+    <tr data-id="${r.id}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}">
       <td><input type="checkbox" class="print-row-check"></td>
       <td>${r.date || ""}</td>
       <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="singleClickPrint('${r.id}')" ondblclick="doubleClickEdit('${r.id}')">${r.customer || ""}</td>
@@ -1186,9 +1195,17 @@ Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
     </tr>`;
   });  
 
-  document.getElementById("totalBore").innerText = totalBoreSum + " | Extra: " + totalExtraSum + " Kg";
-  document.getElementById("totalComm").innerText = totalC.toFixed(2);
-  document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Quintal " + Math.round(totalKg%100) + " Kg";
+  const bw = currentDefaultBW || 50;
+
+const finalBoreCount = Math.floor(totalKgRaw / bw);
+const finalExtraKg = Math.round(totalKgRaw % bw);
+
+document.getElementById("totalBore").innerText =
+finalBoreCount + " Bore | Extra: " + finalExtraKg + " Kg";
+
+document.getElementById("totalQtl").innerText =
+Math.floor(totalKgRaw / 100) + " Quintal " +
+Math.round(totalKgRaw % 100) + " Kg";
   calculateTdsAmount();
 }
   
@@ -1444,7 +1461,26 @@ let sortedDates = Object.keys(grouped).sort((a,b)=>
 repSort==="oldest" ? a.localeCompare(b) : b.localeCompare(a)
 );
 
+let bw = currentDefaultBW || 50;
+let grandTotalKgRaw = 0;
+let grandTotalKgSum = 0;
+
+arr.forEach(r => {
+  let rowBw = Number(r.customBW || bw);
+  let rowBore = Number(r.bore || 0);
+  let rowExtra = Number(r.extra || 0);
+  grandTotalKgRaw += (rowBore * rowBw) + rowExtra;
+  grandTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+});
+
+let grandFinalBore = Math.floor(grandTotalKgRaw / bw);
+let grandFinalExtra = Math.round(grandTotalKgRaw % bw);
+
 let html = `
+<div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.5;">
+  <b>📊 All Dates Combined Grand Total (सभी तारीखों का कुल जोड़):</b><br>
+  Total Entries: <b>${arr.length}</b> | All Bore: <b>${grandFinalBore} Bags</b> | All Extra: <b>${grandFinalExtra} Kg</b> | Kul Vazan: <b>${Math.floor(grandTotalKgSum / 100)} Qtl ${Math.round(grandTotalKgSum % 100)} Kg</b>
+</div>
 <table>
 <thead>
 <tr style="background:#2563eb;color:white">
@@ -1461,22 +1497,51 @@ let html = `
 <tbody>
 `;
 
-sortedDates.forEach(date=>{
-  let totalKg = 0;
-  grouped[date].forEach(r=>{
-    const bw = Number(r.customBW || currentDefaultBW || 50);
-    const bore = Number(r.bore || 0);
-    const extra = Number(r.extra || 0);
-    totalKg += (bore * bw) + extra;
-  });
-  const bagWeight = currentDefaultBW || 50;
-  const finalBore = Math.floor(totalKg / bagWeight);
-  const finalExtra = totalKg % bagWeight;
+let chronologicalArr = [...arr].sort((a,b) => a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
+let runningTotalKgRaw = 0;
+let runningTotalKgSum = 0;
+let cumulativeTotalsByDate = {};
 
-  html += `<tr class="report-date-row"><td colspan="8">${date} | Entries: ${grouped[date].length} | Bore: ${finalBore} | Extra: ${finalExtra} Kg</td></tr>`;
+chronologicalArr.forEach(r => {
+  let rowBw = Number(r.customBW || bw);
+  let rowBore = Number(r.bore || 0);
+  let rowExtra = Number(r.extra || 0);
+  runningTotalKgRaw += (rowBore * rowBw) + rowExtra;
+  runningTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+  cumulativeTotalsByDate[r.date] = {
+    kgRaw: runningTotalKgRaw,
+    qtlSum: runningTotalKgSum
+  };
+});
+
+sortedDates.forEach(date=>{
+  let dayTotalKgRaw = 0;
+  let dayTotalKgSum = 0;
+
+  grouped[date].forEach(r=>{
+    let rowBw = Number(r.customBW || bw);
+    let rowBore = Number(r.bore || 0);
+    let rowExtra = Number(r.extra || 0);
+    dayTotalKgRaw += (rowBore * rowBw) + rowExtra;
+    dayTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+  });
+
+  let dayFinalBore = Math.floor(dayTotalKgRaw / bw);
+  let dayFinalExtra = Math.round(dayTotalKgRaw % bw);
+
+  const dayQtlPart = Math.floor(dayTotalKgSum / 100);
+  const dayKgPart = Math.round(dayTotalKgSum % 100);
+
+  const cum = cumulativeTotalsByDate[date];
+  let cumFinalBore = Math.floor(cum.kgRaw / bw);
+  let cumFinalExtra = Math.round(cum.kgRaw % bw);
+  const cumQtlPart = Math.floor(cum.qtlSum / 100);
+  const cumKgPart = Math.round(cum.qtlSum % 100);
+
+  html += `<tr class="report-date-row"><td colspan="8" style="text-align:left; padding:10px; line-height:1.6;"><b>📅 ${date} | Entries: ${grouped[date].length}</b><br><span style="color:#1e40af;">● Aaj Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Vazan: <b>${dayQtlPart} Qtl ${dayKgPart} Kg</b><br><span style="color:#16a34a;">● Is Tareekh Tak Kul (Back Total):</span> Bore: <b>${cumFinalBore}</b> | Extra: <b>${cumFinalExtra} Kg</b> | Kul Vazan: <b>${cumQtlPart} Qtl ${cumKgPart} Kg</b></td></tr>`;
 
   grouped[date].forEach((r,i)=>{
-    const qKg = Number(r.qtlValue || 0) * 100;
+    const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
     const qtlPart = Math.floor(qKg / 100);
     const kgPart = Math.round(qKg % 100);
     html += `<tr><td>${i+1}</td><td>${r.customer || ""}</td><td>${r.father || ""}</td><td>${r.village || ""}</td><td>${r.bore || 0}</td><td>${r.extra || 0}</td><td>${qtlPart} Qtl</td><td>${kgPart} Kg</td></tr>`;
@@ -1856,7 +1921,8 @@ function handleAIQuery() {
        </thead>
        <tbody>
        `;
-       let printBore = 0;
+       let printTotalKgRaw = 0;
+       let bw = currentDefaultBW || 50;
        targets.forEach(t => {
            let qKg = Number(t.finalQtl || t.qtlValue || 0) * 100;
            tableHTML += `<tr>
@@ -1870,10 +1936,18 @@ function handleAIQuery() {
              <td>${Math.floor(qKg / 100)} Qtl ${Math.round(qKg % 100)} Kg</td>
              <td><b>₹${t.amount || 0}</b></td>
            </tr>`;
-           printBore += Number(t.bore || 0);
+           
+           let rowBw = Number(t.customBW || bw);
+           let rowBore = Number(t.bore || 0);
+           let rowExtra = Number(t.extra || 0);
+           printTotalKgRaw += (rowBore * rowBw) + rowExtra;
        });
        tableHTML += `</tbody></table></div>`;
-       content += `<p style="text-align:center;"><b>Total:</b> ${targets.length} Entries | <b>Total Bore:</b> ${printBore}</p>` + tableHTML;
+       
+       let finalBoreCount = Math.floor(printTotalKgRaw / bw);
+       let finalExtraKg = Math.round(printTotalKgRaw % bw);
+
+       content += `<p style="text-align:center;"><b>Total:</b> ${targets.length} Entries | <b>Total Bore:</b> ${finalBoreCount} Bore | <b>Extra:</b> ${finalExtraKg} Kg</p>` + tableHTML;
        
        document.getElementById('previewContent').innerHTML = content;
        document.getElementById('printPreviewModal').style.display = 'flex';
