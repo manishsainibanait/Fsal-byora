@@ -844,11 +844,17 @@ function openEntryScreen(){
   document.getElementById("mandiTaxPercent").value = "1"; 
   document.getElementById("fasalCutUnit").value = "kg";
   document.getElementById("fasalCutDisplay").innerText = "0 Kg";
-  document.getElementById("cutBagVal").value =
-localStorage.getItem("lastLabour") || "60";
-  if(localStorage.getItem('mandiLastRate')) document.getElementById('rate').value = localStorage.getItem('mandiLastRate');
-  if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
-  if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
+  
+  document.getElementById("cutBagVal").value = localStorage.getItem("lastLabour_" + s) || localStorage.getItem("lastLabour") || "60";
+  if(localStorage.getItem('mandiLastRate_' + s)) document.getElementById('rate').value = localStorage.getItem('mandiLastRate_' + s);
+  else if(localStorage.getItem('mandiLastRate')) document.getElementById('rate').value = localStorage.getItem('mandiLastRate');
+  
+  if(localStorage.getItem('mandiCommPercent_' + s)) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent_' + s);
+  else if(localStorage.getItem('mandiCommPercent')) document.getElementById('commissionPercent').value = localStorage.getItem('mandiCommPercent');
+  
+  if(localStorage.getItem('mandiCommMode_' + s)) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode_' + s);
+  else if(localStorage.getItem('mandiCommMode')) document.getElementById('commMode').value = localStorage.getItem('mandiCommMode');
+
   document.getElementById("extraDeduction").value = 0;
   document.getElementById("cutManualVal").value = 0;
   document.getElementById("entrySeasonLabel").innerText = "Season: " + s;
@@ -1055,11 +1061,13 @@ function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP,
   
 function saveEntry(){  
  const s = document.getElementById("season").value; if(!s) return;
+ localStorage.setItem('mandiLastRate_' + s, document.getElementById("rate").value);
  localStorage.setItem('mandiLastRate', document.getElementById("rate").value);
-localStorage.setItem(
-  "lastLabour",
-  document.getElementById("cutBagVal").value
-); localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
+ localStorage.setItem("lastLabour_" + s, document.getElementById("cutBagVal").value); 
+ localStorage.setItem("lastLabour", document.getElementById("cutBagVal").value); 
+ localStorage.setItem('mandiCommPercent_' + s, document.getElementById("commissionPercent").value);
+ localStorage.setItem('mandiCommPercent', document.getElementById("commissionPercent").value);
+ localStorage.setItem('mandiCommMode_' + s, document.getElementById("commMode").value);
  localStorage.setItem('mandiCommMode', document.getElementById("commMode").value);
 
  const inputDate = document.getElementById("entryDate").value;
@@ -1108,16 +1116,22 @@ function updateTable(arr){
   output.innerHTML = ""; 
   let totalB = 0, totalKg = 0, totalC = 0;  
 let totalKgRaw = 0;
+  let totalBoreSum = 0;
+  let totalExtraSum = 0;
+
   arr.forEach(r => {  
     const bw = Number(r.customBW || currentDefaultBW || 50);
-const bore = Number(r.bore || 0);
-const extra = Number(r.extra || 0);
+    const bore = Number(r.bore || 0);
+    const extra = Number(r.extra || 0);
 
-const totalKgEntry = (bore * bw) + extra;
-const finalBore = totalKgEntry / bw;
+    totalBoreSum += bore;
+    totalExtraSum += extra;
 
-totalKgRaw += totalKgEntry;
-totalB += Math.round(finalBore);
+    const totalKgEntry = (bore * bw) + extra;
+    const finalBore = totalKgEntry / bw;
+
+    totalKgRaw += totalKgEntry;
+    totalB += Math.round(finalBore);
     const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
     totalKg += qKg;
     totalC += Number(r.commission || 0);
@@ -1171,13 +1185,8 @@ Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
       </td>
     </tr>`;
   });  
-  const bw = currentDefaultBW || 50;
 
-const finalBore = Math.floor(totalKgRaw / bw);
-const extraKg = totalKgRaw % bw;
-
-document.getElementById("totalBore").innerText =
-finalBore + " | Extra: " + extraKg + " Kg";
+  document.getElementById("totalBore").innerText = totalBoreSum + " | Extra: " + totalExtraSum + " Kg";
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
   document.getElementById("totalQtl").innerText = Math.floor(totalKg/100) + " Quintal " + Math.round(totalKg%100) + " Kg";
   calculateTdsAmount();
@@ -1251,7 +1260,7 @@ function loadSeasons(){
      let cleanName = n.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim(); 
      let lowerN = cleanName.toLowerCase();
 
-     if(lowerN.includes("गेहूं") || lowerN.includes("गेहुँ") || lowerN.includes("gehu") || lowerN.includes("wheat")) {
+     if(lowerN.includes("गेहूं") || lowerN.includes("गेhuँ") || lowerN.includes("gehu") || lowerN.includes("wheat")) {
          icon = "🌾 ";
      } else if(lowerN.includes("जीरी") || lowerN.includes("धान") || lowerN.includes("chawal") || lowerN.includes("jeeri") || lowerN.includes("rice")) {
          icon = "🌾 ";
@@ -1528,8 +1537,8 @@ function openForcedPreview(id, forceType) {
        let qtlVal = Number(r.finalQtl || r.qtlValue || 0);
        let grossVal = rateVal * qtlVal;
        
-       let commInput = Number(r.commissionPercent || localStorage.getItem('mandiCommPercent') || 0);
-       let commMode = r.commMode || localStorage.getItem('mandiCommMode') || "percent";
+       let commInput = Number(r.commissionPercent || localStorage.getItem('mandiCommPercent_' + s) || localStorage.getItem('mandiCommPercent') || 0);
+       let commMode = r.commMode || localStorage.getItem('mandiCommMode_' + s) || localStorage.getItem('mandiCommMode') || "percent";
        let commVal = (commMode === "percent") ? ((grossVal * commInput) / 100) : (qtlVal * commInput);
        if(Number(r.commission) > 0) commVal = Number(r.commission);
 
@@ -2088,7 +2097,6 @@ function fixAllOrder(){
 
 /* --- BILKUL NAYE INJECTED FUNCTIONS --- */
 
-// Naya close controller panel click context trigger function
 function clearAIResult() {
   document.getElementById("aiResultView").innerHTML = "Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.";
   document.getElementById("aiQueryInput").value = "";
