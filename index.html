@@ -1206,6 +1206,9 @@ finalBoreCount + " Bore | Extra: " + finalExtraKg + " Kg";
 document.getElementById("totalQtl").innerText =
 Math.floor(totalKgRaw / 100) + " Quintal " +
 Math.round(totalKgRaw % 100) + " Kg";
+
+document.getElementById("totalComm").innerText = totalC.toFixed(2);
+
   calculateTdsAmount();
 }
   
