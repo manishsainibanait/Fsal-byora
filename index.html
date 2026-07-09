@@ -525,7 +525,7 @@ background: #e2e8f0 !important;
 </div>
 
 <div style="background:#fff1f2; padding:10px; border-radius:8px; margin-top:10px; border:1px solid #fecdd3;">
-  <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cut</div>
+  <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cult</div>
 
 <select id="fasalCutType" onchange="calcAmount()" style="margin-bottom:5px;">
   <option value="bag">Per Bag</option>
@@ -1418,7 +1418,7 @@ function saveEntry(){
              });
            });
          } else {
-           alert("Saved locally! ⚠️\n\nMandi App में तो एंट्री सेव हो गई, लेकिन Saini Trading App में इस नाम/पिता/गाँव का ग्राहक नहीं मिला! स्पेलिंग चेक करें ताकि लेजर में डेटा जा सके।");
+           alert("Saved locally! ⚠️\n\nMandi App में तो एंट्री सेव हो गई, लेकिन Saini Trading App में इस नाम/पिता/गाँव का ग्राहक नहीं मिला! ऑर्थोग्राफ़िक स्पेलिंग चेक करें ताकि लेजर में डेटा जा सके।");
            closeEntryScreen(); loadSeason();
          }
        });
@@ -1454,7 +1454,6 @@ let totalKgRaw = 0;
 
     let sukhaiBadge = r.applySukhaiChecked ? `<br><span style="color:#7c3aed; font-weight:bold; font-size:12px;">♨️ Sukhai: ${r.sukhaiBags || 0} Bags</span>` : '';
     
-    // --- SAFE NOTE TO STRING EVALUATION MATRIX TRAP ENGINE ---
     let isJFormNode = (r.isJForm === true || (r.note && String(r.note).includes("JForm")));
     let jformBadge = isJFormNode ? `<br><span style="background:#db2777; color:white; padding:2px 6px; font-size:10px; font-weight:bold; border-radius:4px; display:inline-block; margin-top:4px;">📝 J-Form Entry</span>` : '';
     let rowBgStyle = isJFormNode ? 'style="background:#fff1f2; border-left: 4px solid #db2777;"' : '';
@@ -1845,7 +1844,6 @@ function filterData(){
     if(from) arr = arr.filter(r => r.date >= from);
     if(to) arr = arr.filter(r => r.date <= to);
 
-    // --- SEPARATED SAFE STRING CAST CONVERSION FILTER MATRIX ---
     if(entryTypeFilter === "regular") {
         arr = arr.filter(r => !(r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
     } else if(entryTypeFilter === "jform") {
@@ -2722,7 +2720,7 @@ function viewCommissionTracker() {
           <td style="padding:6px;">${e.bore || 0} Bags</td>
         </tr>`;
       });
-      html += `</table>`;
+      html += `</table> Status`;
     }
     document.getElementById("aiResultView").innerHTML = html;
   });
@@ -3088,7 +3086,7 @@ function saveJForm(event) {
         applyGstChecked: false,
         applyMandiTaxChecked: false,
         applySukhaiChecked: false,
-        note: "Entry via JForm Screen Module (" + fsalName + ")",
+        note: "JForm Debit Entry - " + jFormQtl + " Qtl " + jFormExtraKg + " Kg @ ₹" + jFormRate,
         timestamp: Date.now(),
         order: Date.now()
     };
@@ -3100,13 +3098,13 @@ function saveJForm(event) {
     pushReferenceNode.set(jFormDataObject).then(() => {
         try {
             let cleanQueryName = jFormCustName.toLowerCase();
-            sSnap = sainiDb.ref("customers").once("value", sSnap => {
+            sainiDb.ref("customers").once("value", sSnap => {
                 let sainiMatchedCid = null;
                 sSnap.forEach(child => {
                     let c = child.val();
                     if(c && c.name) {
-                        let baseDbName = c.name.replace(/\s+\d+$/, "").replace(/\s+/g," ").trim().toLowerCase();
-                        if(baseDbName === cleanQueryName) {
+                        let dbName = c.name.replace(/\s+\d+$/, "").replace(/\s+/g," ").trim().toLowerCase();
+                        if(dbName === cleanQueryName) {
                             let dbFather = c.father ? c.father.trim().toLowerCase() : "-";
                             let dbVillage = c.village ? c.village.trim().toLowerCase() : "-";
                             
@@ -3133,18 +3131,20 @@ function saveJForm(event) {
                             }
                         }
                         
+                        // --- 🏛️ DYNAMIC MULTI-FIELD OVERRIDE SUITE FOR VISIBILITY IN DEBIT MODE ---
                         let sainiPayloadStructure = {
                             isFasal: false,        
                             isDebit: true,         
                             type: "debit",         
                             debit: jFormAmt,       
                             credit: 0,
-                            name: "JFORM DEBIT: " + activeSeason.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim(),
+                            // Name me crop aur quintal include kiya taaki alag se hamesha highlight ho
+                            name: fsalName + " (" + jFormQtl + " Qtl " + jFormExtraKg + " Kg)",
                             startDate: jFormDate,
                             date: jFormDate,
                             bori: defaultCalculatedBags,
                             weightPer: Number(currentDefaultBW || 50),
-                            quintal: computedTotalQtl,
+                            quintal: computedTotalQtl,  
                             extraKG: extraRemainderKg,
                             rate: jFormRate,
                             totalAmount: jFormAmt,
@@ -3152,12 +3152,13 @@ function saveJForm(event) {
                             totalCut: 0,
                             netFasal: 0,           
                             amount: jFormAmt,
-                            note: "JForm Debit Sync Module (Mandi App Pro)"
+                            // Note field me detail daali jo ledger table me explicit display hogi
+                            note: fsalName + ": " + jFormQtl + " Qtl " + jFormExtraKg + " Kg @ ₹" + jFormRate + " | JForm Debit"
                         };
                         
                         sainiDb.ref("ledgers/" + sainiMatchedCid + "/" + targetActiveAccountId + "/" + generatedEntryKeyId)
                                .set(sainiPayloadStructure).then(() => {
-                                   alert("JForm Saved Successfully! ✅\n\nSaini Trading App में यह एंट्री [ DEBIT SIDE ] खाते (" + targetActiveAccountId + ") में लाइव सिंक हो गई है! 🏛️");
+                                   alert("JForm Saved Successfully! ✅\n\nSaini Trading App Accounts Ledger में एंट्री लोड हो गई है और नोट कॉलम में वजन अपडेट हो गया है! 🏛️");
                                    closeJFormScreen();
                                    loadSeason();
                                });
