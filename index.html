@@ -280,7 +280,6 @@ background: #e2e8f0 !important;
     </div>
 </div>
 
-<!-- --- SEPARATED DYNAMIC WORKSPACE FILTER PANEL --- -->
 <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
     <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -347,7 +346,6 @@ background: #e2e8f0 !important;
     </div>
   </div>
 
-  <!-- --- SEASON DYNAMIC RATE CONTROL PANEL --- -->
   <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin: 8px 0; border: 1px solid #bbf7d0;">
     <b style="color: #166534; font-size: 13px;">🌾 Quick Rate Modifier (Bulk / Single Season Rates):</b>
     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px;">
@@ -386,8 +384,7 @@ background: #e2e8f0 !important;
 <button onclick="sortNewest()" style="background: #fff; color: #444; border: 1px solid #ccc; width: auto; flex: 1;">Newest</button>  
 <button onclick="sortOldest()" style="background: #fff; color: #444; border: 1px solid #ccc; width: auto; flex: 1;">Oldest</button>
 
-<!-- DYNAMIC ENTRY SEPARATOR FILTER DROPDOWN -->
-<select id="entryTypeFilter" onchange="filterData()" style="width: auto; flex: 1.5; margin: 0; padding: 11px; font-weight: bold; border: 2px solid #db2777; background: #fff;">
+<select id="entryTypeFilter" onchange="localStorage.setItem('mandiEntryTypeFilter', this.value); filterData();" style="width: auto; flex: 1.5; margin: 0; padding: 11px; font-weight: bold; border: 2px solid #db2777; background: #fff;">
     <option value="all">🌐 View All Data Mixed</option>
     <option value="regular">🌾 Regular Entries Only</option>
     <option value="jform">📝 J-Form Entries Only</option>
@@ -469,6 +466,11 @@ background: #e2e8f0 !important;
                 <select id="reportSort" onchange="generateReport()" style="margin:0;">
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
+                </select>
+                <select id="reportEntryTypeFilter" onchange="generateReport()" style="margin:0; border: 2px solid var(--primary); font-weight: bold;">
+                    <option value="regular">🌾 Normal / Regular Entry Only</option>
+                    <option value="jform">📝 J-Form Entry Only</option>
+                    <option value="all">🌐 Mixed (All Entries)</option>
                 </select>
                 <button onclick="window.print()" style="margin:0; background: #000; width:auto;">🖨 Print</button>
             </div>
@@ -657,11 +659,10 @@ background: #e2e8f0 !important;
 <input type="hidden" id="defaultBW">
 </div>
 
-<!-- --- MODIFIED SEASON CREATION SCREEN: ADDED EXPLICIT WORKSPACE ASSIGNER DROPDOWN --- -->
 <div id="seasonScreen">  
 <h3 id="seasonScreenTitle">Season Setup</h3>  
 <div id="workspaceYearSelectionContainer" style="margin-bottom: 8px; text-align: left;">
-    <small style="font-weight: bold; color: var(--secondary);">💼 Assign to Workspace Year (कौन्स साल में डालना है):</small>
+    <small style="font-weight: bold; color: var(--secondary);">💼 Assign to Workspace Year (कौन्स साल में डालna hai):</small>
     <select id="seasonYearSelect" style="margin: 4px 0; font-weight: bold; border: 2px solid var(--secondary);">
         <option value="2027">🚀 Year 2027 Workspace (New)</option>
         <option value="2026">🌾 Year 2026 Workspace</option>
@@ -675,7 +676,6 @@ background: #e2e8f0 !important;
   <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 
-<!-- --- MULTI CUSTOMER SUKHAI PENDING MANAGER SCREEN LAYER --- -->
 <div id="sukhaiManagerScreen">
     <div class="no-print">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
@@ -694,6 +694,14 @@ background: #e2e8f0 !important;
                     <input type="number" id="bulkSukhaiBagsInput" placeholder="Khali chhodne par automatic pure bags aa jayenge" style="margin:4px 0;">
                 </div>
                 <button onclick="applyBulkSukhaiUpdate()" style="background:#7c3aed; width:auto; padding:12px 25px; margin:0; align-self:flex-end;">Save Selected Rows ✅</button>
+            </div>
+            <div style="margin-top:12px; padding-top:8px; border-top:1px dashed #c084fc;">
+                <small style="font-weight:bold; color:#6b21a8;">🔍 Sukhai Status Filter:</small>
+                <select id="sukhaiStatusFilter" onchange="loadSukhaiManagerData()" style="padding:8px; margin:4px 0; border: 2px solid #7c3aed; font-weight: bold; width: auto; display: inline-block;">
+                    <option value="all">🌐 View All Mixed Data</option>
+                    <option value="completed">✅ Sukhai Completed Only</option>
+                    <option value="pending">❌ Sukhai Pending Only</option>
+                </select>
             </div>
         </div>
     </div>
@@ -715,7 +723,6 @@ background: #e2e8f0 !important;
     </div>
 </div>
 
-<!-- --- NEW JFORM MANAGEMENT SCREEN OVERLAY --- -->
 <div id="jformScreen">
     <h3 style="color: #db2777; margin-bottom:5px;">📝 New JForm Slip Entry</h3>
     <div style="font-weight:bold; margin-bottom:12px; color:#475569;">Workspace Platform Engine</div>
@@ -797,6 +804,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!localStorage.getItem("app_pin")) {
         localStorage.setItem("app_pin", "1234");
     }
+    
+    // --- PERSISTENT SELECTION MODIFICATION HOOK ON RELOAD ---
+    if(localStorage.getItem('mandiEntryTypeFilter')) {
+        document.getElementById("entryTypeFilter").value = localStorage.getItem('mandiEntryTypeFilter');
+    }
+
     refreshBiometricUI();
     if(localStorage.getItem("fingerprintCredential")) {
         setTimeout(() => { authenticateFingerprint(); }, 500);
@@ -973,7 +986,7 @@ firebase.initializeApp({
 });  
 const db=firebase.database();  
 
-// 2nd App (सैनी ट्रेडिंग कंपनी) का डेटाबेस वेरिएबल डिक्लेरेशन
+// 2nd App (सैनी ट्रेडिंग कंपनी) का डेटाbereich Variable Declaration
 const sainiFirebaseConfig = {
   apiKey: "AIzaSyB30K96un0DsFbJ0-dx329za1HEnky3iC8",
   authDomain: "ms-saini.firebaseapp.com",
@@ -1878,6 +1891,7 @@ const from = document.getElementById("repFrom").value;
 const to = document.getElementById("repTo").value;
 const s = document.getElementById("season").value;
 const repSort = document.getElementById("reportSort").value;
+const repType = document.getElementById("reportEntryTypeFilter").value; // --- REPORT TYPE CAPTURE LOGIC ---
 
 if(!s) return;
 
@@ -1894,6 +1908,13 @@ arr = arr.filter(r =>
 
 if(from) arr = arr.filter(r => r.date >= from);
 if(to) arr = arr.filter(r => r.date <= to);
+
+// --- REPORT SEPARATION STRATEGY FILTER IMPLEMENTATION ---
+if(repType === "regular") {
+    arr = arr.filter(r => !(r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
+} else if(repType === "jform") {
+    arr = arr.filter(r => (r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
+}
 
 if(repSort === "oldest")
 arr.sort((a,b)=> a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
@@ -2605,6 +2626,79 @@ function handleAIQuery() {
   });
 }
 
+function processBulkEditField(entries, s, fieldName, promptMessage) {
+  let valInput = prompt(promptMessage);
+  if (valInput === null || valInput === "") return;
+  let updateValue = Number(valInput);
+  if (isNaN(updateValue) || updateValue < 0) { alert("Invalid Number Entered!"); return; }
+
+  let updates = {};
+  entries.forEach(t => {
+    let updatedNode = { ...t };
+    if (fieldName === "cutBagVal") { updatedNode.cutBagVal = updateValue; } 
+    else { updatedNode[fieldName] = updateValue; }
+    
+    let b = Number(updatedNode.bore || 0);
+    let extra = Number(updatedNode.extra || 0);
+    let rate = Number(updatedNode.rate || 0);
+    let exDed = Number(updatedNode.extraDeduction || 0);
+    let commMode = updatedNode.commMode || "percent";
+    let commInput = Number(updatedNode.commissionPercent || 0);
+    let bwUsed = Number(updatedNode.customBW || currentDefaultBW || 50);
+    
+    let cut = 0;
+    let totalBags = b + (extra / bwUsed);
+    let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
+    cut += totalBags * cbVal;
+    
+    if(updatedNode.cutManualChecked) {
+       cut += Number(updatedNode.cutManualVal || 0);
+    }
+    
+    let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
+    let fasalCutKg = 0;
+    let fcWeightInput = Number(updatedNode.fasalCutWeight || 0);
+    let cutType = updatedNode.fasalCutType || "bag";
+
+    if(fcWeightInput > 0){
+       let unit = updatedNode.fasalCutUnit || "kg";
+       let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
+       if(cutType === "bag"){ fasalCutKg = b * weightKg; } 
+       else if(cutType === "quintal"){ fasalCutKg = originalQtl * weightKg; }
+    }
+
+    let finalQtl = originalQtl - (fasalCutKg / 100);
+    if(finalQtl < 0) finalQtl = 0;
+    
+    updatedNode.qtlValue = originalQtl;
+    updatedNode.finalQtl = finalQtl;
+    updatedNode.cutQtl = originalQtl - finalQtl;
+
+    let totalKg = finalQtl * 100;
+    let qtlPart = Math.floor(totalKg / 100);
+    let kgPart = (totalKg % 100).toFixed(1);
+    updatedNode.quintal = qtlPart + " Quintal " + kgPart + " Kg";
+
+    let gross = rate * finalQtl;
+    let commission = 0;
+    commission = (commMode === "percent") ? ((gross * commInput) / 100) : (finalQtl * commInput);
+    let net = gross - cut - exDed;
+
+    updatedNode.cut = cut.toFixed(2);
+    updatedNode.commission = commission.toFixed(2);
+    updatedNode.amount = net.toFixed(2);
+
+    let id = t.id;
+    delete updatedNode.id;
+    updates[`seasons/${s}/entries/${id}`] = updatedNode;
+  });
+
+  db.ref().update(updates).then(() => {
+    document.getElementById("aiResultView").innerHTML = `✅ AI Bulk Edit Success: <b>${entries.length} entries</b> change ho gayi hain!`;
+    loadSeason();
+  });
+}
+
 function clearAIResult() {
   document.getElementById("aiResultView").innerHTML = "Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.";
   document.getElementById("aiQueryInput").value = "";
@@ -2828,6 +2922,7 @@ function toggleAllSukhaiMgr(master) {
 
 function loadSukhaiManagerData() {
     const s = document.getElementById("season").value;
+    const sukhaiFilter = document.getElementById("sukhaiStatusFilter").value; // --- CAPTURE SUKHAI STATUS MODE ---
     db.ref("seasons/" + s + "/entries").once("value", snap => {
         const tbody = document.getElementById("sukhaiMgrTableBody");
         tbody.innerHTML = "";
@@ -2836,6 +2931,11 @@ function loadSukhaiManagerData() {
         snap.forEach(child => {
             const id = child.key;
             const r = child.val();
+            
+            // --- SUKHAI COMPLETED VS PENDING FILTER VALIDATION ---
+            if (sukhaiFilter === "completed" && !r.applySukhaiChecked) return;
+            if (sukhaiFilter === "pending" && r.applySukhaiChecked) return;
+            
             const statusText = r.applySukhaiChecked ? `✅ ${r.sukhaiBags || 0} Bags` : `❌ Pending / Sukhai Rehti Hai`;
             const rowStyle = r.applySukhaiChecked ? '' : 'style="background:#fef2f2;"';
             
@@ -3010,6 +3110,10 @@ function openJFormScreen() {
     document.getElementById("jform_fsal_name").value = detectedCrop;
     document.getElementById("jform_date").value = new Date().toISOString().split("T")[0];
     
+    // --- J-FORM CURRENT ACTIVE SEASON CURRENT RATE AUTOMATION ---
+    let autoActiveRate = localStorage.getItem('mandiLastRate_' + activeSeason) || localStorage.getItem('mandiLastRate') || "";
+    document.getElementById("jform_rate").value = autoActiveRate;
+    
     document.getElementById("jformScreen").style.display = "block";
     loadSuggestions();
     
@@ -3138,7 +3242,6 @@ function saveJForm(event) {
                             type: "debit",         
                             debit: jFormAmt,       
                             credit: 0,
-                            // Name me crop aur quintal include kiya taaki alag se hamesha highlight ho
                             name: fsalName + " (" + jFormQtl + " Qtl " + jFormExtraKg + " Kg)",
                             startDate: jFormDate,
                             date: jFormDate,
@@ -3152,7 +3255,6 @@ function saveJForm(event) {
                             totalCut: 0,
                             netFasal: 0,           
                             amount: jFormAmt,
-                            // Note field me detail daali jo ledger table me explicit display hogi
                             note: fsalName + ": " + jFormQtl + " Qtl " + jFormExtraKg + " Kg @ ₹" + jFormRate + " | JForm Debit"
                         };
                         
