@@ -784,6 +784,80 @@ const MASTER_PASSWORD = "786786";
 let isCreatingNewSeason = false; 
 let globalSeasonsObject = {}; 
 
+// APP ICON BADGE DYNAMIC REFRESH ENGINE: Current Season ke total bags ko App Icon & Browser Badge par real-time update karta hai
+function updateAppIconBadge(count) {
+  const totalBags = Math.max(0, parseInt(count) || 0);
+  
+  // 1. Web App Native Badge API (Android Chrome / Installed PWA)
+  if ('setAppBadge' in navigator) {
+    if (totalBags > 0) {
+      navigator.setAppBadge(totalBags).catch(err => console.log("App Badge error:", err));
+    } else {
+      navigator.clearAppBadge().catch(err => console.log("App Badge clear error:", err));
+    }
+  }
+  
+  // 2. Dynamic Browser Favicon Badge Generator (For Browser Tabs & Home Shortcuts)
+  try {
+    let favicon = document.querySelector("link[rel*='icon']");
+    if (!favicon) {
+      favicon = document.createElement('link');
+      favicon.rel = 'shortcut icon';
+      document.getElementsByTagName('head')[0].appendChild(favicon);
+    }
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Circle Icon Background
+    ctx.fillStyle = '#2563eb';
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Center Emoji
+    ctx.font = '26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🌾', 32, 32);
+
+    // Badge Overlay with Count
+    if (totalBags > 0) {
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.arc(48, 16, 15, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const displayTxt = totalBags > 999 ? '999+' : totalBags.toString();
+      ctx.fillText(displayTxt, 48, 16);
+    }
+    
+    favicon.href = canvas.toDataURL('image/png');
+  } catch(e) {
+    console.log("Favicon Badge update error:", e);
+  }
+
+  // 3. Dynamic Window Title Sync
+  const seasonName = document.getElementById("season") ? document.getElementById("season").value : "";
+  if (seasonName) {
+    document.title = `(${totalBags} Bags) ${seasonName} - Mandi App Pro`;
+  } else {
+    document.title = `(${totalBags} Bags) Mandi App Pro`;
+  }
+}
+
 // UNIVERSAL SPLIT ENGINE: बड़े नाम में से शुद्ध नाम, पिता और गाँव निकालने के लिए बैकअप फ़ंक्शन
 function parseRichCustomerName(val) {
     if (val.includes(" (पुत्र:") && val.includes(" - गाँव: ")) {
@@ -1292,7 +1366,7 @@ function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP,
       </div>
     </div>
   `;
-}
+}  
   
 // 🎯 REALTIME LEDGER DYNAMIC LIVE SYNC ENGINE: 1st App का एंट्री डेटा सेव होने पर 2nd App के ग्राहक के चालू (Active) लेजर खाते में लाइव भेजता है
 function saveEntry(){  
@@ -1449,7 +1523,7 @@ function updateTable(arr){
   const output = document.getElementById("output");
   output.innerHTML = ""; 
   let totalB = 0, totalKg = 0, totalC = 0;  
-let totalKgRaw = 0;
+  let totalKgRaw = 0;
 
   arr.forEach(r => {  
     const bw = Number(r.customBW || currentDefaultBW || 50);
@@ -1538,6 +1612,9 @@ ${sukhaiBadge}
   
   const mainBadge = document.getElementById("mainDashboardRateBadge");
   if(mainBadge) { mainBadge.innerText = rateTxt; }
+
+  // Dynamic Refresh Hook: Current Season ke Total Bags ko App Icon par live update karta hai
+  updateAppIconBadge(finalBoreCount);
 }
   
 function sortNewest(){ sortMode = "newest"; filterData(); }
