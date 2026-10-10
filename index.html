@@ -1,4 +1,5 @@
-<!DOCTYPE html>  <html lang="hi">  
+<!DOCTYPE html>  
+<html lang="hi">  
 <head>  
 <meta charset="UTF-8">  
 <link rel="manifest" href="manifest.json">
@@ -22,7 +23,7 @@ th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}
 th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
 .actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
 .searchBar{background:#dbeafe;padding:15px;border-radius:10px;margin-bottom:15px; border: 1px solid #bfdbfe;}  
-#entryScreen,#seasonScreen,#reportScreen,#sukhaiManagerScreen,#jformScreen{  
+#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen{  
  position:fixed;top:0;left:0;right:0;bottom:0;  
  background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
 }  
@@ -212,6 +213,12 @@ border: 1px solid #e2e8f0;
 #reportOutput th:nth-child(7), #reportOutput td:nth-child(7) { width: 11%; }
 #reportOutput th:nth-child(8), #reportOutput td:nth-child(8) { width: 14%; }
 
+/* --- CUT REPORT LAYOUT --- */
+#cutReportOutput { width: 100%; overflow: hidden; padding: 0; margin-top: 10px; }
+#cutReportOutput table { width: 100%; border-collapse: collapse; background: #fff; }
+#cutReportOutput th { font-size: 13px; padding: 10px 6px; background: var(--danger); color: white; text-align: center; position: sticky; top: 0; z-index: 10; }
+#cutReportOutput td { font-size: 13px; padding: 8px 6px; text-align: center; border: 1px solid #e2e8f0; }
+
 .report-date-row{
 font-size:14px;
 font-weight:bold;
@@ -244,7 +251,8 @@ background: #e2e8f0 !important;
 .desi-slip-card::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1px; background: rgba(239, 68, 68, 0.25); }
 .desi-slip-title { text-align: center; border-bottom: 1px solid #dcd1ab; padding-bottom: 4px; color: #854d0e; font-weight: bold; font-size: 16px; }
 .desi-slip-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e9e4c9; font-size: 13px; color: #4338ca; }
-</style>  </head>  
+</style>  
+</head>  
 <body>  
 
 <div id="lockScreen">
@@ -275,7 +283,7 @@ background: #e2e8f0 !important;
     <button onclick="logoutApp()" style="width:auto; padding:8px 15px; background:var(--danger); margin:0;">Logout 🚪</button>
     <div style="display:flex; gap:5px;">
         <button onclick="openReport()" style="width:auto; padding:8px 15px; background:var(--warning); margin:0;">📊 Report</button>
-<button onclick="openCutReport()" style="width:auto; padding:8px 15px; background:#dc2626; margin:0;">📉 Cut Report</button>
+        <button onclick="openCutReport()" style="width:auto; padding:8px 15px; background:#dc2626; margin:0;">📉 Cut Report</button>
         <button onclick="setupNewPin()" style="width:auto; padding:8px 10px; font-size:12px; background:var(--primary); margin:0;">Set PIN</button>
     </div>
 </div>
@@ -395,16 +403,21 @@ background: #e2e8f0 !important;
 </div>  
 
 <div style="display:flex;gap:8px; margin-bottom: 10px;">
-
     <button onclick="moveEntry('up')" style="background: #4b5563;">⬆ Move Up</button>
     <button onclick="moveEntry('down')" style="background: #4b5563;">⬇ Move Down</button>
-<button onclick="fixAllOrder()" style="background:red;">Fix Order</button>
+    <button onclick="fixAllOrder()" style="background:red;">Fix Order</button>
 </div>
 
 <div class="card">  
 <b>Total Bore:</b> <span id="totalBore" style="color:var(--danger); font-size: 18px;">0</span> |  
 <b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span> |  
 <b>Total Comm:</b> <span id="totalComm" style="color:var(--warning); font-size: 18px;">0</span>
+
+<!-- LIVE SUKHAI SUMMARY COUNTER BOX -->
+<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #c084fc; font-size:14px; background:#f3e8ff; padding:8px; border-radius:6px; border:1px solid #d8b4fe; color:#581c87;">
+  ♨️ <b>Sukhai Applied Total Bags:</b> <span id="dashboardSukhaiBags" style="color:#7c3aed; font-size:17px; font-weight:bold;">0 Bags</span> | 
+  <b>Farmers Count:</b> <span id="dashboardSukhaiFarmers" style="color:#6b21a8; font-size:16px; font-weight:bold;">0 Kisan</span>
+</div>
 
 <div class="tds-calculator">
     <b>TDS %:</b> <input type="number" id="tdsPercentInput" value="0" oninput="saveTdsPercent()" step="0.01">
@@ -455,9 +468,8 @@ background: #e2e8f0 !important;
             <button onclick="closeReport()" style="width:auto; background:var(--secondary);">Close</button>
         </div>
         <div class="searchBar">
-        <input id="reportSearch" placeholder="🔍 Search Name, Father or Village..." oninput="generateReport()">
-
-<button onclick="clearReportSearch()" style="background:var(--danger); margin-top:6px;">❌ Clear Search</button>
+            <input id="reportSearch" placeholder="🔍 Search Name, Father or Village..." oninput="generateReport()">
+            <button onclick="clearReportSearch()" style="background:var(--danger); margin-top:6px;">❌ Clear Search</button>
             <div style="display:flex; gap:6px;">
                 <div style="flex:1;"><small>From:</small><input type="date" id="repFrom" oninput="generateReport()"></div>
                 <div style="flex:1;"><small>To:</small><input type="date" id="repTo" oninput="generateReport()"></div>
@@ -477,6 +489,22 @@ background: #e2e8f0 !important;
         </div>
     </div>
     <div id="reportOutput"></div>
+</div>
+
+<div id="cutReportScreen">
+    <div class="no-print">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="color:var(--danger);">📉 Cut & Labour Report</h2>
+            <button onclick="closeCutReport()" style="width:auto; background:var(--secondary);">Close ❌</button>
+        </div>
+        <div class="searchBar">
+            <input id="cutReportSearch" placeholder="🔍 Search Customer, Father or Village..." oninput="generateCutReport()">
+            <div style="display:flex; gap:6px; margin-top:10px;">
+                <button onclick="window.print()" style="margin:0; background: #000; width:auto;">🖨 Print Cut Report</button>
+            </div>
+        </div>
+    </div>
+    <div id="cutReportOutput"></div>
 </div>
 
 <div id="entryScreen">
@@ -529,10 +557,11 @@ background: #e2e8f0 !important;
 <div style="background:#fff1f2; padding:10px; border-radius:8px; margin-top:10px; border:1px solid #fecdd3;">
   <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cult</div>
 
-<select id="fasalCutType" onchange="calcAmount()" style="margin-bottom:5px;">
-  <option value="bag">Per Bag</option>
-  <option value="quintal">Per Quintal</option>
-</select>  <div style="display:flex; gap:8px;">
+  <select id="fasalCutType" onchange="calcAmount()" style="margin-bottom:5px;">
+    <option value="bag">Per Bag</option>
+    <option value="quintal">Per Quintal</option>
+  </select>  
+  <div style="display:flex; gap:8px;">
     <input id="fasalCutWeight" type="number" placeholder="Weight" oninput="calcAmount()" style="flex:2;">
     <select id="fasalCutUnit" onchange="calcAmount()" style="flex:1;">
       <option value="kg">KG</option>
@@ -551,7 +580,7 @@ background: #e2e8f0 !important;
   <div style="display: flex; gap: 8px;">
     <div style="flex: 1;">
       <small style="color:#7e22ce; font-weight:500;">Sukhai Bags Count (कितने बैग सुखाए)</small>
-      <input id="sukhaiBags" type="number" placeholder="Bags quantity likhein" oninput="calcAmount()">
+      <input id="sukhaiBags" type="number" placeholder="Khali chhodne par poore bags count honge" oninput="calcAmount()">
     </div>
   </div>
 </div>
@@ -673,7 +702,7 @@ background: #e2e8f0 !important;
 <input id="seasonWeight" placeholder="Default Bore Weight (e.g. 50)">  
 <button onclick="saveSeason()" style="background: var(--success);">✔ Save Season</button>  
 <button id="deleteSeasonBtn" onclick="deleteSeason()" style="background: var(--danger);">🗑 Delete</button>  
-  <button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
+<button onclick="closeSeasonScreen()" style="background: var(--secondary);">⬅ Back</button>  
 </div>  
 
 <div id="sukhaiManagerScreen">
@@ -687,7 +716,7 @@ background: #e2e8f0 !important;
         
         <div style="background:#f3e8ff; padding:15px; border-radius:10px; margin-bottom:15px; border:1px solid #d8b4fe;">
             <b style="color:#6b21a8; font-size:14px;">📝 Bulk Update Mode (All Bags Default):</b>
-            <p style="margin:5px 0; font-size:13px; color:#581c87;">Niche di gayi list me se un sabhi customers ko tick lagayein jinki sukhai add karni hai. Box ko khali chhodne par automatic unke poore (All) bags ki sukhai save ho jayegi!</p>
+            <p style="margin:5px 0; font-size:13px; color:#581c87;">Niche di gayi list me se un sabhi customers ko tick lagayein jinki sukhai add karni hai. Box ko khali chhodne par automatic unke poore (All) bags की sukhai save ho jayegi!</p>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
                 <div style="flex:1; min-width:150px;">
                     <small style="font-weight:bold; color:#6b21a8;">Sukhai Bags Count (Khali = All Bags):</small>
@@ -779,16 +808,16 @@ background: #e2e8f0 !important;
     </form>
 </div>
 
-</div> <script>  
+</div> 
+
+<script>  
 const MASTER_PASSWORD = "786786";
 let isCreatingNewSeason = false; 
 let globalSeasonsObject = {}; 
 
-// APP ICON BADGE DYNAMIC REFRESH ENGINE: Current Season ke total bags ko App Icon & Browser Badge par real-time update karta hai
 function updateAppIconBadge(count) {
   const totalBags = Math.max(0, parseInt(count) || 0);
   
-  // 1. Web App Native Badge API (Android Chrome / Installed PWA)
   if ('setAppBadge' in navigator) {
     if (totalBags > 0) {
       navigator.setAppBadge(totalBags).catch(err => console.log("App Badge error:", err));
@@ -797,7 +826,6 @@ function updateAppIconBadge(count) {
     }
   }
   
-  // 2. Dynamic Browser Favicon Badge Generator (For Browser Tabs & Home Shortcuts)
   try {
     let favicon = document.querySelector("link[rel*='icon']");
     if (!favicon) {
@@ -811,7 +839,6 @@ function updateAppIconBadge(count) {
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
     
-    // Circle Icon Background
     ctx.fillStyle = '#2563eb';
     ctx.beginPath();
     ctx.arc(32, 32, 30, 0, 2 * Math.PI);
@@ -820,13 +847,11 @@ function updateAppIconBadge(count) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Center Emoji
     ctx.font = '26px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🌾', 32, 32);
 
-    // Badge Overlay with Count
     if (totalBags > 0) {
       ctx.fillStyle = '#dc2626';
       ctx.beginPath();
@@ -849,7 +874,6 @@ function updateAppIconBadge(count) {
     console.log("Favicon Badge update error:", e);
   }
 
-  // 3. Dynamic Window Title Sync
   const seasonName = document.getElementById("season") ? document.getElementById("season").value : "";
   if (seasonName) {
     document.title = `(${totalBags} Bags) ${seasonName} - Mandi App Pro`;
@@ -858,7 +882,6 @@ function updateAppIconBadge(count) {
   }
 }
 
-// UNIVERSAL SPLIT ENGINE: बड़े नाम में से शुद्ध नाम, पिता और गाँव निकालने के लिए बैकअप फ़ंक्शन
 function parseRichCustomerName(val) {
     if (val.includes(" (पुत्र:") && val.includes(" - गाँव: ")) {
        let namePart = val.split(" (पुत्र:")[0].trim();
@@ -879,7 +902,6 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem("app_pin", "1234");
     }
     
-    // --- PERSISTENT SELECTION MODIFICATION HOOK ON RELOAD ---
     if(localStorage.getItem('mandiEntryTypeFilter')) {
         document.getElementById("entryTypeFilter").value = localStorage.getItem('mandiEntryTypeFilter');
     }
@@ -900,7 +922,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       
-      // Jform autocomplete dynamic listener connection hook
       document.getElementById("jform_customer").addEventListener(evtName, function() {
         let parsed = parseRichCustomerName(this.value);
         if (parsed) {
@@ -970,7 +991,7 @@ function handlePinSubmit() {
 async function registerFingerprint() {
     try {
         if (!window.PublicKeyCredential || !navigator.credentials) { 
-            alert("यह डिवाइस या लोकल फाइल मोड बायोमेट्रिक को सपोर्ट नहीं करता। PIN का उपयोग करें।"); 
+            alert("यह डिवाइस बायोमेट्रिक सपोर्ट नहीं करता। PIN का उपयोग करें।"); 
             return; 
         }
         const pin = prompt("Fingerprint रजिस्टर करने के लिए apna PIN दर्ज करें:");
@@ -1060,7 +1081,6 @@ firebase.initializeApp({
 });  
 const db=firebase.database();  
 
-// 2nd App (सैनी ट्रेडिंग कंपनी) का डेटाbereich Variable Declaration
 const sainiFirebaseConfig = {
   apiKey: "AIzaSyB30K96un0DsFbJ0-dx329za1HEnky3iC8",
   authDomain: "ms-saini.firebaseapp.com",
@@ -1182,6 +1202,7 @@ function openEntryScreen(){
   });
   setTimeout(()=>{ const c = document.getElementById("customer"); c.focus(); c.select(); }, 300);
 }
+
 function closeEntryScreen(){ document.getElementById("entryScreen").style.display = "none"; editID = null; }
 
 function toggleCustomBW() {
@@ -1202,23 +1223,18 @@ function autoCalc(){
   const b = Number(document.getElementById("bore").value || 0);
   const e = Number(document.getElementById("extra").value || 0);
   const totalQtl = (b * bw + e) / 100;
-window.currentQtl = totalQtl;
-const totalKg = totalQtl * 100;
-const qtlPart = Math.floor(totalKg / 100);
-const kgPart = Math.round(totalKg % 100);
+  window.currentQtl = totalQtl;
+  const totalKg = totalQtl * 100;
+  const qtlPart = Math.floor(totalKg / 100);
+  const kgPart = Math.round(totalKg % 100);
 
-document.getElementById("fasalCutDisplay").innerText =
-qtlPart + " Qtl " + kgPart + " Kg";
+  document.getElementById("fasalCutDisplay").innerText = qtlPart + " Qtl " + kgPart + " Kg";
   calcAmount();
 }
 
 function toggleLivePreviewWindow() {
   const wrap = document.getElementById("liveParchiToggleWrapper");
-  if(wrap.style.display === "none") {
-     wrap.style.display = "block";
-  } else {
-     wrap.style.display = "none";
-  }
+  wrap.style.display = (wrap.style.display === "none") ? "block" : "none";
 }
 
 function calcAmount(){
@@ -1244,39 +1260,38 @@ function calcAmount(){
 
   const originalQtl = Number(((b * bwUsed + Number(document.getElementById("extra").value || 0)) / 100).toFixed(3));
 
-let fasalCutKg = 0;
-const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
-const cutType = document.getElementById("fasalCutType").value;
+  let fasalCutKg = 0;
+  const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
+  const cutType = document.getElementById("fasalCutType").value;
 
-if(fcWeightInput > 0){
-   const unit = document.getElementById("fasalCutUnit").value;
-   let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
+  if(fcWeightInput > 0){
+     const unit = document.getElementById("fasalCutUnit").value;
+     let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
 
-   if(cutType === "bag"){
-      fasalCutKg = b * weightKg;
-   } 
-   else if(cutType === "quintal"){
-      fasalCutKg = originalQtl * weightKg;
-   }
-}
+     if(cutType === "bag"){
+        fasalCutKg = b * weightKg;
+     } 
+     else if(cutType === "quintal"){
+        fasalCutKg = originalQtl * weightKg;
+     }
+  }
 
-const cutQtlPart = Math.floor(fasalCutKg / 100);
-const cutKgPart = (fasalCutKg % 100).toFixed(1);
+  const cutQtlPart = Math.floor(fasalCutKg / 100);
+  const cutKgPart = (fasalCutKg % 100).toFixed(1);
 
-document.getElementById("fasalCutDisplay").innerText = 
-  cutQtlPart + " Qtl " + cutKgPart + " Kg";
+  document.getElementById("fasalCutDisplay").innerText = cutQtlPart + " Qtl " + cutKgPart + " Kg";
 
-let finalQtl = originalQtl - (fasalCutKg / 100);
-if(finalQtl < 0) finalQtl = 0;
-window.finalQtl = finalQtl;
-window.cutQtl = originalQtl - finalQtl;
-const totalKg = finalQtl * 100;
+  let finalQtl = originalQtl - (fasalCutKg / 100);
+  if(finalQtl < 0) finalQtl = 0;
+  window.finalQtl = finalQtl;
+  window.cutQtl = originalQtl - finalQtl;
+  const totalKg = finalQtl * 100;
 
-const qtlPart = Math.floor(totalKg / 100);
-const kgPart = (totalKg % 100).toFixed(1);
+  const qtlPart = Math.floor(totalKg / 100);
+  const kgPart = (totalKg % 100).toFixed(1);
 
-document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg";
-const qtl = finalQtl;
+  document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg";
+  const qtl = finalQtl;
 
   if(document.getElementById("cutQtl").checked) cut += qtl * Number(document.getElementById("cutQtlVal").value || 0);
   
@@ -1332,7 +1347,6 @@ function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP,
   const container = document.getElementById("liveParchiContainer");
   if(!container) return;
 
-  const s = document.getElementById("season").value || "Current Season";
   const cust = document.getElementById("customer").value || "--- Kisan Name ---";
   const totalBags = document.getElementById("bore").value || 0;
   const qtlTxt = document.getElementById("quintal").value || "0 Quintal";
@@ -1368,7 +1382,6 @@ function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP,
   `;
 }  
   
-// 🎯 REALTIME LEDGER DYNAMIC LIVE SYNC ENGINE: 1st App का एंट्री डेटा सेव होने पर 2nd App के ग्राहक के चालू (Active) लेजर खाते में लाइव भेजता है
 function saveEntry(){  
  const s = document.getElementById("season").value; if(!s) return;
  localStorage.setItem('mandiLastRate_' + s, document.getElementById("rate").value);
@@ -1500,12 +1513,12 @@ function saveEntry(){
              };
              
              sainiDb.ref("ledgers/" + matchedCid + "/" + activeAccId + "/" + entryKey).set(sainiData).then(() => {
-                alert("Saved Successfully! ✅\n\nSaini Trading Company App में [ " + data.customer + " ] के चालू हिसाब खाता (" + activeAccId + ") में फसल लाइव सिंक हो गई है! 🌾");
+                alert("Saved Successfully! ✅\n\nSaini Trading App में [ " + data.customer + " ] के चालू हिसाब खाता में फसल लाइव सिंक हो गई है! 🌾");
                 closeEntryScreen(); loadSeason();
              });
            });
          } else {
-           alert("Saved locally! ⚠️\n\nMandi App में तो एंट्री सेव हो गई, लेकिन Saini Trading App में इस नाम/पिता/गाँव का ग्राहक नहीं मिला! ऑर्थोग्राफ़िक स्पेलिंग चेक करें ताकि लेजर में डेटा जा सके।");
+           alert("Saved locally! ⚠️\n\nMandi App में तो एंट्री सेव हो गई, लेकिन Saini Trading App में इस नाम/पिता/गाँव का ग्राहक नहीं मिला!");
            closeEntryScreen(); loadSeason();
          }
        });
@@ -1525,6 +1538,9 @@ function updateTable(arr){
   let totalB = 0, totalKg = 0, totalC = 0;  
   let totalKgRaw = 0;
 
+  let totalSukhaiBagsApplied = 0;
+  let sukhaiFarmersSet = new Set();
+
   arr.forEach(r => {  
     const bw = Number(r.customBW || currentDefaultBW || 50);
     const bore = Number(r.bore || 0);
@@ -1539,7 +1555,14 @@ function updateTable(arr){
     totalKg += qKg;
     totalC += Number(r.commission || 0);
 
-    let sukhaiBadge = r.applySukhaiChecked ? `<br><span style="color:#7c3aed; font-weight:bold; font-size:12px;">♨️ Sukhai: ${r.sukhaiBags || 0} Bags</span>` : '';
+    if(r.applySukhaiChecked) {
+      let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : bore;
+      totalSukhaiBagsApplied += actualSukhaiBags;
+      if(r.customer) sukhaiFarmersSet.add(r.customer.trim().toLowerCase());
+    }
+
+    let actualDisplayBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : bore;
+    let sukhaiBadge = r.applySukhaiChecked ? `<br><span style="color:#7c3aed; font-weight:bold; font-size:12px;">♨️ Sukhai: ${actualDisplayBags} Bags</span>` : '';
     
     let isJFormNode = (r.isJForm === true || (r.note && String(r.note).includes("JForm")));
     let jformBadge = isJFormNode ? `<br><span style="background:#db2777; color:white; padding:2px 6px; font-size:10px; font-weight:bold; border-radius:4px; display:inline-block; margin-top:4px;">📝 J-Form Entry</span>` : '';
@@ -1556,35 +1579,20 @@ function updateTable(arr){
       <td>${r.extra || 0}</td>
       <td><small>${r.note || ""}</small></td>
       <td style="font-weight:bold; line-height:1.4;">
-
-<span style="color:#16a34a;">
-${Math.floor((r.qtlValue||0))} Qtl ${Math.round(((r.qtlValue||0)%1)*100)} Kg
-</span>
-
-<br>
-
-<span style="color:#dc2626; font-size:12px;">
-Cut: ${(r.cutQtl || 0).toFixed(2)} Qtl
-</span>
-
-<br>
-
-<span style="color:#22c55e; font-size:12px;">
-Final: ${Math.floor((r.finalQtl || 0))} Qtl ${Math.round(((r.finalQtl || 0)%1)*100)} Kg
-</span>
-
-</td>
-
-<td>
-<div style="font-size:12px;">
-Gross: ₹${((r.rate || 0) * (r.finalQtl || 0)).toFixed(2)}<br>
-Rate: ₹${r.rate || 0}<br>
-Labour: ₹${r.cut || 0}<br>
-Deduction: ₹${r.extraDeduction || 0}<br>
-Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
-${sukhaiBadge}
-</div>
-</td>
+        <span style="color:#16a34a;">${Math.floor((r.qtlValue||0))} Qtl ${Math.round(((r.qtlValue||0)%1)*100)} Kg</span><br>
+        <span style="color:#dc2626; font-size:12px;">Cut: ${(r.cutQtl || 0).toFixed(2)} Qtl</span><br>
+        <span style="color:#22c55e; font-size:12px;">Final: ${Math.floor((r.finalQtl || 0))} Qtl ${Math.round(((r.finalQtl || 0)%1)*100)} Kg</span>
+      </td>
+      <td>
+        <div style="font-size:12px;">
+          Gross: ₹${((r.rate || 0) * (r.finalQtl || 0)).toFixed(2)}<br>
+          Rate: ₹${r.rate || 0}<br>
+          Labour: ₹${r.cut || 0}<br>
+          Deduction: ₹${r.extraDeduction || 0}<br>
+          Net: <b style="color:var(--danger)">₹${r.amount || 0}</b>
+          ${sukhaiBadge}
+        </div>
+      </td>
       <td>
         <button class="actionBtn" style="background:#b7791f; font-size:11px;" onclick="openForcedPreview('${r.id}', 'khachi')">📄 Kachhi</button>
         <button class="actionBtn" style="background:#2563eb; font-size:11px;" onclick="openForcedPreview('${r.id}', 'pakki')">🏛️ Pakki</button>
@@ -1602,6 +1610,11 @@ ${sukhaiBadge}
   document.getElementById("totalQtl").innerText = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round(totalKgRaw % 100) + " Kg";
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
 
+  const sukhaiBagsEl = document.getElementById("dashboardSukhaiBags");
+  const sukhaiFarmersEl = document.getElementById("dashboardSukhaiFarmers");
+  if(sukhaiBagsEl) sukhaiBagsEl.innerText = totalSukhaiBagsApplied + " Bags";
+  if(sukhaiFarmersEl) sukhaiFarmersEl.innerText = sukhaiFarmersSet.size + " Kisan";
+
   calculateTdsAmount();
 
   let uniqueRates = [...new Set(arr.map(r => Number(r.rate || 0)).filter(r => r > 0))].sort((a,b)=>a-b);
@@ -1613,7 +1626,6 @@ ${sukhaiBadge}
   const mainBadge = document.getElementById("mainDashboardRateBadge");
   if(mainBadge) { mainBadge.innerText = rateTxt; }
 
-  // Dynamic Refresh Hook: Current Season ke Total Bags ko App Icon par live update karta hai
   updateAppIconBadge(finalBoreCount);
 }
   
@@ -1695,6 +1707,26 @@ function loadSeasons(){
   
   db.ref("seasonsInfo").once("value", s => {  
    globalSeasonsObject = s.val() || {};
+   
+   if(localStorage.getItem("lastSeason") && globalSeasonsObject[localStorage.getItem("lastSeason")]) {
+      let lastSeasonName = localStorage.getItem("lastSeason");
+      let foundYear = null;
+      window.workspaceYears.forEach(yr => {
+         if(lastSeasonName.includes(yr) || lastSeasonName.toLowerCase().includes(yr.substring(2))) {
+            foundYear = yr;
+         }
+      });
+      if(foundYear) {
+         document.getElementById("yearWorkspaceFilter").value = foundYear;
+         localStorage.setItem('mandiYearWorkspace', foundYear);
+      }
+   } else if (localStorage.getItem('mandiYearWorkspace')) {
+      let savedWorkspace = localStorage.getItem('mandiYearWorkspace');
+      if([...document.getElementById("yearWorkspaceFilter").options].some(o => o.value === savedWorkspace)) {
+         document.getElementById("yearWorkspaceFilter").value = savedWorkspace;
+      }
+   }
+
    filterSeasonsByYear(); 
   });  
  });
@@ -1739,31 +1771,25 @@ function addNewYearWorkspace() {
       return;
    }
    db.ref("workspaces/" + newYr).set(true).then(() => {
-      alert("Naya Year Workspace " + newYr + " safely add ho gaya hai! 🎉");
+      alert("Naya Year Workspace safely add ho gaya hai! 🎉");
       loadSeasons();
    });
 }
 
 function deleteYearWorkspace() {
    const currentYr = document.getElementById("yearWorkspaceFilter").value;
-   if(currentYr === "all") {
-      alert("Kripya delete karne ke liye pehle dropdown se koi ek valid Year Select karein!");
-      return;
-   }
-   if(currentYr === "2025" || currentYr === "2026" || currentYr === "2027") {
-      if(!confirm("Yeh System Ka Default Year (" + currentYr + ") hai. Kya aap sure hain ki ise workspace list se hatana chahte hain? (Aapka entries data delete nahi hoga)")); return;
-   } else {
-      if(!confirm("Kya aap such me Year " + currentYr + " Workspace ko permanent delete karna chahte hain?")) return;
-   }
+   if(currentYr === "all") { alert("Pehle koi valid Year Select karein!"); return; }
+   if(!confirm("Kya aap such me Year " + currentYr + " Workspace delete karna chahte hain?")) return;
    
    db.ref("workspaces/" + currentYr).remove().then(() => {
-      alert("Year Workspace list se successfully delete ho gaya hai! ✅");
+      alert("Workspace delete ho gaya hai! ✅");
       loadSeasons();
    });
 }
 
 function filterSeasonsByYear() {
   const selectedYearTab = document.getElementById("yearWorkspaceFilter").value;
+  localStorage.setItem('mandiYearWorkspace', selectedYearTab);
   const sD = document.getElementById("season"); 
   sD.innerHTML = "";  
   
@@ -1801,12 +1827,10 @@ function filterSeasonsByYear() {
      }
 
      let icon = "📅 "; 
-     if(lowerN.includes("गेहूं") || lowerN.includes("गेhuँ") || lowerN.includes("gehu") || lowerN.includes("wheat")) { icon = "🌾 "; } 
-     else if(lowerN.includes("जीरी") || lowerN.includes("धान") || lowerN.includes("chawal") || lowerN.includes("jeeri") || lowerN.includes("rice")) { icon = "🌾 "; } 
-     else if(lowerN.includes("मक्की") || lowerN.includes("मक्का") || lowerN.includes("makki") || lowerN.includes("maize") || lowerN.includes("corn")) { icon = "🌽 "; } 
-     else if(lowerN.includes("सरसों") || lowerN.includes("सरसो") || lowerN.includes("sarso") || lowerN.includes("mustard")) { icon = "🌱 "; } 
-     else if(lowerN.includes("सूरजमुखी") || lowerN.includes("surajmukhi")) { icon = "🌻 "; } 
-     else if(lowerN.includes("तोरिया") || lowerN.includes("toriya")) { icon = "🌿 "; }
+     if(lowerN.includes("गेहूं") || lowerN.includes("gehu") || lowerN.includes("wheat")) { icon = "🌾 "; } 
+     else if(lowerN.includes("जीरी") || lowerN.includes("धान") || lowerN.includes("jeeri") || lowerN.includes("rice")) { icon = "🌾 "; } 
+     else if(lowerN.includes("मक्की") || lowerN.includes("makki")) { icon = "🌽 "; } 
+     else if(lowerN.includes("सरसों") || lowerN.includes("sarso")) { icon = "🌱 "; }
      
      sD.innerHTML += `<option value="${n}">${icon}${cleanName}</option>`; 
      addedCount++;
@@ -1816,8 +1840,11 @@ function filterSeasonsByYear() {
      sD.innerHTML = `<option value="">⚠️ No Seasons Found in ${selectedYearTab}</option>`;
      document.getElementById("mainDashboardRateBadge").innerText = "---";
   } else {
-     sD.value = localStorage.lastSeason || sD.options[0]?.value; 
-     if(!sD.value && sD.options[0]) sD.value = sD.options[0].value;
+     if (localStorage.getItem("lastSeason") && [...sD.options].some(o => o.value === localStorage.getItem("lastSeason"))) {
+        sD.value = localStorage.getItem("lastSeason");
+     } else {
+        sD.value = sD.options[0]?.value;
+     }
      onSeasonChange();
   }
 }
@@ -1825,7 +1852,7 @@ function filterSeasonsByYear() {
 function onSeasonChange(){ 
   const s = document.getElementById("season").value;
   if(!s) return;
-  localStorage.lastSeason = s;
+  localStorage.setItem("lastSeason", s);
   const saved = localStorage.getItem("mandiTdsPercent_" + s);
   document.getElementById("tdsPercentInput").value = saved || 0;
   loadSeason(); 
@@ -1873,7 +1900,7 @@ function saveSeason(){
     }
 
     db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{
-       localStorage.lastSeason=newN;
+       localStorage.setItem("lastSeason", newN);
        document.getElementById("seasonScreen").style.display="none";
        isCreatingNewSeason = false;
        document.getElementById("yearWorkspaceFilter").value = targetYear;
@@ -1892,7 +1919,7 @@ function saveSeason(){
  });
  db.ref("seasonsInfo/" + newN).set({ name:newN, defaultBw:w }).then(()=>{
    db.ref("seasonsInfo/" + oldName).remove();
-   localStorage.lastSeason=newN;
+   localStorage.setItem("lastSeason", newN);
    document.getElementById("seasonScreen").style.display="none";
    loadSeasons();
  });
@@ -1962,13 +1989,97 @@ function openReport() {
 }
 function closeReport() { document.getElementById("reportScreen").style.display = "none"; }
 
+function openCutReport() {
+    const s = document.getElementById("season").value;
+    if(!s) { alert("Pehle season select karein!"); return; }
+    document.getElementById("cutReportScreen").style.display = "block";
+    generateCutReport();
+}
+
+function closeCutReport() {
+    document.getElementById("cutReportScreen").style.display = "none";
+}
+
+function generateCutReport() {
+    const query = document.getElementById("cutReportSearch") ? document.getElementById("cutReportSearch").value.toLowerCase().trim() : "";
+    const s = document.getElementById("season").value;
+    if(!s) return;
+
+    db.ref("seasons/" + s + "/entries").once("value", snap => {
+        let arr = Object.entries(snap.val() || {}).map(([id, v]) => ({ id, ...v }));
+
+        if(query !== "") {
+            arr = arr.filter(r =>
+                (r.customer || "").toLowerCase().includes(query) ||
+                (r.father || "").toLowerCase().includes(query) ||
+                (r.village || "").toLowerCase().includes(query)
+            );
+        }
+
+        arr.sort((a,b)=> (b.date || "").localeCompare(a.date || "") || (b.order ?? b.timestamp ?? 0) - (a.order ?? a.timestamp ?? 0));
+
+        let totalLabSum = 0;
+        let totalFasalCutSum = 0;
+        let totalDedSum = 0;
+
+        arr.forEach(r => {
+            totalLabSum += Number(r.cut || 0);
+            totalFasalCutSum += Number(r.cutQtl || 0);
+            totalDedSum += Number(r.extraDeduction || 0);
+        });
+
+        let html = `
+        <div style="background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.5; border:1px solid #fca5a5;">
+            <b>📉 Cut & Labour Report Summary:</b><br>
+            Total Entries: <b>${arr.length}</b> | Total Labour Cost: <b>₹${totalLabSum.toFixed(2)}</b> | Total Fasal Cut: <b>${totalFasalCutSum.toFixed(2)} Qtl</b> | Total Extra Deduction: <b>₹${totalDedSum.toFixed(2)}</b>
+        </div>
+        <table>
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Village</th>
+            <th>Bags</th>
+            <th>Fasal Cut</th>
+            <th>Labour (₹)</th>
+            <th>Extra Deduction (₹)</th>
+            <th>Note</th>
+        </tr>
+        </thead>
+        <tbody>
+        `;
+
+        if(arr.length === 0) {
+            html += `<tr><td colspan="8" style="text-align:center; padding:20px;">Koi entries nahi mili!</td></tr>`;
+        } else {
+            arr.forEach(r => {
+                html += `
+                <tr>
+                    <td>${r.date || ""}</td>
+                    <td style="font-weight:bold; color:var(--primary);">${r.customer || ""}</td>
+                    <td>${r.village || ""}</td>
+                    <td>${r.bore || 0} Bags</td>
+                    <td style="color:#dc2626; font-weight:bold;">${(r.cutQtl || 0).toFixed(2)} Qtl</td>
+                    <td style="color:#b91c1c; font-weight:bold;">₹${Number(r.cut || 0).toFixed(2)}</td>
+                    <td style="color:#d97706;">₹${Number(r.extraDeduction || 0).toFixed(2)}</td>
+                    <td><small>${r.note || ""}</small></td>
+                </tr>
+                `;
+            });
+        }
+
+        html += `</tbody></table>`;
+        document.getElementById("cutReportOutput").innerHTML = html;
+    });
+}
+
 function generateReport() {
 const query = document.getElementById("reportSearch").value.toLowerCase().trim();
 const from = document.getElementById("repFrom").value;
 const to = document.getElementById("repTo").value;
 const s = document.getElementById("season").value;
 const repSort = document.getElementById("reportSort").value;
-const repType = document.getElementById("reportEntryTypeFilter").value; // --- REPORT TYPE CAPTURE LOGIC ---
+const repType = document.getElementById("reportEntryTypeFilter").value;
 
 if(!s) return;
 
@@ -1986,7 +2097,6 @@ arr = arr.filter(r =>
 if(from) arr = arr.filter(r => r.date >= from);
 if(to) arr = arr.filter(r => r.date <= to);
 
-// --- REPORT SEPARATION STRATEGY FILTER IMPLEMENTATION ---
 if(repType === "regular") {
     arr = arr.filter(r => !(r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
 } else if(repType === "jform") {
@@ -2020,8 +2130,10 @@ arr.forEach(r => {
   let rowExtra = Number(r.extra || 0);
   grandTotalKgRaw += (rowBore * rowBw) + rowExtra;
   grandTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+  
   if(r.applySukhaiChecked) {
-     grandTotalSukhaiBags += Number(r.sukhaiBags || 0);
+     let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
+     grandTotalSukhaiBags += actualSukhaiBags;
      if(r.customer) sukhaiCustomersSet.add(r.customer.trim());
   }
 });
@@ -2031,7 +2143,7 @@ let grandFinalExtra = Math.round(grandTotalKgRaw % bw);
 
 let html = `
 <div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.5;">
-  <b>📊 All Dates Combined Grand Total (सभी तारीखों का कुल जोड़):</b><br>
+  <b>📊 All Dates Combined Grand Total:</b><br>
   Total Entries: <b>${arr.length}</b> | All Bore: <b>${grandFinalBore} Bags</b> | All Extra: <b>${grandFinalExtra} Kg</b> | Kul Vazan: <b>${Math.floor(grandTotalKgSum / 100)} Qtl ${Math.round(grandTotalKgSum % 100)} Kg</b><br>
   <span style="color:#fde047; font-weight:bold; font-size:15px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span>
 </div>
@@ -2079,7 +2191,11 @@ sortedDates.forEach(date=>{
     let rowExtra = Number(r.extra || 0);
     dayTotalKgRaw += (rowBore * rowBw) + rowExtra;
     dayTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
-    if(r.applySukhaiChecked) dayTotalSukhai += Number(r.sukhaiBags || 0);
+    
+    if(r.applySukhaiChecked) {
+      let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
+      dayTotalSukhai += actualSukhaiBags;
+    }
   });
 
   let dayFinalBore = Math.floor(dayTotalKgRaw / bw);
@@ -2094,13 +2210,14 @@ sortedDates.forEach(date=>{
   const cumQtlPart = Math.floor(cum.qtlSum / 100);
   const cumKgPart = Math.round(cum.qtlSum % 100);
 
-  html += `<tr class="report-date-row"><td colspan="8" style="text-align:left; padding:10px; line-height:1.6;"><b>📅 ${date} | Entries: ${grouped[date].length}</b><br><span style="color:#1e40af;">● Aaj Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Vazan: <b>${dayQtlPart} Qtl ${dayKgPart} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br><span style="color:#16a34a;">● Is Tareekh Tak Kul (Back Total):</span> Bore: <b>${cumFinalBore}</b> | Extra: <b>${cumFinalExtra} Kg</b> | Kul Vazan: <b>${cumQtlPart} Qtl ${cumKgPart} Kg</b></td></tr>`;
+  html += `<tr class="report-date-row"><td colspan="8" style="text-align:left; padding:10px; line-height:1.6;"><b>📅 ${date} | Entries: ${grouped[date].length}</b><br><span style="color:#1e40af;">● Aaj Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Vazan: <b>${dayQtlPart} Qtl ${dayKgPart} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br><span style="color:#16a34a;">● Is Tareekh Tak Kul:</span> Bore: <b>${cumFinalBore}</b> | Extra: <b>${cumFinalExtra} Kg</b> | Kul Vazan: <b>${cumQtlPart} Qtl ${cumKgPart} Kg</b></td></tr>`;
 
   grouped[date].forEach((r,i)=>{
     const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
     const qtlPart = Math.floor(qKg / 100);
     const kgPart = Math.round(qKg % 100);
-    let sukhaiLabel = r.applySukhaiChecked ? ` <span style="color:#7c3aed; font-size:11px; font-weight:bold;">(♨️ Sukhai: ${r.sukhaiBags} Bags)</span>` : '';
+    let actualDisplayBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : Number(r.bore || 0);
+    let sukhaiLabel = r.applySukhaiChecked ? ` <span style="color:#7c3aed; font-size:11px; font-weight:bold;">(♨️ Sukhai: ${actualDisplayBags} Bags)</span>` : '';
     html += `<tr><td>${i+1}</td><td>${r.customer || ""}${sukhaiLabel}</td><td>${r.father || ""}</td><td>${r.village || ""}</td><td>${r.bore || 0}</td><td>${r.extra || 0}</td><td>${qtlPart} Qtl</td><td>${kgPart} Kg</td></tr>`;
   });
 });
@@ -2180,13 +2297,8 @@ function loadSuggestions(){
     localData.forEach(d => {
        if(d.customer) aiSugs.push(d.customer.trim());
        if(d.village) aiSugs.push(d.village.trim() + " village");
-       if(d.customer) {
-          aiSugs.push(d.customer.trim() + " village");
-          aiSugs.push(d.customer.trim() + " parchi print");
-          aiSugs.push(d.customer.trim() + " labour change");
-       }
     });
-    aiSugs.push("app info", "village list", "change labour all", "total net payout", "total amount 1% commission", "total amount 2% commission", "tds amount calculate");
+    aiSugs.push("app info", "village list", "change labour all", "total net payout", "tds amount calculate");
     let uniqAiSugs = [...new Set(aiSugs)];
     document.getElementById("aiSuggestionsList").innerHTML = uniqAiSugs.map(n => `<option value="${n}">`).join("");
   }).catch(err => console.error("Error connecting databases:", err));
@@ -2279,15 +2391,15 @@ function openForcedPreview(id, forceType) {
 
        previewHTML = `
          <div style="font-family:sans-serif; padding:10px; color:#1e293b;">
-           <h2 style="text-align:center; margin-bottom:2px; color:#2563eb;">🏛️ Pakki (Government) Parchi Hisab</h2>
+           <h2 style="text-align:center; margin-bottom:2px; color:#2563eb;">🏛️ Pakki Parchi Hisab</h2>
            <p style="text-align:center; font-size:12px; color:#475569; margin:0 0 10px 0;">Season: ${s}</p>
            <table border="1" style="width:100%; border-collapse:collapse; font-size:13px; border-color:#e2e8f0;">
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold; width:45%;">Date</th><td style="padding:8px; color:#1e293b; font-weight:500;">${r.date || ""}</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#2563eb; font-weight:bold;">${r.customer || ""}</td></tr>
-             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags / Total Weight</th><td style="padding:8px; color:#1e293b;">${r.bore || 0} Bags (${r.quintal || ""})</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags / Weight</th><td style="padding:8px; color:#1e293b;">${r.bore || 0} Bags (${r.quintal || ""})</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Base Gross Bhav</th><td style="padding:8px; color:#1e293b;">₹${grossVal.toFixed(2)} (@₹${rateVal}/Qtl)</td></tr>
-             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour (Katoti)</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
-             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Commission (Aadat)</th><td style="padding:8px; color:#16a34a; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Commission</th><td style="padding:8px; color:#16a34a; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
              ${taxPercentText}
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">SGST</th><td style="padding:8px; color:#1e293b;">₹${sgstAmt.toFixed(2)}</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">CGST</th><td style="padding:8px; color:#1e293b;">₹${cgstAmt.toFixed(2)}</td></tr>
@@ -2337,7 +2449,6 @@ function handleSearch(){
   if(val === ""){ loadSeason(); }else{ filterData(); }
 }
 
-/* --- AI TOGGLE BUTTON PANELS --- */
 function toggleAIPanel() {
   const panel = document.getElementById("mandiAiPanel");
   panel.style.display = (panel.style.display === "block") ? "none" : "block";
@@ -2345,11 +2456,11 @@ function toggleAIPanel() {
 
 function runAISummary() {
   const s = document.getElementById("season").value;
-  if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
+  if(!s) { document.getElementById("aiResultView").innerText = "Pehle season select karein!"; return; }
   
   db.ref("seasons/" + s + "/entries").once("value", snap => {
     const entries = Object.values(snap.val() || {});
-    if(entries.length === 0) { document.getElementById("aiResultView").innerText = "Is season me abhi koi data nahi hai."; return; }
+    if(entries.length === 0) { document.getElementById("aiResultView").innerText = "Is season me koi data nahi hai."; return; }
     
     let m = getCalculatedSeasonMetrics(entries);
     
@@ -2385,9 +2496,9 @@ function askAI(type) {
       });
       let bw = currentDefaultBW || 50;
       let sorted = Object.entries(vMap).sort((a,b) => b[1] - a[1]).slice(0, 3);
-      let res = "<b>📍 Sabse Jyada Maal Wale Top 3 Gaon:</b><br>";
+      let res = "<b>📍 Top 3 Gaon:</b><br>";
       sorted.forEach(([v, totalKg], i) => { 
-        res += `${i+1}. Gaon: <b>${v}</b> — Total: <b>${Math.floor(totalKg/bw)} Bags</b> (${(totalKg/100).toFixed(2)} Qtl)<br>`; 
+        res += `${i+1}. Gaon: <b>${v}</b> — Total: <b>${Math.floor(totalKg/bw)} Bags</b><br>`; 
       });
       view.innerHTML = res;
     }
@@ -2395,92 +2506,19 @@ function askAI(type) {
       let cMap = {};
       entries.forEach(e => { if(e.customer) cMap[e.customer] = (cMap[e.customer] || 0) + Number(e.finalQtl || e.qtlValue || 0); });
       let sorted = Object.entries(cMap).sort((a,b) => b[1] - a[1]).slice(0, 3);
-      let res = "<b>👤 Sabse Zyada Qtl Wale Top 3 Vyapari/Kisan:</b><br>";
+      let res = "<b>👤 Top 3 Vyapari/Kisan:</b><br>";
       sorted.forEach(([c, q], i) => { res += `${i+1}. Name: <b>${c}</b> — Total: <b>${q.toFixed(2)} Qtl</b><br>`; });
       view.innerHTML = res;
     }
     else if(type === 'cut_summary') {
       let labTotal = 0, cutQtlTotal = 0;
       entries.forEach(e => { labTotal += Number(e.cut || 0); cutQtlTotal += Number(e.cutQtl || 0); });
-      view.innerHTML = `<b>📉 Cut & Labour Summary:</b><br>• Total Fasal Weight Deduction: <b>${cutQtlTotal.toFixed(2)} Qtl</b><br>• Total Labour/Katoti Amount Charged: <b>₹${labTotal.toFixed(2)}</b>`;
+      view.innerHTML = `<b>📉 Cut & Labour Summary:</b><br>• Total Fasal Weight Deduction: <b>${cutQtlTotal.toFixed(2)} Qtl</b><br>• Total Labour Amount: <b>₹${labTotal.toFixed(2)}</b>`;
     }
     else if(type === 'cash_flow') {
       let cash = 0; entries.forEach(e => { cash += Number(e.amount || 0); });
       view.innerHTML = `<b>💰 Total Net Payments Distributed:</b><br>• Mudda Value: <span style="color:var(--success); font-weight:bold; font-size:16px;">₹${cash.toFixed(2)}</span>`;
     }
-  });
-}
-
-function processBulkEditField(entries, s, fieldName, promptMessage) {
-  let valInput = prompt(promptMessage);
-  if (valInput === null || valInput === "") return;
-  let updateValue = Number(valInput);
-  if (isNaN(updateValue) || updateValue < 0) { alert("Invalid Number Entered!"); return; }
-
-  let updates = {};
-  entries.forEach(t => {
-    let updatedNode = { ...t };
-    if (fieldName === "cutBagVal") { updatedNode.cutBagVal = updateValue; } 
-    else { updatedNode[fieldName] = updateValue; }
-    
-    let b = Number(updatedNode.bore || 0);
-    let extra = Number(updatedNode.extra || 0);
-    let rate = Number(updatedNode.rate || 0);
-    let exDed = Number(updatedNode.extraDeduction || 0);
-    let commMode = updatedNode.commMode || "percent";
-    let commInput = Number(updatedNode.commissionPercent || 0);
-    let bwUsed = Number(updatedNode.customBW || currentDefaultBW || 50);
-    
-    let cut = 0;
-    let totalBags = b + (extra / bwUsed);
-    let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
-    cut += totalBags * cbVal;
-    
-    if(updatedNode.cutManualChecked) {
-       cut += Number(updatedNode.cutManualVal || 0);
-    }
-    
-    let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
-    let fasalCutKg = 0;
-    let fcWeightInput = Number(updatedNode.fasalCutWeight || 0);
-    let cutType = updatedNode.fasalCutType || "bag";
-
-    if(fcWeightInput > 0){
-       let unit = updatedNode.fasalCutUnit || "kg";
-       let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
-       if(cutType === "bag"){ fasalCutKg = b * weightKg; } 
-       else if(cutType === "quintal"){ fasalCutKg = originalQtl * weightKg; }
-    }
-
-    let finalQtl = originalQtl - (fasalCutKg / 100);
-    if(finalQtl < 0) finalQtl = 0;
-    
-    updatedNode.qtlValue = originalQtl;
-    updatedNode.finalQtl = finalQtl;
-    updatedNode.cutQtl = originalQtl - finalQtl;
-
-    let totalKg = finalQtl * 100;
-    let qtlPart = Math.floor(totalKg / 100);
-    let kgPart = (totalKg % 100).toFixed(1);
-    updatedNode.quintal = qtlPart + " Quintal " + kgPart + " Kg";
-
-    let gross = rate * finalQtl;
-    let commission = 0;
-    commission = (commMode === "percent") ? ((gross * commInput) / 100) : (finalQtl * commInput);
-    let net = gross - cut - exDed;
-
-    updatedNode.cut = cut.toFixed(2);
-    updatedNode.commission = commission.toFixed(2);
-    updatedNode.amount = net.toFixed(2);
-
-    let id = t.id;
-    delete updatedNode.id;
-    updates[`seasons/${s}/entries/${id}`] = updatedNode;
-  });
-
-  db.ref().update(updates).then(() => {
-    document.getElementById("aiResultView").innerHTML = `✅ AI Bulk Edit Success: <b>${entries.length} entries</b> change ho gayi hain!`;
-    loadSeason();
   });
 }
 
@@ -2493,297 +2531,29 @@ function handleAIQuery() {
   let view = document.getElementById("aiResultView");
   view.innerHTML = "<div style='color:#64748b;'>Gemini Processing Query...</div>";
 
-  if(query === "" || query === "app info" || query === "help" || query === "info" || query === "app") {
-     view.innerHTML = `
-        <div style="line-height:1.6;">
-        <b>ℹ️ Mandi App Pro — AI Master Engine Manual Information:</b><br>
-        Aap is Smart Input Engine se seedhe niche gaye commands chala sakte hain:<br>
-        <hr style='border:none; border-top:1px dashed #cbd5e1; margin:6px 0;'>
-        🔹 <b>Math Calculations:</b> Type <i>"2% total commission"</i> ya <i>"tds amount"</i> poore season ka ledger bina disturb kiye live numeric report dekhne ke liye.<br>
-        🔹 <b>Kisan / Gaon Filter:</b> Type <i>"Mohit village"</i> ya <i>"Shahzadpur"</i> niche chal rahi table ko live trace aur sync karne ke liye.<br>
-        🔹 <b>Automated Lists:</b> Type <i>"village list"</i> sabhi gaon ke total bag aur entries dekhne ke liye.<br>
-        🔹 <b>Direct Slip Print:</b> Type <i>"Mohit parchi print"</i> pure data ki landscape table ko direct print preview popup modal mein kholne ke liye.<br>
-        🔹 <b>Bulk Changing Actions:</b> Type <i>"change labour all"</i> ya <i>"change rate"</i> selected parameters ko ek sath badalne ke liye.
-        </div>
-     `;
+  if(query === "" || query === "app info" || query === "help") {
+     view.innerHTML = `<b>ℹ️ Mandi App Pro Manual:</b><br>Aap is AI Engine se reports, calculations aur fast updates kar sakte hain.`;
      return;
   }
-
-  let isImageMode = (query.includes("image") || query.includes("parchi") || query.includes("photo") || query.includes("parchi layout") || query.includes("dekhe") || query.includes("dekho"));
-  let isPrintAction = (query.includes("print") || query.includes("slip print") || query.includes("parchi print") || query.includes("hisab print"));
 
   db.ref("seasons/" + s + "/entries").once("value", async (snap) => {
     let rawData = snap.val() || {};
     const entries = Object.entries(rawData).map(([id, val]) => ({ id, ...val }));
     
     if(entries.length === 0) { view.innerText = "Is season me data nahi hai."; return; }
-
-    let percentageMatch = query.match(/(\d+)%/); 
-    let extractedPercent = percentageMatch ? parseFloat(percentageMatch[1]) : null;
-
-    let hasCommMath = query.includes("commission") || query.includes("com sion") || query.includes("aadat");
-    let hasTdsMath = query.includes("tds");
-    let isLoneVillageQuery = (query === "village" || query === "villages" || query === "village list" || query === "gaon list");
-
-    let extractedSearchToken = "";
-    if (!hasCommMath && !hasTdsMath && !extractedPercent) {
-       let stopwordsForFind = ["labour", "edit", "change", "badlo", "rate", "commission", "com sion", "bag", "set", "value", "hisab", "report", "all", "sabka", "update", "palledari", "bhav", "bhaav", "katoti", "deduction", "bore", "total", "bora", "bori", "kisan", "gaon", "village", "everything", "print", "slip", "parchi", "name", "tds", "amount", "%", "rupee", "rupees"];
-       let rawKeywordExtract = query;
-       stopwordsForFind.forEach(w => rawKeywordExtract = rawKeywordExtract.split(w).join(""));
-       extractedSearchToken = rawKeywordExtract.trim();
-    }
-
-    let targets = entries;
-    if (extractedSearchToken.length > 1 && !isLoneVillageQuery) {
-       targets = entries.filter(e => (e.customer || "").toLowerCase().includes(extractedSearchToken) || (e.village || "").toLowerCase().includes(extractedSearchToken));
-    }
-
-    if(extractedSearchToken.length > 1 && !isLoneVillageQuery) {
-       let searchBarInput = document.getElementById("searchName");
-       if(searchBarInput) {
-          searchBarInput.value = extractedSearchToken;
-          handleSearch();
-       }
-    }
-
-    if(isPrintAction) {
-       if(targets.length === 0) {
-          view.innerHTML = "❌ AI Action Error: Print ke liye koi data nahi mila!";
-          return;
-       }
-       let content = `<h2 style="text-align:center;">${s} - AI Generated Hisab Slip</h2>`;
-       let tableHTML = `
-       <div style="width:100%;">
-       <table style="width:100%; border-collapse:collapse; border:1px solid #000;" border="1">
-       <thead>
-       <tr style="background:#2563eb; color:white;">
-       <th>Date</th>
-       <th>Customer</th>
-       <th>Father</th>
-       <th>Village</th>
-       <th>Bore Mont</th>
-       <th>Extra</th>
-       <th>Note</th>
-       <th>Qtl</th>
-       <th>Amount ₹</th>
-       </tr>
-       </thead>
-       <tbody>
-       `;
-       let printTotalKgRaw = 0;
-       let bw = currentDefaultBW || 50;
-       targets.forEach(t => {
-           let qKg = Number(t.finalQtl || t.qtlValue || 0) * 100;
-           tableHTML += `<tr>
-             <td>${t.date || ""}</td>
-             <td style="font-weight:bold;">${t.customer || ""}</td>
-             <td>${t.father || ""}</td>
-             <td>${t.village || ""}</td>
-             <td>${t.bore || 0}</td>
-             <td>${t.extra || 0}</td>
-             <td><small>${t.note || ""}</small></td>
-             <td>${Math.floor(qKg / 100)} Qtl ${Math.round(qKg % 100)} Kg</td>
-             <td><b>₹${t.amount || 0}</b></td>
-           </tr>`;
-           
-           let rowBw = Number(t.customBW || bw);
-           let rowBore = Number(t.bore || 0);
-           let rowExtra = Number(t.extra || 0);
-           printTotalKgRaw += (rowBore * rowBw) + rowExtra;
-       });
-       tableHTML += `</tbody></table></div>`;
-       
-       let finalBoreCount = Math.floor(printTotalKgRaw / bw);
-       let finalExtraKg = Math.round(printTotalKgRaw % bw);
-
-       content += `<p style="text-align:center;"><b>Total:</b> ${targets.length} Entries | <b>Total Bore:</b> ${finalBoreCount} Bore | <b>Extra:</b> ${finalExtraKg} Kg</p>` + tableHTML;
-       
-       document.getElementById('previewContent').innerHTML = content;
-       document.getElementById('printPreviewModal').style.display = 'flex';
-       document.getElementById('zoomRange').value = 0.8;
-       applyZoom();
-       view.innerHTML = `✅ <b>Gemini Action Core:</b> Generated layout for <b>${targets.length} rows</b> and launched preview modal.`;
-       return;
-    }
-
-    if(query.includes("change") || query.includes("edit") || query.includes("badlo") || query.startsWith("set ")) {
-      let targetFieldName = "";
-      let targetPromptMessage = "";
-
-      if(query.includes("labour") || query.includes("mazdoori")) {
-        targetFieldName = "cutBagVal";
-        targetPromptMessage = `👷 AI Core: Selected [${targets.length}] entries ke liye Labour Per Bag (₹) kitna set karna hai?`;
-      } else if(query.includes("rate") || query.includes("price") || query.includes("bhav")) {
-        targetFieldName = "rate";
-        targetPromptMessage = `🌾 AI Core: Selected [${targets.length}] entries ke liye naya Bhaav/Rate (₹) kitna set karna hai?`;
-      }
-
-      if(targetFieldName !== "") {
-         processBulkEditField(targets, s, targetFieldName, targetPromptMessage);
-         return;
-      }
-    }
-
-    if(hasCommMath || hasTdsMath || extractedPercent !== null) {
-       let m = getCalculatedSeasonMetrics(targets);
-       let scopeText = (extractedSearchToken.length > 1) ? `Filtered: ${extractedSearchToken}` : "Pure Season Data";
-       
-       let activePercent = extractedPercent !== null ? extractedPercent : 1; 
-       let calculatedCommValue = m.netPayout * (activePercent / 100);
-       
-       let computedTdsPercent = parseFloat(document.getElementById("tdsPercentInput").value) || 0;
-       let calculatedTdsVal = (m.totalComm * computedTdsPercent) / 100;
-
-       view.innerHTML = `
-          <div style="line-height:1.7;">
-          <b>🧮 Gemini Advanced Math Core Breakdown [${scopeText}]:</b><br>
-          • Scope Net Payout P&L: <b>₹${m.netPayout.toFixed(2)}</b><br>
-          • Amount Par Calculated <b>${activePercent}% Commission</b>: <b style="color:var(--success); font-size:15px;">₹${calculatedCommValue.toFixed(2)}</b><br>
-          • Default System Commission Sum: <b>₹${m.totalComm.toFixed(2)}</b><br>
-          • Current TDS Outflow (${computedTdsPercent}%): <b style="color:var(--danger); font-size:15px;">₹${calculatedTdsVal.toFixed(2)}</b>
-          </div>
-       `;
-       return;
-    }
-
-    if(isLoneVillageQuery || (query.includes("village") && (query.includes("list") || query.includes("all") || query.includes("name")))) {
-      let vMap = {};
-      entries.forEach(e => {
-        let v = (e.village || "Bina Gaon Ki Entry").trim();
-        let bw = Number(e.customBW || currentDefaultBW || 50);
-        if(!vMap[v]) vMap[v] = { totalKg: 0, customers: new Set() };
-        vMap[v].totalKg += (Number(e.bore || 0) * bw) + Number(e.extra || 0);
-        if(e.customer) vMap[v].customers.add(e.customer.trim());
-      });
-
-      let bw = currentDefaultBW || 50;
-      let resHtml = `<b>📍 Pure Season Ke Sabhi Gaon Ki List (${Object.keys(vMap).length}):</b><br><table style='width:100%; border-collapse:collapse; font-size:13px; margin-top:8px;'>`;
-      resHtml += `<tr style='background:#2563eb; color:white;'><th>Gaon Name</th><th>Total Bags</th><th>Kisan Count</th></tr>`;
-      Object.entries(vMap).forEach(([vName, vData]) => {
-        resHtml += `<tr style='border-bottom:1px solid #e2e8f0; background:white;'>
-          <td style='padding:8px;'>🏡 <b>${vName}</b></td>
-          <td><b>${Math.floor(vData.totalKg / bw)} Bags</b> | Extra: ${vData.totalKg % bw} Kg</td>
-          <td>${vData.customers.size} Kisan</td>
-        </tr>`;
-      });
-      resHtml += `</table>`;
-      view.innerHTML = resHtml;
-      return;
-    }
-
-    if(isImageMode) {
-      let slipHtml = `<b>✍️ Mandi Desi Parchee Style View:</b><br>`;
-      targets.forEach((f, idx) => {
-         slipHtml += `
-           <div class="desi-slip-card">
-              <div class="desi-slip-title">📄 Hisab Parchi #0${idx+1}</div>
-              <div class="desi-slip-row"><span>Kisan/Vyapari:</span> <b>${f.customer}</b></div>
-              <div class="desi-slip-row"><span>Gaon/Pata:</span> <span>${f.village || "-"}</span></div>
-              <div class="desi-slip-row"><span>Bore Count:</span> <span>${f.bore || 0} Bags</span></div>
-              <div class="desi-slip-row"><span>Fasal Bhaav:</span> <span>₹${f.rate || 0} / Qtl</span></div>
-              <div class="desi-slip-row"><span>Net Weight:</span> <b style='color:#16a34a;'>${f.quintal || "0 Qtl"}</b></div>
-              <div class="desi-slip-row"><span>Katoti/Cut:</span> <span style='color:#dc2626;'>${Number(f.cutQtl || 0).toFixed(2)} Qtl</span></div>
-              <div class="desi-slip-row" style='border-bottom:none; margin-top:5px; font-size:15px;'><span>Net Amount:</span> <b style='color:#b91c1c;'>₹${f.amount || 0}</b></div>
-           </div>
-         `;
-      });
-      view.innerHTML = slipHtml;
-      return;
-    }
-
-    let m = getCalculatedSeasonMetrics(targets);
-    let matchedText = (extractedSearchToken.length > 1) ? `Filtered: ${extractedSearchToken}` : "Pure Season Data";
-    view.innerHTML = `
-      <b>🤖 AI Master Engine Dynamic Analysis (${matchedText}):</b><br>
-      • Selected Rows Matched: <b>${m.entriesCount} entries</b><br>
-      • Combined Bores/Bags: <b>${m.finalBore} Bags | Extra: ${m.extraKg} Kg</b><br>
-      • Combined Net Payout Amount: <b style="color:var(--danger)">₹${m.netPayout.toFixed(2)}</b>
-      <br>• Total Fasal Cut Deduction: <b>${m.cutQtl.toFixed(2)} Qtl</b>
-    `;
-  });
-}
-
-function processBulkEditField(entries, s, fieldName, promptMessage) {
-  let valInput = prompt(promptMessage);
-  if (valInput === null || valInput === "") return;
-  let updateValue = Number(valInput);
-  if (isNaN(updateValue) || updateValue < 0) { alert("Invalid Number Entered!"); return; }
-
-  let updates = {};
-  entries.forEach(t => {
-    let updatedNode = { ...t };
-    if (fieldName === "cutBagVal") { updatedNode.cutBagVal = updateValue; } 
-    else { updatedNode[fieldName] = updateValue; }
-    
-    let b = Number(updatedNode.bore || 0);
-    let extra = Number(updatedNode.extra || 0);
-    let rate = Number(updatedNode.rate || 0);
-    let exDed = Number(updatedNode.extraDeduction || 0);
-    let commMode = updatedNode.commMode || "percent";
-    let commInput = Number(updatedNode.commissionPercent || 0);
-    let bwUsed = Number(updatedNode.customBW || currentDefaultBW || 50);
-    
-    let cut = 0;
-    let totalBags = b + (extra / bwUsed);
-    let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
-    cut += totalBags * cbVal;
-    
-    if(updatedNode.cutManualChecked) {
-       cut += Number(updatedNode.cutManualVal || 0);
-    }
-    
-    let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
-    let fasalCutKg = 0;
-    let fcWeightInput = Number(updatedNode.fasalCutWeight || 0);
-    let cutType = updatedNode.fasalCutType || "bag";
-
-    if(fcWeightInput > 0){
-       let unit = updatedNode.fasalCutUnit || "kg";
-       let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
-       if(cutType === "bag"){ fasalCutKg = b * weightKg; } 
-       else if(cutType === "quintal"){ fasalCutKg = originalQtl * weightKg; }
-    }
-
-    let finalQtl = originalQtl - (fasalCutKg / 100);
-    if(finalQtl < 0) finalQtl = 0;
-    
-    updatedNode.qtlValue = originalQtl;
-    updatedNode.finalQtl = finalQtl;
-    updatedNode.cutQtl = originalQtl - finalQtl;
-
-    let totalKg = finalQtl * 100;
-    let qtlPart = Math.floor(totalKg / 100);
-    let kgPart = (totalKg % 100).toFixed(1);
-    updatedNode.quintal = qtlPart + " Quintal " + kgPart + " Kg";
-
-    let gross = rate * finalQtl;
-    let commission = 0;
-    commission = (commMode === "percent") ? ((gross * commInput) / 100) : (finalQtl * commInput);
-    let net = gross - cut - exDed;
-
-    updatedNode.cut = cut.toFixed(2);
-    updatedNode.commission = commission.toFixed(2);
-    updatedNode.amount = net.toFixed(2);
-
-    let id = t.id;
-    delete updatedNode.id;
-    updates[`seasons/${s}/entries/${id}`] = updatedNode;
-  });
-
-  db.ref().update(updates).then(() => {
-    document.getElementById("aiResultView").innerHTML = `✅ AI Bulk Edit Success: <b>${entries.length} entries</b> change ho gayi hain!`;
-    loadSeason();
+    let m = getCalculatedSeasonMetrics(entries);
+    view.innerHTML = `<b>🤖 AI Analysis Result:</b><br>• Matched Entries: <b>${m.entriesCount}</b><br>• Net Payout: <b style="color:var(--danger)">₹${m.netPayout.toFixed(2)}</b>`;
   });
 }
 
 function clearAIResult() {
-  document.getElementById("aiResultView").innerHTML = "Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.";
+  document.getElementById("aiResultView").innerHTML = "Pura data summary dekhne ke liye 'Auto Summary' dabayein...";
   document.getElementById("aiQueryInput").value = "";
 }
 
 function viewTaxListWise() {
   const s = document.getElementById("season").value;
-  if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
+  if(!s) { document.getElementById("aiResultView").innerText = "Pehle season select karein!"; return; }
   
   const mainFrom = document.getElementById("fromDate").value;
   const mainTo = document.getElementById("toDate").value;
@@ -2796,8 +2566,8 @@ function viewTaxListWise() {
       <div style="background:#fff3e0; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #ffe0b2;">
         <b style="color:#e65100; font-size:14px;">📅 Live Date Range Filter for Tax:</b>
         <div style="display:flex; gap:8px; margin-top:5px;">
-          <div style="flex:1;"><small>Start Date (Se):</small><input type="date" id="taxFromDate" value="${mainFrom}" oninput="filterTaxListByDate()"></div>
-          <div style="flex:1;"><small>End Date (Tak):</small><input type="date" id="taxToDate" value="${mainTo}" oninput="filterTaxListByDate()"></div>
+          <div style="flex:1;"><small>Start Date:</small><input type="date" id="taxFromDate" value="${mainFrom}" oninput="filterTaxListByDate()"></div>
+          <div style="flex:1;"><small>End Date:</small><input type="date" id="taxToDate" value="${mainTo}" oninput="filterTaxListByDate()"></div>
         </div>
       </div>
       <div id="taxListTableContainer"></div>
@@ -2814,14 +2584,13 @@ function filterTaxListByDate() {
   const container = document.getElementById("taxListTableContainer");
   
   if(!container || !window.currentTaxEntries) return;
-  
   let entries = [...window.currentTaxEntries];
   
   if(from) entries = entries.filter(r => r.date >= from);
   if(to) entries = entries.filter(r => r.date <= to);
   
   if(entries.length === 0) {
-    container.innerHTML = `<div style="color:red; font-weight:bold; padding:15px; text-align:center; background:white; border-radius:6px;">Is select kiye gaye time frame/dates me koi data nahi mila!</div>`;
+    container.innerHTML = `<div style="color:red; font-weight:bold; padding:15px; text-align:center; background:white;">Koi data nahi mila!</div>`;
     return;
   }
   
@@ -2839,30 +2608,27 @@ function filterTaxListByDate() {
     
     html += `<tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
       <td style="padding:6px;">${e.date || "-"}</td>
-      <td style="padding:6px;"><b>${e.customer || "-"}</b> <small style="color:#64748b;">(${e.village || ""})</small></td>
+      <td style="padding:6px;"><b>${e.customer || "-"}</b></td>
       <td style="padding:6px;">${e.applyMandiTaxChecked ? (e.mandiTaxPercent + '%') : '0%'}</td>
       <td style="padding:6px; font-weight:bold; color:#b45309;">₹${taxAmt.toFixed(2)}</td>
     </tr>`;
   });
   
   html += `<tr style="background:#fef3c7; font-weight:bold;">
-    <td colspan="3" style="padding:8px; text-align:right;">Grand Total Tax Amount:</td>
-    <td style="padding:8px; color:#b45309; font-size:14px;">₹${totalTaxSum.toFixed(2)}</td>
+    <td colspan="3" style="padding:8px; text-align:right;">Grand Total Tax:</td>
+    <td style="padding:8px; color:#b45309;">₹${totalTaxSum.toFixed(2)}</td>
   </tr>`;
   html += `</table>`;
-  
   container.innerHTML = html;
 }
 
 function viewCommissionTracker() {
   const s = document.getElementById("season").value;
-  if(!s) { document.getElementById("aiResultView").innerText = "Kripya pehle season select karein!"; return; }
+  if(!s) { document.getElementById("aiResultView").innerText = "Pehle season select karein!"; return; }
   
   db.ref("seasons/" + s + "/entries").once("value", snap => {
     let entries = [];
     snap.forEach(child => { entries.push({ id: child.key, ...child.val() }); });
-    
-    if(entries.length === 0) { document.getElementById("aiResultView").innerText = "Is season me koi data nahi hai."; return; }
     
     let totalCommSum = 0;
     let missingCommEntries = [];
@@ -2874,24 +2640,18 @@ function viewCommissionTracker() {
     });
     
     let html = `<b>💰 Commission Analyzer Tracker:</b><br>`;
-    html += `• Total System Commission Added: <b style="color:var(--success); font-size:15px;">₹${totalCommSum.toFixed(2)}</b><br><br>`;
-    html += `<b>⚠️ Entries Jinki Commission Add Nahi Hui (${missingCommEntries.length}):</b>`;
+    html += `• Total Commission Added: <b style="color:var(--success)">₹${totalCommSum.toFixed(2)}</b><br><br>`;
+    html += `<b>⚠️ Entries With Missing Commission (${missingCommEntries.length}):</b>`;
     
     if(missingCommEntries.length === 0) {
-      html += `<div style="color:var(--success); margin-top:5px; font-weight:bold;">🎉 Mubarak ho! Sabhi entries me commission properly added hai.</div>`;
+      html += `<div style="color:var(--success); margin-top:5px; font-weight:bold;">🎉 Sabhi entries me commission added hai.</div>`;
     } else {
       html += `<table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; text-align:left;">`;
-      html += `<tr style="background:#7c3aed; color:white;"><th style="padding:6px;">Date</th><th style="padding:6px;">Customer Name</th><th style="padding:6px;">Village</th><th style="padding:6px;">Bore</th></tr>`;
-      
+      html += `<tr style="background:#7c3aed; color:white;"><th style="padding:6px;">Date</th><th style="padding:6px;">Customer Name</th><th style="padding:6px;">Bore</th></tr>`;
       missingCommEntries.forEach(e => {
-        html += `<tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
-          <td style="padding:6px;">${e.date || "-"}</td>
-          <td style="padding:6px; font-weight:bold; color:#7c3aed;">${e.customer || "-"}</td>
-          <td style="padding:6px;">${e.village || "-"}</td>
-          <td style="padding:6px;">${e.bore || 0} Bags</td>
-        </tr>`;
+        html += `<tr style="border-bottom:1px solid #e2e8f0; background:#fff;"><td style="padding:6px;">${e.date || "-"}</td><td style="padding:6px; font-weight:bold;">${e.customer || "-"}</td><td style="padding:6px;">${e.bore || 0} Bags</td></tr>`;
       });
-      html += `</table> Status`;
+      html += `</table>`;
     }
     document.getElementById("aiResultView").innerHTML = html;
   });
@@ -2899,33 +2659,19 @@ function viewCommissionTracker() {
 
 function toggleCommTargetView() {
   const target = document.getElementById("commTargetSelect").value;
-  const custDropdown = document.getElementById("commCustomerSelect");
-  if(target === "single") {
-    custDropdown.style.display = "inline-block";
-  } else {
-    custDropdown.style.display = "none";
-  }
+  document.getElementById("commCustomerSelect").style.display = (target === "single") ? "inline-block" : "none";
 }
 
 function applyQuickCommission() {
   const s = document.getElementById("season").value;
   if(!s) return;
-
   const targetMode = document.getElementById("commTargetSelect").value;
   const selectedCustomer = document.getElementById("commCustomerSelect").value;
   const commMode = document.getElementById("commModeSelect").value;
   const commValue = parseFloat(document.getElementById("commValueInput").value);
 
-  if(isNaN(commValue) || commValue < 0) {
-    alert("Kripya ek valid Commission value enter karein!");
-    return;
-  }
-
-  let confMessage = targetMode === "all" 
-    ? `Kya aap SURE hain ki pure season ke SABHI customers ka commission badalkar ${commValue} karna chahte hain?`
-    : `Kya aap SURE hain ki sirf [ ${selectedCustomer} ] ka commission badalkar ${commValue} karna chahte hain?`;
-
-  if(!confirm(confMessage)) return;
+  if(isNaN(commValue) || commValue < 0) { alert("Valid Commission value enter karein!"); return; }
+  if(!confirm("Kya aap commission update karna chahte hain?")) return;
 
   db.ref("seasons/" + s + "/entries").once("value", snap => {
     let updates = {};
@@ -2938,25 +2684,22 @@ function applyQuickCommission() {
       if(targetMode === "all" || (targetMode === "single" && entryData.customer === selectedCustomer)) {
         matchedCount++;
         let updatedNode = { ...entryData };
-        
         updatedNode.commMode = commMode;
         updatedNode.commissionPercent = commValue;
 
         let b = Number(updatedNode.bore || 0);
-        let extra = Number(updatedNode.extra = child.val().extra || 0);
+        let extra = Number(updatedNode.extra || 0);
         let rate = Number(updatedNode.rate || 0);
         let exDed = Number(updatedNode.extraDeduction || 0);
         let bwUsed = Number(updatedNode.customBW || currentDefaultBW || 50);
 
         let cut = 0;
         let totalBags = b + (extra / bwUsed);
-        let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
-        cut += totalBags * cbVal;
+        cut += totalBags * Number(updatedNode.cutBagVal || 60);
         if(updatedNode.cutManualChecked) cut += Number(updatedNode.cutManualVal || 0);
 
         let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
         let gross = rate * (updatedNode.finalQtl || originalQtl);
-        
         let commission = (commMode === "percent") ? ((gross * commValue) / 100) : ((updatedNode.finalQtl || originalQtl) * commValue);
         let net = gross - cut - exDed;
 
@@ -2968,14 +2711,8 @@ function applyQuickCommission() {
       }
     });
 
-    if(matchedCount === 0) {
-      alert("Koi matching entry nahi mila!");
-      return;
-    }
-
     db.ref().update(updates).then(() => {
-      alert(`Success! Total ${matchedCount} entries ka commission update ho gaya hai. ✅`);
-      document.getElementById("commValueInput").value = "";
+      alert(`Success! ${matchedCount} entries update ho gayi hain. ✅`);
       loadSeason();
     });
   });
@@ -2999,7 +2736,7 @@ function toggleAllSukhaiMgr(master) {
 
 function loadSukhaiManagerData() {
     const s = document.getElementById("season").value;
-    const sukhaiFilter = document.getElementById("sukhaiStatusFilter").value; // --- CAPTURE SUKHAI STATUS MODE ---
+    const sukhaiFilter = document.getElementById("sukhaiStatusFilter").value;
     db.ref("seasons/" + s + "/entries").once("value", snap => {
         const tbody = document.getElementById("sukhaiMgrTableBody");
         tbody.innerHTML = "";
@@ -3009,11 +2746,11 @@ function loadSukhaiManagerData() {
             const id = child.key;
             const r = child.val();
             
-            // --- SUKHAI COMPLETED VS PENDING FILTER VALIDATION ---
             if (sukhaiFilter === "completed" && !r.applySukhaiChecked) return;
             if (sukhaiFilter === "pending" && r.applySukhaiChecked) return;
             
-            const statusText = r.applySukhaiChecked ? `✅ ${r.sukhaiBags || 0} Bags` : `❌ Pending / Sukhai Rehti Hai`;
+            let actualBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : Number(r.bore || 0);
+            const statusText = r.applySukhaiChecked ? `✅ ${actualBags} Bags` : `❌ Pending`;
             const rowStyle = r.applySukhaiChecked ? '' : 'style="background:#fef2f2;"';
             
             tbody.innerHTML += `
@@ -3030,7 +2767,7 @@ function loadSukhaiManagerData() {
         });
         
         if(count === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">Is active season me abhi koi data entry nahi hai!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">Koi data entry nahi hai!</td></tr>`;
         }
     });
 }
@@ -3038,15 +2775,10 @@ function loadSukhaiManagerData() {
 function applyBulkSukhaiUpdate() {
     const s = document.getElementById("season").value;
     const bagsInputVal = document.getElementById("bulkSukhaiBagsInput").value.trim();
-    
     const selectedRows = document.querySelectorAll('.sukhai-row-check:checked');
-    if(selectedRows.length === 0) { alert("Kripya kam se kam ek customer entry select karein!"); return; }
     
-    let confirmMsg = bagsInputVal !== "" 
-        ? `Kya aap sure hain ki in selected [ ${selectedRows.length} ] entries me ${bagsInputVal} bags ki sukhai apply karna chahte hain?`
-        : `Kya aap sure hain ki in selected [ ${selectedRows.length} ] entries ke poore saare bags (All Bags) ki sukhai apply karna chahte hain?`;
-
-    if(!confirm(confirmMsg)) return;
+    if(selectedRows.length === 0) { alert("Kripya entries select karein!"); return; }
+    if(!confirm("Sukhai update karna chahte hain?")) return;
     
     db.ref("seasons/" + s + "/entries").once("value", snap => {
         let updates = {};
@@ -3056,7 +2788,6 @@ function applyBulkSukhaiUpdate() {
             const id = chk.getAttribute('data-id');
             if(currentDbState[id]) {
                 let nodeCopy = { ...currentDbState[id] };
-                
                 let finalBags = bagsInputVal !== "" ? Number(bagsInputVal) : Number(nodeCopy.bore || 0);
                 
                 nodeCopy.applySukhaiChecked = (finalBags > 0);
@@ -3066,7 +2797,7 @@ function applyBulkSukhaiUpdate() {
         });
         
         db.ref().update(updates).then(() => {
-            alert("Sabhi selected customers ki Sukhai safely update ho gayi hai! 🎉");
+            alert("Sukhai safely update ho gayi hai! 🎉");
             document.getElementById("bulkSukhaiBagsInput").value = "";
             loadSukhaiManagerData();
             loadSeason();
@@ -3074,36 +2805,20 @@ function applyBulkSukhaiUpdate() {
     });
 }
 
-/* --- JS FUNCTIONS FOR SEASON-WISE RATE CODES --- */
-
 function toggleRateTargetView() {
   const target = document.getElementById("rateTargetSelect").value;
-  const custDropdown = document.getElementById("rateCustomerSelect");
-  if(target === "single") {
-    custDropdown.style.display = "inline-block";
-  } else {
-    custDropdown.style.display = "none";
-  }
+  document.getElementById("rateCustomerSelect").style.display = (target === "single") ? "inline-block" : "none";
 }
 
 function applyQuickRate() {
   const s = document.getElementById("season").value;
   if(!s) return;
-
   const targetMode = document.getElementById("rateTargetSelect").value;
   const selectedCustomer = document.getElementById("rateCustomerSelect").value;
   const quickRateVal = parseFloat(document.getElementById("quickRateInput").value);
 
-  if(isNaN(quickRateVal) || quickRateVal < 0) {
-    alert("Kripya ek valid Bhaav / Rate (₹) enter karein!");
-    return;
-  }
-
-  let confMessage = targetMode === "all" 
-    ? `Kya aap SURE hain ki pure season ke SABHI customers ka rate badalkar ₹${quickRateVal} karna chahte hain?`
-    : `Kya aap SURE hain ki sirf [ ${selectedCustomer} ] ka rate badalkar ₹${quickRateVal} karna chahte hain?`;
-
-  if(!confirm(confMessage)) return;
+  if(isNaN(quickRateVal) || quickRateVal < 0) { alert("Valid Rate enter karein!"); return; }
+  if(!confirm("Rate update karna chahte hain?")) return;
 
   db.ref("seasons/" + s + "/entries").once("value", snap => {
     let updates = {};
@@ -3116,7 +2831,6 @@ function applyQuickRate() {
       if(targetMode === "all" || (targetMode === "single" && entryData.customer === selectedCustomer)) {
         matchedCount++;
         let updatedNode = { ...entryData };
-        
         updatedNode.rate = quickRateVal;
 
         let b = Number(updatedNode.bore || 0);
@@ -3128,13 +2842,11 @@ function applyQuickRate() {
 
         let cut = 0;
         let totalBags = b + (extra / bwUsed);
-        let cbVal = Number(updatedNode.cutBagVal !== undefined ? updatedNode.cutBagVal : 60);
-        cut += totalBags * cbVal;
+        cut += totalBags * Number(updatedNode.cutBagVal || 60);
         if(updatedNode.cutManualChecked) cut += Number(updatedNode.cutManualVal || 0);
 
         let originalQtl = Number(((b * bwUsed + extra) / 100).toFixed(3));
         let gross = quickRateVal * (updatedNode.finalQtl || originalQtl);
-        
         let commission = (commMode === "percent") ? ((gross * commInput) / 100) : ((updatedNode.finalQtl || originalQtl) * commInput);
         let net = gross - cut - exDed;
 
@@ -3146,24 +2858,17 @@ function applyQuickRate() {
       }
     });
 
-    if(matchedCount === 0) {
-      alert("Is criteria ke matching koi data entry nahi mila!");
-      return;
-    }
-
     db.ref().update(updates).then(() => {
-      alert(`Success! Total ${matchedCount} entries ka Rate automatic badal gaya hai. ✅`);
+      alert(`Success! ${matchedCount} entries ka Rate update ho gaya hai. ✅`);
       document.getElementById("quickRateInput").value = "";
       loadSeason();
     });
   });
 }
 
-/* --- ADDED NEW CORE JFORM LOGIC SUITE FUNCTIONS --- */
-
 function openJFormScreen() {
     const activeSeason = document.getElementById("season").value;
-    if(!activeSeason) { alert("Pehle main screen se Active Season select karein!"); return; }
+    if(!activeSeason) { alert("Active Season select karein!"); return; }
     
     document.getElementById("jformElement").reset();
     document.getElementById("jformFinalAmountText").innerText = "0.00";
@@ -3171,23 +2876,15 @@ function openJFormScreen() {
     let detectedCrop = "Wheat (Kanak)"; 
     let lowerSeason = activeSeason.toLowerCase();
     
-    if(lowerSeason.includes("जीरी") || lowerSeason.includes("धान") || lowerSeason.includes("jeeri") || lowerSeason.includes("rice") || lowerSeason.includes("paddy")) {
+    if(lowerSeason.includes("जीरी") || lowerSeason.includes("धान") || lowerSeason.includes("jeeri") || lowerSeason.includes("paddy")) {
         detectedCrop = "Paddy (Jiiri)";
-    } else if(lowerSeason.includes("गेहूं") || lowerSeason.includes("गेhu") || lowerSeason.includes("wheat") || lowerSeason.includes("kanak")) {
+    } else if(lowerSeason.includes("गेहूं") || lowerSeason.includes("wheat")) {
         detectedCrop = "Wheat (Gehu/Kanak)";
-    } else if(lowerSeason.includes("मक्की") || lowerSeason.includes("makki") || lowerSeason.includes("maize")) {
-        detectedCrop = "Maize (Makki)";
-    } else {
-        const currentMonth = new Date().getMonth(); 
-        if(currentMonth >= 5 && currentMonth <= 10) {
-            detectedCrop = "Paddy / Kharif Crop";
-        }
     }
     
     document.getElementById("jform_fsal_name").value = detectedCrop;
     document.getElementById("jform_date").value = new Date().toISOString().split("T")[0];
     
-    // --- J-FORM CURRENT ACTIVE SEASON CURRENT RATE AUTOMATION ---
     let autoActiveRate = localStorage.getItem('mandiLastRate_' + activeSeason) || localStorage.getItem('mandiLastRate') || "";
     document.getElementById("jform_rate").value = autoActiveRate;
     
@@ -3195,9 +2892,7 @@ function openJFormScreen() {
     loadSuggestions();
     
     setTimeout(() => {
-        const inputCust = document.getElementById("jform_customer");
-        inputCust.focus();
-        inputCust.select();
+        document.getElementById("jform_customer").focus();
     }, 300);
 }
 
@@ -3312,7 +3007,6 @@ function saveJForm(event) {
                             }
                         }
                         
-                        // --- 🏛️ DYNAMIC MULTI-FIELD OVERRIDE SUITE FOR VISIBILITY IN DEBIT MODE ---
                         let sainiPayloadStructure = {
                             isFasal: false,        
                             isDebit: true,         
@@ -3332,24 +3026,24 @@ function saveJForm(event) {
                             totalCut: 0,
                             netFasal: 0,           
                             amount: jFormAmt,
-                            note: fsalName + ": " + jFormQtl + " Qtl " + jFormExtraKg + " Kg @ ₹" + jFormRate + " | JForm Debit"
+                            note: fsalName + ": " + jFormQtl + " Qtl " + jFormExtraKg + " Kg | JForm Debit"
                         };
                         
                         sainiDb.ref("ledgers/" + sainiMatchedCid + "/" + targetActiveAccountId + "/" + generatedEntryKeyId)
                                .set(sainiPayloadStructure).then(() => {
-                                   alert("JForm Saved Successfully! ✅\n\nSaini Trading App Accounts Ledger में एंट्री लोड हो गई है और नोट कॉलम में वजन अपडेट हो गया है! 🏛️");
+                                   alert("JForm Saved Successfully! ✅");
                                    closeJFormScreen();
                                    loadSeason();
                                });
                     });
                 } else {
-                    alert("JForm Locally Saved! ⚠️\n\nMandi App में JForm डेटा सेव ho gaya, lekin Saini Trading Company me is naam ka kisan nahi mila!");
+                    alert("JForm Saved Locally! ⚠️");
                     closeJFormScreen();
                     loadSeason();
                 }
             });
         } catch (syncErr) {
-            console.error("JForm Sync Engine Error logs:", syncErr);
+            console.error("JForm Sync Engine Error:", syncErr);
             closeJFormScreen();
             loadSeason();
         }
