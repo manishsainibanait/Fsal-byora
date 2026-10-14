@@ -438,7 +438,7 @@ background: #e2e8f0 !important;
   <th>Bore</th>  
   <th>Extra</th>
   <th>Note</th>
-  <th>Qtl</th>
+  <th style="min-width: 165px;">Weight (Pehle/Baad)</th>
   <th>Payment Details</th>
   <th>Edit</th>
 </tr>  
@@ -952,7 +952,7 @@ function getCalculatedSeasonMetrics(entries) {
 
   let bw = currentDefaultBW || 50;
   let finalBoreCount = Math.floor(totalKgRaw / bw);
-  let extraKgPart = totalKgRaw % bw;
+  let extraKgPart = Math.round(totalKgRaw % bw);
 
   return {
     entriesCount: entries.length,
@@ -1547,10 +1547,9 @@ function updateTable(arr){
     const extra = Number(r.extra || 0);
 
     const totalKgEntry = (bore * bw) + extra;
-    const finalBore = totalKgEntry / bw;
 
     totalKgRaw += totalKgEntry;
-    totalB += Math.round(finalBore);
+    totalB += bore;
     const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
     totalKg += qKg;
     totalC += Number(r.commission || 0);
@@ -1568,6 +1567,22 @@ function updateTable(arr){
     let jformBadge = isJFormNode ? `<br><span style="background:#db2777; color:white; padding:2px 6px; font-size:10px; font-weight:bold; border-radius:4px; display:inline-block; margin-top:4px;">📝 J-Form Entry</span>` : '';
     let rowBgStyle = isJFormNode ? 'style="background:#fff1f2; border-left: 4px solid #db2777;"' : '';
 
+    let preCutQtlVal = Number(r.qtlValue || 0);
+    let preCutQtlPart = Math.floor(preCutQtlVal);
+    let preCutKgPart = Math.round((preCutQtlVal % 1) * 100);
+
+    let finalQtlVal = Number(r.finalQtl || 0);
+    let finalQtlPart = Math.floor(finalQtlVal);
+    let finalKgPart = Math.round((finalQtlVal % 1) * 100);
+
+    // Dynamic Remaining Bags Calculation
+    let finalKgTotal = Math.round(finalQtlVal * 100);
+    let finalRemainingBags = Math.floor(finalKgTotal / bw);
+    let finalRemainingExtraKg = finalKgTotal % bw;
+    
+    let pehleBagsTxt = extra > 0 ? `${bore}B ${extra}K` : `${bore}B`;
+    let baadBagsTxt = finalRemainingExtraKg > 0 ? `${finalRemainingBags}B ${finalRemainingExtraKg}K` : `${finalRemainingBags}B`;
+
     output.innerHTML += `
     <tr data-id="${r.id}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" ${rowBgStyle}>
       <td><input type="checkbox" class="print-row-check"></td>
@@ -1578,10 +1593,10 @@ function updateTable(arr){
       <td>${r.bore || ""}</td>
       <td>${r.extra || 0}</td>
       <td><small>${r.note || ""}</small></td>
-      <td style="font-weight:bold; line-height:1.4;">
-        <span style="color:#16a34a;">${Math.floor((r.qtlValue||0))} Qtl ${Math.round(((r.qtlValue||0)%1)*100)} Kg</span><br>
-        <span style="color:#dc2626; font-size:12px;">Cut: ${(r.cutQtl || 0).toFixed(2)} Qtl</span><br>
-        <span style="color:#22c55e; font-size:12px;">Final: ${Math.floor((r.finalQtl || 0))} Qtl ${Math.round(((r.finalQtl || 0)%1)*100)} Kg</span>
+      <td style="font-size:12px; line-height:1.4; white-space:nowrap; min-width:165px;">
+        <div>⏳ <b>Pehle:</b> ${pehleBagsTxt} (${preCutQtlPart}Q ${preCutKgPart}K)</div>
+        <div style="color:#dc2626;">📉 <b>Cut:</b> ${(r.cutQtl || 0).toFixed(2)}Q</div>
+        <div style="color:#16a34a; font-weight:bold;">✅ <b>Baad:</b> ${baadBagsTxt} (${finalQtlPart}Q ${finalKgPart}K)</div>
       </td>
       <td>
         <div style="font-size:12px;">
@@ -1628,7 +1643,161 @@ function updateTable(arr){
 
   updateAppIconBadge(finalBoreCount);
 }
+
+function generateReport() {
+const query = document.getElementById("reportSearch").value.toLowerCase().trim();
+const from = document.getElementById("repFrom").value;
+const to = document.getElementById("repTo").value;
+const s = document.getElementById("season").value;
+const repSort = document.getElementById("reportSort").value;
+const repType = document.getElementById("reportEntryTypeFilter").value;
+
+if(!s) return;
+
+db.ref("seasons/" + s + "/entries").once("value", snap => {
+let arr = Object.entries(snap.val() || {}).map(([id,v]) => ({ id, ...v }));
+
+if(query !== ""){
+arr = arr.filter(r =>
+(r.customer || "").toLowerCase().includes(query) ||
+(r.father || "").toLowerCase().includes(query) ||
+(r.village || "").toLowerCase().includes(query)
+);
+}
+
+if(from) arr = arr.filter(r => r.date >= from);
+if(to) arr = arr.filter(r => r.date <= to);
+
+if(repType === "regular") {
+    arr = arr.filter(r => !(r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
+} else if(repType === "jform") {
+    arr = arr.filter(r => (r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
+}
+
+if(repSort === "oldest")
+arr.sort((a,b)=> a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
+else
+arr.sort((a,b)=> b.date.localeCompare(a.date) || (b.order ?? b.timestamp) - (a.order ?? a.timestamp));
+
+let grouped = {};
+arr.forEach(r=>{
+if(!grouped[r.date]) grouped[r.date] = [];
+grouped[r.date].push(r);
+});
+
+let sortedDates = Object.keys(grouped).sort((a,b)=>
+repSort==="oldest" ? a.localeCompare(b) : b.localeCompare(a)
+);
+
+let bw = currentDefaultBW || 50;
+let grandTotalKgRaw = 0;
+let grandTotalKgSum = 0;
+let grandTotalSukhaiBags = 0;
+let sukhaiCustomersSet = new Set();
+
+arr.forEach(r => {
+  let rowBw = Number(r.customBW || bw);
+  let rowBore = Number(r.bore || 0);
+  let rowExtra = Number(r.extra || 0);
+  grandTotalKgRaw += (rowBore * rowBw) + rowExtra;
+  grandTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
   
+  if(r.applySukhaiChecked) {
+     let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
+     grandTotalSukhaiBags += actualSukhaiBags;
+     if(r.customer) sukhaiCustomersSet.add(r.customer.trim());
+  }
+});
+
+let grandFinalBore = Math.floor(grandTotalKgRaw / bw);
+let grandFinalExtra = Math.round(grandTotalKgRaw % bw);
+
+let html = `
+<div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.5;">
+  <b>📊 All Dates Combined Grand Total:</b><br>
+  Total Entries: <b>${arr.length}</b> | All Bore: <b>${grandFinalBore} Bags</b> | All Extra: <b>${grandFinalExtra} Kg</b> | Kul Vazan: <b>${Math.floor(grandTotalKgSum / 100)} Qtl ${Math.round(grandTotalKgSum % 100)} Kg</b><br>
+  <span style="color:#fde047; font-weight:bold; font-size:15px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span>
+</div>
+<table>
+<thead>
+<tr style="background:#2563eb;color:white">
+<th>No</th>
+<th>Name</th>
+<th>Father</th>
+<th>Village</th>
+<th>Bore</th>
+<th>Extra</th>
+<th>Quintal</th>
+<th>Kg</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+let chronologicalArr = [...arr].sort((a,b) => a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
+let runningTotalKgRaw = 0;
+let runningTotalKgSum = 0;
+let cumulativeTotalsByDate = {};
+
+chronologicalArr.forEach(r => {
+  let rowBw = Number(r.customBW || bw);
+  let rowBore = Number(r.bore || 0);
+  let rowExtra = Number(r.extra || 0);
+  runningTotalKgRaw += (rowBore * rowBw) + rowExtra;
+  runningTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+  cumulativeTotalsByDate[r.date] = {
+    kgRaw: runningTotalKgRaw,
+    qtlSum: runningTotalKgSum
+  };
+});
+
+sortedDates.forEach(date=>{
+  let dayTotalKgRaw = 0;
+  let dayTotalKgSum = 0;
+  let dayTotalSukhai = 0;
+
+  grouped[date].forEach(r=>{
+    let rowBw = Number(r.customBW || bw);
+    let rowBore = Number(r.bore || 0);
+    let rowExtra = Number(r.extra || 0);
+    dayTotalKgRaw += (rowBore * rowBw) + rowExtra;
+    dayTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+    
+    if(r.applySukhaiChecked) {
+      let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
+      dayTotalSukhai += actualSukhaiBags;
+    }
+  });
+
+  let dayFinalBore = Math.floor(dayTotalKgRaw / bw);
+  let dayFinalExtra = Math.round(dayTotalKgRaw % bw);
+
+  const dayQtlPart = Math.floor(dayTotalKgSum / 100);
+  const dayKgPart = Math.round(dayTotalKgSum % 100);
+
+  const cum = cumulativeTotalsByDate[date];
+  let cumFinalBore = Math.floor(cum.kgRaw / bw);
+  let cumFinalExtra = Math.round(cum.kgRaw % bw);
+  const cumQtlPart = Math.floor(cum.qtlSum / 100);
+  const cumKgPart = Math.round(cum.qtlSum % 100);
+
+  html += `<tr class="report-date-row"><td colspan="8" style="text-align:left; padding:10px; line-height:1.6;"><b>📅 ${date} | Entries: ${grouped[date].length}</b><br><span style="color:#1e40af;">● Aaj Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Vazan: <b>${dayQtlPart} Qtl ${dayKgPart} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br><span style="color:#16a34a;">● Is Tareekh Tak Kul:</span> Bore: <b>${cumFinalBore}</b> | Extra: <b>${cumFinalExtra} Kg</b> | Kul Vazan: <b>${cumQtlPart} Qtl ${cumKgPart} Kg</b></td></tr>`;
+
+  grouped[date].forEach((r,i)=>{
+    const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
+    const qtlPart = Math.floor(qKg / 100);
+    const kgPart = Math.round(qKg % 100);
+    let actualDisplayBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : Number(r.bore || 0);
+    let sukhaiLabel = r.applySukhaiChecked ? ` <span style="color:#7c3aed; font-size:11px; font-weight:bold;">(♨️ Sukhai: ${actualDisplayBags} Bags)</span>` : '';
+    html += `<tr><td>${i+1}</td><td>${r.customer || ""}${sukhaiLabel}</td><td>${r.father || ""}</td><td>${r.village || ""}</td><td>${r.bore || 0}</td><td>${r.extra || 0}</td><td>${qtlPart} Qtl</td><td>${kgPart} Kg</td></tr>`;
+  });
+});
+
+html += `</tbody></table>`;
+document.getElementById("reportOutput").innerHTML = html || "<p style='text-align:center;padding:20px;'>No entries found</p>";
+});
+}
+
 function sortNewest(){ sortMode = "newest"; filterData(); }
 function sortOldest(){ sortMode = "oldest"; filterData(); }
   
@@ -2071,160 +2240,6 @@ function generateCutReport() {
         html += `</tbody></table>`;
         document.getElementById("cutReportOutput").innerHTML = html;
     });
-}
-
-function generateReport() {
-const query = document.getElementById("reportSearch").value.toLowerCase().trim();
-const from = document.getElementById("repFrom").value;
-const to = document.getElementById("repTo").value;
-const s = document.getElementById("season").value;
-const repSort = document.getElementById("reportSort").value;
-const repType = document.getElementById("reportEntryTypeFilter").value;
-
-if(!s) return;
-
-db.ref("seasons/" + s + "/entries").once("value", snap => {
-let arr = Object.entries(snap.val() || {}).map(([id,v]) => ({ id, ...v }));
-
-if(query !== ""){
-arr = arr.filter(r =>
-(r.customer || "").toLowerCase().includes(query) ||
-(r.father || "").toLowerCase().includes(query) ||
-(r.village || "").toLowerCase().includes(query)
-);
-}
-
-if(from) arr = arr.filter(r => r.date >= from);
-if(to) arr = arr.filter(r => r.date <= to);
-
-if(repType === "regular") {
-    arr = arr.filter(r => !(r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
-} else if(repType === "jform") {
-    arr = arr.filter(r => (r.isJForm === true || (r.note && String(r.note).includes("JForm"))));
-}
-
-if(repSort === "oldest")
-arr.sort((a,b)=> a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
-else
-arr.sort((a,b)=> b.date.localeCompare(a.date) || (b.order ?? b.timestamp) - (a.order ?? a.timestamp));
-
-let grouped = {};
-arr.forEach(r=>{
-if(!grouped[r.date]) grouped[r.date] = [];
-grouped[r.date].push(r);
-});
-
-let sortedDates = Object.keys(grouped).sort((a,b)=>
-repSort==="oldest" ? a.localeCompare(b) : b.localeCompare(a)
-);
-
-let bw = currentDefaultBW || 50;
-let grandTotalKgRaw = 0;
-let grandTotalKgSum = 0;
-let grandTotalSukhaiBags = 0;
-let sukhaiCustomersSet = new Set();
-
-arr.forEach(r => {
-  let rowBw = Number(r.customBW || bw);
-  let rowBore = Number(r.bore || 0);
-  let rowExtra = Number(r.extra || 0);
-  grandTotalKgRaw += (rowBore * rowBw) + rowExtra;
-  grandTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
-  
-  if(r.applySukhaiChecked) {
-     let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
-     grandTotalSukhaiBags += actualSukhaiBags;
-     if(r.customer) sukhaiCustomersSet.add(r.customer.trim());
-  }
-});
-
-let grandFinalBore = Math.floor(grandTotalKgRaw / bw);
-let grandFinalExtra = Math.round(grandTotalKgRaw % bw);
-
-let html = `
-<div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.5;">
-  <b>📊 All Dates Combined Grand Total:</b><br>
-  Total Entries: <b>${arr.length}</b> | All Bore: <b>${grandFinalBore} Bags</b> | All Extra: <b>${grandFinalExtra} Kg</b> | Kul Vazan: <b>${Math.floor(grandTotalKgSum / 100)} Qtl ${Math.round(grandTotalKgSum % 100)} Kg</b><br>
-  <span style="color:#fde047; font-weight:bold; font-size:15px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span>
-</div>
-<table>
-<thead>
-<tr style="background:#2563eb;color:white">
-<th>No</th>
-<th>Name</th>
-<th>Father</th>
-<th>Village</th>
-<th>Bore</th>
-<th>Extra</th>
-<th>Quintal</th>
-<th>Kg</th>
-</tr>
-</thead>
-<tbody>
-`;
-
-let chronologicalArr = [...arr].sort((a,b) => a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
-let runningTotalKgRaw = 0;
-let runningTotalKgSum = 0;
-let cumulativeTotalsByDate = {};
-
-chronologicalArr.forEach(r => {
-  let rowBw = Number(r.customBW || bw);
-  let rowBore = Number(r.bore || 0);
-  let rowExtra = Number(r.extra || 0);
-  runningTotalKgRaw += (rowBore * rowBw) + rowExtra;
-  runningTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
-  cumulativeTotalsByDate[r.date] = {
-    kgRaw: runningTotalKgRaw,
-    qtlSum: runningTotalKgSum
-  };
-});
-
-sortedDates.forEach(date=>{
-  let dayTotalKgRaw = 0;
-  let dayTotalKgSum = 0;
-  let dayTotalSukhai = 0;
-
-  grouped[date].forEach(r=>{
-    let rowBw = Number(r.customBW || bw);
-    let rowBore = Number(r.bore || 0);
-    let rowExtra = Number(r.extra || 0);
-    dayTotalKgRaw += (rowBore * rowBw) + rowExtra;
-    dayTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
-    
-    if(r.applySukhaiChecked) {
-      let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
-      dayTotalSukhai += actualSukhaiBags;
-    }
-  });
-
-  let dayFinalBore = Math.floor(dayTotalKgRaw / bw);
-  let dayFinalExtra = Math.round(dayTotalKgRaw % bw);
-
-  const dayQtlPart = Math.floor(dayTotalKgSum / 100);
-  const dayKgPart = Math.round(dayTotalKgSum % 100);
-
-  const cum = cumulativeTotalsByDate[date];
-  let cumFinalBore = Math.floor(cum.kgRaw / bw);
-  let cumFinalExtra = Math.round(cum.kgRaw % bw);
-  const cumQtlPart = Math.floor(cum.qtlSum / 100);
-  const cumKgPart = Math.round(cum.qtlSum % 100);
-
-  html += `<tr class="report-date-row"><td colspan="8" style="text-align:left; padding:10px; line-height:1.6;"><b>📅 ${date} | Entries: ${grouped[date].length}</b><br><span style="color:#1e40af;">● Aaj Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Vazan: <b>${dayQtlPart} Qtl ${dayKgPart} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br><span style="color:#16a34a;">● Is Tareekh Tak Kul:</span> Bore: <b>${cumFinalBore}</b> | Extra: <b>${cumFinalExtra} Kg</b> | Kul Vazan: <b>${cumQtlPart} Qtl ${cumKgPart} Kg</b></td></tr>`;
-
-  grouped[date].forEach((r,i)=>{
-    const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
-    const qtlPart = Math.floor(qKg / 100);
-    const kgPart = Math.round(qKg % 100);
-    let actualDisplayBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : Number(r.bore || 0);
-    let sukhaiLabel = r.applySukhaiChecked ? ` <span style="color:#7c3aed; font-size:11px; font-weight:bold;">(♨️ Sukhai: ${actualDisplayBags} Bags)</span>` : '';
-    html += `<tr><td>${i+1}</td><td>${r.customer || ""}${sukhaiLabel}</td><td>${r.father || ""}</td><td>${r.village || ""}</td><td>${r.bore || 0}</td><td>${r.extra || 0}</td><td>${qtlPart} Qtl</td><td>${kgPart} Kg</td></tr>`;
-  });
-});
-
-html += `</tbody></table>`;
-document.getElementById("reportOutput").innerHTML = html || "<p style='text-align:center;padding:20px;'>No entries found</p>";
-});
 }
 
 function loadSuggestions(){
