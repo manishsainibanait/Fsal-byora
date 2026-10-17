@@ -1582,8 +1582,9 @@ function saveEntry(){
 function updateTable(arr){  
   const output = document.getElementById("output");
   output.innerHTML = ""; 
-  let totalB = 0, totalKg = 0, totalC = 0;  
+  let totalB = 0, totalC = 0;  
   let totalKgRaw = 0;
+  let totalFinalKgRaw = 0; // Cut lagne ke baad ka sahi total kg
 
   let totalSukhaiBagsApplied = 0;
   let sukhaiFarmersSet = new Set();
@@ -1597,8 +1598,11 @@ function updateTable(arr){
 
     totalKgRaw += totalKgEntry;
     totalB += bore;
-    const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
-    totalKg += qKg;
+    
+    // finalQtl cut minus hone ke baad ka quintal value hai
+    const finalQtlVal = Number(r.finalQtl !== undefined ? r.finalQtl : r.qtlValue || 0);
+    totalFinalKgRaw += (finalQtlVal * 100);
+    
     totalC += Number(r.commission || 0);
 
     if(r.applySukhaiChecked) {
@@ -1618,7 +1622,6 @@ function updateTable(arr){
     let preCutQtlPart = Math.floor(preCutQtlVal);
     let preCutKgPart = Math.round(((preCutQtlVal % 1) * 100) * 10) / 10;
 
-    let finalQtlVal = Number(r.finalQtl || 0);
     let finalQtlPart = Math.floor(finalQtlVal);
     let finalKgPart = Math.round(((finalQtlVal % 1) * 100) * 10) / 10;
 
@@ -1667,8 +1670,25 @@ function updateTable(arr){
   const finalBoreCount = Math.floor(totalKgRaw / bw);
   const finalExtraKg = Math.round((totalKgRaw % bw) * 10) / 10;
 
-  document.getElementById("totalBore").innerText = finalBoreCount + " Bore | Extra: " + finalExtraKg + " Kg";
-  document.getElementById("totalQtl").innerText = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
+  // Cut lagne ke baad ka sahi kam hua bore aur kg
+  const finalBoreAfterCut = Math.floor(totalFinalKgRaw / bw);
+  const finalExtraAfterCut = Math.round((totalFinalKgRaw % bw) * 10) / 10;
+
+  const searchInputVal = document.getElementById("searchName").value.trim();
+
+  // Agar search box me kuch likha hai, tabhi "Cut ke Baad" dikhega
+  if(searchInputVal !== "") {
+    document.getElementById("totalBore").innerHTML = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${finalBoreAfterCut} Bore ${finalExtraAfterCut} Kg</b></span>`;
+    
+    const totalQtlBeforeCut = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
+    const totalQtlAfterCut = Math.floor(totalFinalKgRaw / 100) + " Qtl " + Math.round((totalFinalKgRaw % 100) * 10) / 10 + " Kg";
+    document.getElementById("totalQtl").innerHTML = `${totalQtlBeforeCut}<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${totalQtlAfterCut}</b></span>`;
+  } else {
+    // Bina search ke normal total hi dikhega
+    document.getElementById("totalBore").innerText = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg`;
+    document.getElementById("totalQtl").innerText = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
+  }
+
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
 
   const sukhaiBagsEl = document.getElementById("dashboardSukhaiBags");
@@ -2548,8 +2568,7 @@ function openSingleEntryPreview(id) {
 }
 
 function handleSearch(){
-  const val = document.getElementById("searchName").value.trim();
-  if(val === ""){ loadSeason(); }else{ filterData(); }
+  filterData();
 }
 
 function toggleAIPanel() {
