@@ -1214,10 +1214,17 @@ function openEntryScreen(){
   document.getElementById("applyMandiTax").checked = false; 
   document.getElementById("applySukhai").checked = false; 
   document.getElementById("mandiTaxPercent").value = "1"; 
-  document.getElementById("fasalCutType").value = "quintal";
-  document.getElementById("fasalCutWeight").value = "3";
-  document.getElementById("fasalCutUnit").value = "kg";
-  document.getElementById("fasalCutDisplay").innerText = "0 Kg";
+  
+document.getElementById("fasalCutType").value = "quintal";
+document.getElementById("fasalCutWeight").value = "0";
+document.getElementById("fasalCutUnit").value = "kg";
+document.getElementById("fasalCutDisplay").innerText = "0 Qtl 0 Kg";
+
+// Har nayi entry mein purani fasal cut setting reset
+document.getElementById("fasalCutWeight").value = "0";
+document.getElementById("fasalCutType").value = "quintal";
+document.getElementById("fasalCutUnit").value = "kg";
+
   
   document.getElementById("cutBagVal").value = localStorage.getItem("lastLabour_" + s) || localStorage.getItem("lastLabour") || "60";
   if(localStorage.getItem('mandiLastRate_' + s)) document.getElementById('rate').value = localStorage.getItem('mandiLastRate_' + s);
