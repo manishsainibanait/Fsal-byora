@@ -22,7 +22,7 @@ table{width:100%;border-collapse:collapse;}
 th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}  
 th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
 .actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
-.searchBar{background:#dbeafe;padding:15px;border-radius:10px;margin-bottom:15px; border: 1px solid #bfdbfe;}  
+.searchBar{background:#dbeafe;padding:12px;border-radius:10px;margin-bottom:12px; border: 1px solid #bfdbfe;}  
 #entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen{  
  position:fixed;top:0;left:0;right:0;bottom:0;  
  background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
@@ -243,16 +243,16 @@ border: 1px solid #e2e8f0;
 }
 
 /* Explicit column widths & frozen Customer column in Cut Report */
-#cutReportOutput th:nth-child(1), #cutReportOutput td:nth-child(1) { width: 11%; } /* Date */
+#cutReportOutput th:nth-child(1), #cutReportOutput td:nth-child(1) { width: 11%; } 
 #cutReportOutput th:nth-child(2), #cutReportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; }
 #cutReportOutput th:nth-child(2) { position: sticky; left: 0; background: var(--danger); z-index: 20; }
 #cutReportOutput td:nth-child(2) { position: sticky; left: 0; background: #fff; z-index: 5; font-weight: bold; color: var(--primary); }
-#cutReportOutput th:nth-child(3), #cutReportOutput td:nth-child(3) { width: 13%; } /* Village */
-#cutReportOutput th:nth-child(4), #cutReportOutput td:nth-child(4) { width: 16%; } /* Bags */
-#cutReportOutput th:nth-child(5), #cutReportOutput td:nth-child(5) { width: 10%; } /* Fasal Cut */
-#cutReportOutput th:nth-child(6), #cutReportOutput td:nth-child(6) { width: 11%; } /* Labour */
-#cutReportOutput th:nth-child(7), #cutReportOutput td:nth-child(7) { width: 11%; } /* Deduction */
-#cutReportOutput th:nth-child(8), #cutReportOutput td:nth-child(8) { width: 10%; } /* Note */
+#cutReportOutput th:nth-child(3), #cutReportOutput td:nth-child(3) { width: 13%; } 
+#cutReportOutput th:nth-child(4), #cutReportOutput td:nth-child(4) { width: 16%; } 
+#cutReportOutput th:nth-child(5), #cutReportOutput td:nth-child(5) { width: 10%; } 
+#cutReportOutput th:nth-child(6), #cutReportOutput td:nth-child(6) { width: 11%; } 
+#cutReportOutput th:nth-child(7), #cutReportOutput td:nth-child(7) { width: 11%; } 
+#cutReportOutput th:nth-child(8), #cutReportOutput td:nth-child(8) { width: 10%; } 
 
 .report-date-row{
 font-size:14px;
@@ -415,15 +415,7 @@ background: #e2e8f0 !important;
   <div class="ai-result" id="aiResultView">Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.</div>
 </div>
 
-<div class="searchBar">  
-<input id="searchName" placeholder="🔍 Search Customer..." oninput="handleSearch()">
-<div style="display:flex; gap:6px;">
-    <input type="date" id="fromDate" oninput="filterData()">  
-    <input type="date" id="toDate" oninput="filterData()">  
-</div>
-</div>  
-
-<div style="display:flex; gap:6px; margin-bottom: 10px; align-items: center; flex-wrap: wrap;">  
+<div style="display:flex; gap:6px; margin: 10px 0; align-items: center; flex-wrap: wrap;">  
 <button onclick="sortNewest()" style="background: #fff; color: #444; border: 1px solid #ccc; width: auto; flex: 1;">Newest</button>  
 <button onclick="sortOldest()" style="background: #fff; color: #444; border: 1px solid #ccc; width: auto; flex: 1;">Oldest</button>
 
@@ -442,6 +434,20 @@ background: #e2e8f0 !important;
     <button onclick="moveEntry('down')" style="background: #4b5563;">⬇ Move Down</button>
     <button onclick="fixAllOrder()" style="background:red;">Fix Order</button>
 </div>
+
+<!-- LIVE SEARCH BAR WITH CUSTOMER LIST AUTO-SUGGESTIONS -->
+<div class="searchBar">  
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+    <span style="font-weight:bold; color:var(--primary); font-size:13px;">🔍 Search Customer (With Auto Suggestion):</span>
+    <button type="button" onclick="clearLiveSearch()" style="width:auto; padding:3px 10px; margin:0; font-size:11px; background:var(--danger); border-radius:4px;">Clear ❌</button>
+  </div>
+  <input id="searchName" list="searchCustomerList" placeholder="🔍 Type ya select karein (Name, Father, Village)..." oninput="handleSearch()" style="margin:0 0 6px 0; background:#fff; font-weight:bold; border:2px solid var(--primary);">
+  <datalist id="searchCustomerList"></datalist>
+  <div style="display:flex; gap:6px;">
+      <input type="date" id="fromDate" oninput="filterData()" style="margin:0; background:#fff;">  
+      <input type="date" id="toDate" oninput="filterData()" style="margin:0; background:#fff;">  
+  </div>
+</div>  
 
 <div class="card">  
 <b>Total Bore:</b> <span id="totalBore" style="color:var(--danger); font-size: 18px;">0</span> |  
@@ -468,8 +474,6 @@ background: #e2e8f0 !important;
   <th style="width:30px;"><input type="checkbox" onclick="toggleAll(this)"></th>
   <th>Date</th>  
   <th>Customer</th>  
-  <th>Father</th>
-  <th>Village</th>  
   <th>Bore</th>  
   <th>Extra</th>
   <th>Note</th>
@@ -786,7 +790,6 @@ background: #e2e8f0 !important;
                     <th style="width:40px;"><input type="checkbox" onclick="toggleAllSukhaiMgr(this)"></th>
                     <th>Date</th>
                     <th>Customer Name</th>
-                    <th>Village</th>
                     <th>Total Bags (Bore)</th>
                     <th>Sukhai Status</th>
                 </tr>
@@ -975,6 +978,15 @@ document.addEventListener('DOMContentLoaded', () => {
            calcJFormAmount();
         }
       });
+
+      // Search bar auto extraction from rich format
+      document.getElementById("searchName").addEventListener(evtName, function() {
+        let parsed = parseRichCustomerName(this.value);
+        if (parsed) {
+           this.value = parsed.name;
+           filterData();
+        }
+      });
     });
 });
 
@@ -1138,6 +1150,13 @@ let editID=null, currentDefaultBW=37.5, sortMode = "newest", editOldTimestamp = 
 let editOldOrder = null;
 let clickTimer = null;
 
+function clearLiveSearch() {
+  document.getElementById("searchName").value = "";
+  document.getElementById("fromDate").value = "";
+  document.getElementById("toDate").value = "";
+  filterData();
+}
+
 function openCustomPreview() {
     const s = document.getElementById("season").value;
     const selectedChecks = document.querySelectorAll('.print-row-check:checked');
@@ -1165,7 +1184,10 @@ function openCustomPreview() {
     let totalKgRaw = 0;
     rowsToPrint.forEach(tr => {
         let cells = tr.querySelectorAll('td');
-        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cells[2].innerText}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText}</td><td>${cells[8].innerText}</td><td>${cells[9].innerText.replace(/Comm:.*\n?/g,"")}</td></tr>`;
+        let cName = tr.getAttribute('data-customer') || "";
+        let fName = tr.getAttribute('data-father') || "";
+        let vName = tr.getAttribute('data-village') || "";
+        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cName}</td><td>${fName}</td><td>${vName}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText.replace(/Comm:.*\n?/g,"")}</td></tr>`;
         
         let b = Number(tr.getAttribute('data-bore') || 0);
         let e = Number(tr.getAttribute('data-extra') || 0);
@@ -1215,16 +1237,10 @@ function openEntryScreen(){
   document.getElementById("applySukhai").checked = false; 
   document.getElementById("mandiTaxPercent").value = "1"; 
   
-document.getElementById("fasalCutType").value = "quintal";
-document.getElementById("fasalCutWeight").value = "0";
-document.getElementById("fasalCutUnit").value = "kg";
-document.getElementById("fasalCutDisplay").innerText = "0 Qtl 0 Kg";
-
-// Har nayi entry mein purani fasal cut setting reset
-document.getElementById("fasalCutWeight").value = "0";
-document.getElementById("fasalCutType").value = "quintal";
-document.getElementById("fasalCutUnit").value = "kg";
-
+  document.getElementById("fasalCutType").value = "quintal";
+  document.getElementById("fasalCutWeight").value = "0";
+  document.getElementById("fasalCutUnit").value = "kg";
+  document.getElementById("fasalCutDisplay").innerText = "0 Qtl 0 Kg";
   
   document.getElementById("cutBagVal").value = localStorage.getItem("lastLabour_" + s) || localStorage.getItem("lastLabour") || "60";
   if(localStorage.getItem('mandiLastRate_' + s)) document.getElementById('rate').value = localStorage.getItem('mandiLastRate_' + s);
@@ -1591,7 +1607,7 @@ function updateTable(arr){
   output.innerHTML = ""; 
   let totalB = 0, totalC = 0;  
   let totalKgRaw = 0;
-  let totalFinalKgRaw = 0; // Cut lagne ke baad ka sahi total kg
+  let totalFinalKgRaw = 0; 
 
   let totalSukhaiBagsApplied = 0;
   let sukhaiFarmersSet = new Set();
@@ -1601,14 +1617,16 @@ function updateTable(arr){
     const bore = Number(r.bore || 0);
     const extra = Number(r.extra || 0);
 
-    const totalKgEntry = (bore * bw) + extra;
-
-    totalKgRaw += totalKgEntry;
+    const origEntryKg = (bore * bw) + extra;
+    totalKgRaw += origEntryKg;
     totalB += bore;
     
-    // finalQtl cut minus hone ke baad ka quintal value hai
-    const finalQtlVal = Number(r.finalQtl !== undefined ? r.finalQtl : r.qtlValue || 0);
-    totalFinalKgRaw += (finalQtlVal * 100);
+    // Accurate calculation: cutQtl ko seedha minus karke remaining weight calculate karna
+    let cutKgThisRow = Number(r.cutQtl || 0) * 100;
+    let actualRemainingRowKg = origEntryKg - cutKgThisRow;
+    if (actualRemainingRowKg < 0) actualRemainingRowKg = 0;
+    
+    totalFinalKgRaw += actualRemainingRowKg;
     
     totalC += Number(r.commission || 0);
 
@@ -1629,23 +1647,36 @@ function updateTable(arr){
     let preCutQtlPart = Math.floor(preCutQtlVal);
     let preCutKgPart = Math.round(((preCutQtlVal % 1) * 100) * 10) / 10;
 
-    let finalQtlPart = Math.floor(finalQtlVal);
-    let finalKgPart = Math.round(((finalQtlVal % 1) * 100) * 10) / 10;
+    let rowFinalQtlVal = actualRemainingRowKg / 100;
+    let finalQtlPart = Math.floor(rowFinalQtlVal);
+    let finalKgPart = Math.round((actualRemainingRowKg % 100) * 10) / 10;
 
-    let finalKgTotal = Math.round((finalQtlVal * 100) * 10) / 10;
-    let finalRemainingBags = Math.floor(finalKgTotal / bw);
-    let finalRemainingExtraKg = Math.round((finalKgTotal % bw) * 10) / 10;
+    let finalRemainingBags = Math.floor(actualRemainingRowKg / bw);
+    let finalRemainingExtraKg = Math.round((actualRemainingRowKg % bw) * 10) / 10;
     
     let pehleBagsTxt = extra > 0 ? `${bore}B ${extra}K` : `${bore}B`;
     let baadBagsTxt = finalRemainingExtraKg > 0 ? `${finalRemainingBags}B ${finalRemainingExtraKg}K` : `${finalRemainingBags}B`;
 
+    let shortFather = (r.father || "").trim();
+    let shortVillage = (r.village || "").trim();
+    let metaSubText = "";
+    if (shortFather && shortVillage) {
+      metaSubText = `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(S/O: ${shortFather} | V: ${shortVillage})</div>`;
+    } else if (shortFather) {
+      metaSubText = `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(S/O: ${shortFather})</div>`;
+    } else if (shortVillage) {
+      metaSubText = `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(V: ${shortVillage})</div>`;
+    }
+
     output.innerHTML += `
-    <tr data-id="${r.id}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" ${rowBgStyle}>
+    <tr data-id="${r.id}" data-customer="${r.customer || ''}" data-father="${r.father || ''}" data-village="${r.village || ''}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" ${rowBgStyle}>
       <td><input type="checkbox" class="print-row-check"></td>
       <td>${r.date || ""}</td>
-      <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="singleClickPrint('${r.id}')" ondblclick="doubleClickEdit('${r.id}')">${r.customer || ""}${jformBadge}</td>
-      <td>${r.father || ""}</td>
-      <td>${r.village || ""}</td>
+      <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="singleClickPrint('${r.id}')" ondblclick="doubleClickEdit('${r.id}')">
+        ${r.customer || ""}
+        ${metaSubText}
+        ${jformBadge}
+      </td>
       <td>${r.bore || ""}</td>
       <td>${r.extra || 0}</td>
       <td><small>${r.note || ""}</small></td>
@@ -1677,13 +1708,12 @@ function updateTable(arr){
   const finalBoreCount = Math.floor(totalKgRaw / bw);
   const finalExtraKg = Math.round((totalKgRaw % bw) * 10) / 10;
 
-  // Cut lagne ke baad ka sahi kam hua bore aur kg
+  // Cut ke baad sahi kam hue bags & kg[span_0](start_span)[span_0](end_span)
   const finalBoreAfterCut = Math.floor(totalFinalKgRaw / bw);
   const finalExtraAfterCut = Math.round((totalFinalKgRaw % bw) * 10) / 10;
 
   const searchInputVal = document.getElementById("searchName").value.trim();
 
-  // Agar search box me kuch likha hai, tabhi "Cut ke Baad" dikhega
   if(searchInputVal !== "") {
     document.getElementById("totalBore").innerHTML = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${finalBoreAfterCut} Bore ${finalExtraAfterCut} Kg</b></span>`;
     
@@ -1691,7 +1721,6 @@ function updateTable(arr){
     const totalQtlAfterCut = Math.floor(totalFinalKgRaw / 100) + " Qtl " + Math.round((totalFinalKgRaw % 100) * 10) / 10 + " Kg";
     document.getElementById("totalQtl").innerHTML = `${totalQtlBeforeCut}<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${totalQtlAfterCut}</b></span>`;
   } else {
-    // Bina search ke normal total hi dikhega
     document.getElementById("totalBore").innerText = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg`;
     document.getElementById("totalQtl").innerText = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
   }
@@ -2180,7 +2209,14 @@ function deleteSeason(){
 }
 
 function filterData(){  
-  const nameInput = document.getElementById("searchName").value.toLowerCase().trim();
+  const rawSearchVal = document.getElementById("searchName").value.trim();
+  let nameInput = rawSearchVal.toLowerCase();
+  
+  let parsed = parseRichCustomerName(rawSearchVal);
+  if(parsed && parsed.name) {
+    nameInput = parsed.name.toLowerCase();
+  }
+
   const from = document.getElementById("fromDate").value; 
   const to = document.getElementById("toDate").value;
   const s = document.getElementById("season").value; 
@@ -2310,7 +2346,6 @@ function generateCutReport() {
         <tr>
             <th>Date</th>
             <th>Customer</th>
-            <th>Village</th>
             <th>Bags (Orig/Baad)</th>
             <th>Fasal Cut</th>
             <th>Labour (₹)</th>
@@ -2322,7 +2357,7 @@ function generateCutReport() {
         `;
 
         if(arr.length === 0) {
-            html += `<tr><td colspan="8" style="text-align:center; padding:20px;">Koi entries nahi mili!</td></tr>`;
+            html += `<tr><td colspan="7" style="text-align:center; padding:20px;">Koi entries nahi mili!</td></tr>`;
         } else {
             arr.forEach(r => {
                 let rowBw = Number(r.customBW || bw);
@@ -2341,7 +2376,6 @@ function generateCutReport() {
                 <tr>
                     <td>${r.date || ""}</td>
                     <td>${r.customer || ""}</td>
-                    <td>${r.village || ""}</td>
                     <td><b>${r.bore || 0}B</b><br><small style="color:#16a34a; font-weight:bold;">${baadText}</small></td>
                     <td style="color:#dc2626; font-weight:bold;">${(r.cutQtl || 0).toFixed(2)}Q</td>
                     <td style="color:#b91c1c; font-weight:bold;">₹${Number(r.cut || 0).toFixed(0)}</td>
@@ -2401,6 +2435,12 @@ function loadSuggestions(){
     
     document.getElementById("customerList").innerHTML = uniqRich.map(n => `<option value="${n}">`).join("");
     document.getElementById("jformCustomerList").innerHTML = uniqRich.map(n => `<option value="${n}">`).join("");
+    
+    // Live Search Bar Datalist update
+    const searchDatalist = document.getElementById("searchCustomerList");
+    if(searchDatalist) {
+      searchDatalist.innerHTML = uniqRich.map(n => `<option value="${n}">`).join("");
+    }
 
     const localFathers = localData.map(d => d.father).filter(Boolean);
     const allFathers = [...new Set([...localFathers, ...crossFathers])].sort();
@@ -2887,7 +2927,6 @@ function loadSukhaiManagerData() {
                     <td><input type="checkbox" class="sukhai-row-check" data-id="${id}"></td>
                     <td>${r.date || "-"}</td>
                     <td style="font-weight:bold; color:var(--primary);">${r.customer || "-"}</td>
-                    <td>${r.village || "-"}</td>
                     <td>${r.bore || 0} Bags</td>
                     <td style="font-weight:bold; color:${r.applySukhaiChecked ? 'green' : 'red'};">${statusText}</td>
                 </tr>
@@ -2896,7 +2935,7 @@ function loadSukhaiManagerData() {
         });
         
         if(count === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">Koi data entry nahi hai!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">Koi data entry nahi hai!</td></tr>`;
         }
     });
 }
@@ -3166,7 +3205,7 @@ function saveJForm(event) {
                                });
                     });
                 } else {
-                    alert("JFormSaved Locally! ⚠️");
+                    alert("JForm Saved Locally! ⚠️");
                     closeJFormScreen();
                     loadSeason();
                 }
