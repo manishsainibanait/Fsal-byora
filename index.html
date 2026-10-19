@@ -6,7 +6,9 @@
 <title>Mandi App Pro</title>  
 <meta name="viewport" content="width=device-width, initial-scale=1">  
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>  
 
 :root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; color: #1e293b; }
@@ -23,7 +25,7 @@ th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}
 th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
 .actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
 .searchBar{background:#dbeafe;padding:12px;border-radius:10px;margin-bottom:12px; border: 1px solid #bfdbfe;}  
-#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen{  
+#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen,#gatePassScreen{  
  position:fixed;top:0;left:0;right:0;bottom:0;  
  background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
 }  
@@ -67,7 +69,7 @@ th{background: var(--primary);color:#fff; position: sticky; top: 0;}
 @media print {
   @page{ size: A4 landscape; margin: 8mm; }
   body * { visibility: hidden; }
-  #previewContent, #previewContent * { visibility: visible; }
+  #previewContent, #previewContent *, #gatePassPrintArea, #gatePassPrintArea * { visibility: visible; }
   #previewContent { position: absolute; left: 0; top: 0; width: 100% !important; transform: scale(var(--p-zoom)) !important; transform-origin: top left; padding: 0; margin: 0; }
   .no-print { display: none !important; }
 }
@@ -242,7 +244,6 @@ border: 1px solid #e2e8f0;
     overflow-wrap: break-word; 
 }
 
-/* Explicit column widths & frozen Customer column in Cut Report */
 #cutReportOutput th:nth-child(1), #cutReportOutput td:nth-child(1) { width: 11%; } 
 #cutReportOutput th:nth-child(2), #cutReportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; }
 #cutReportOutput th:nth-child(2) { position: sticky; left: 0; background: var(--danger); z-index: 20; }
@@ -278,14 +279,44 @@ background: #e2e8f0 !important;
 .ai-chip:hover { background: #bfdbfe; }
 .ai-result { background: white; border-radius: 8px; padding: 12px; border: 1px solid #cbd5e1; margin-top: 10px; font-size: 14px; line-height: 1.6; color: #334155; max-height: 250px; overflow-y: auto;}
 
-/* Handwriting Desi Parchi Layout Theme */
-.desi-slip-card {
-    background: #fffef2; border: 2px dashed #b5a477; border-radius: 4px; box-shadow: 3px 3px 8px rgba(0,0,0,0.08);
-    padding: 16px; margin: 12px 0; font-family: 'Courier New', Courier, monospace, sans-serif; position: relative; overflow: hidden;
+/* --- 2ND APP GATE PASS UI INTEGRATION --- */
+.gp-stat-box { background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:8px; text-align:center; flex:1; min-width:80px; }
+.gp-stat-box small { display:block; font-size:11px; color:#64748b; font-weight:600; }
+.gp-stat-box strong { font-size:15px; font-weight:800; }
+
+/* --- APP DROPDOWN MENU UI --- */
+.dropdown-menu-container { position: relative; display: inline-block; }
+.dropdown-menu-list {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 110%;
+  background: white;
+  min-width: 190px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 10000;
+  border: 1px solid #cbd5e1;
 }
-.desi-slip-card::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1px; background: rgba(239, 68, 68, 0.25); }
-.desi-slip-title { text-align: center; border-bottom: 1px solid #dcd1ab; padding-bottom: 4px; color: #854d0e; font-weight: bold; font-size: 16px; }
-.desi-slip-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e9e4c9; font-size: 13px; color: #4338ca; }
+.dropdown-menu-list button {
+  width: 100%;
+  text-align: left;
+  background: white;
+  color: #1e293b;
+  border: none;
+  border-radius: 0;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.dropdown-menu-list button:hover {
+  background: #f1f5f9;
+  color: var(--primary);
+}
+.dropdown-menu-list button:last-child { border-bottom: none; }
 </style>  
 </head>  
 <body>  
@@ -316,10 +347,20 @@ background: #e2e8f0 !important;
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
     <button onclick="logoutApp()" style="width:auto; padding:8px 15px; background:var(--danger); margin:0;">Logout 🚪</button>
-    <div style="display:flex; gap:5px;">
-        <button onclick="openReport()" style="width:auto; padding:8px 15px; background:var(--warning); margin:0;">📊 Report</button>
-        <button onclick="openCutReport()" style="width:auto; padding:8px 15px; background:#dc2626; margin:0;">📉 Cut Report</button>
-        <button onclick="setupNewPin()" style="width:auto; padding:8px 10px; font-size:12px; background:var(--primary); margin:0;">Set PIN</button>
+    <div style="display:flex; gap:6px; align-items:center;">
+        <button onclick="openReport()" style="width:auto; padding:8px 14px; background:var(--warning); margin:0;">📊 Report</button>
+        <button onclick="openCutReport()" style="width:auto; padding:8px 14px; background:#dc2626; margin:0;">📉 Cut Report</button>
+        
+        <!-- POPUP MENU (AI, SUKHAI, GATEPASS, SETPIN) -->
+        <div class="dropdown-menu-container">
+            <button onclick="toggleTopMenu()" style="width:auto; padding:8px 14px; background:#0f172a; margin:0; font-weight:bold; display:flex; align-items:center; gap:5px;">☰ Menu ▼</button>
+            <div id="topDropdownMenu" class="dropdown-menu-list">
+                <button onclick="menuAction('ai')">🤖 Ask AI</button>
+                <button onclick="menuAction('sukhai')">♨️ Sukhai Manager</button>
+                <button onclick="menuAction('gatepass')">🎫 Gatepass Details</button>
+                <button onclick="menuAction('setpin')">🔑 Set PIN</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -346,12 +387,10 @@ background: #e2e8f0 !important;
     </div>
 </div>
 
-<div style="display:flex;gap:4px; flex-wrap: wrap;">  
-<button onclick="openSeasonScreen()" style="background: var(--secondary); flex: 1; min-width: 70px;">⚙ Setup</button>  
-<button onclick="toggleAIPanel()" style="background: #1e40af; font-weight: bold; flex: 1.2; min-width: 110px;">🤖 Ask AI</button>  
-<button onclick="openSukhaiManager()" style="background: #7c3aed; font-weight: bold; flex: 1.2; min-width: 110px;">♨️ Sukhai</button>
-<button onclick="openJFormScreen()" style="background: #db2777; font-weight: bold; flex: 1.2; min-width: 100px;">📝 Add JForm</button>
-<button onclick="openEntryScreen()" style="background: var(--primary); font-size: 16px; font-weight: bold; flex: 1.5; min-width: 110px;">➕ Add Entry</button>  
+<div style="display:flex;gap:6px;">  
+<button onclick="openSeasonScreen()" style="background: var(--secondary); flex: 1;">⚙ Setup</button>  
+<button onclick="openJFormScreen()" style="background: #db2777; font-weight: bold; flex: 1.2;">📝 Add JForm</button>
+<button onclick="openEntryScreen()" style="background: var(--primary); font-size: 16px; font-weight: bold; flex: 1.5;">➕ Add Entry</button>  
 </div>  
 
 <div class="ai-panel" id="mandiAiPanel">
@@ -855,12 +894,104 @@ background: #e2e8f0 !important;
     </form>
 </div>
 
+<!-- ========================================== -->
+<!-- 2ND APP GATE PASS SYSTEM INTEGRATED SCREEN -->
+<!-- ========================================== -->
+<div id="gatePassScreen">
+  <div class="no-print">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:#0f172a; color:white; padding:12px; border-radius:10px;">
+        <div>
+          <h2 style="font-size:18px; margin:0;">🎫 Gate Pass Management (2nd App Live Data)</h2>
+          <small id="gpStatusBadge" style="color:#93c5fd; font-weight:600;">डेटा कनेक्ट हो रहा है...</small>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button onclick="syncGatePassData()" style="width:auto; background:#1e40af; padding:6px 14px; margin:0; font-size:13px;">🔄 Sync</button>
+          <button onclick="closeGatePassScreen()" style="width:auto; background:var(--danger); padding:6px 14px; margin:0; font-size:13px;">Close ❌</button>
+        </div>
+    </div>
+
+    <!-- Quick Stats from 2nd App -->
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <div class="gp-stat-box"><small>कुल रिकॉर्ड</small><strong id="gpTotalRows" style="color:#0f172a;">0</strong></div>
+        <div class="gp-stat-box"><small>फिल्टर रिकॉर्ड</small><strong id="gpVisibleRows" style="color:#1e40af;">0</strong></div>
+        <div class="gp-stat-box"><small>कुल क्विंटल</small><strong id="gpTotalQty" style="color:var(--success);">0.00</strong></div>
+        <div class="gp-stat-box"><small>कुल बोरे</small><strong id="gpTotalBore" style="color:#7c3aed;">0</strong></div>
+    </div>
+
+    <!-- Filters from 2nd App -->
+    <div class="searchBar" style="background:#f8fafc; border:1px solid #cbd5e1;">
+        <input id="gpSearch" placeholder="🔍 खोजें: किसान नाम, गाँव, या Gatepass No..." oninput="renderGatePassTable()" style="margin:0 0 8px 0; font-weight:bold; background:white;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:6px;">
+            <select id="gpSeasonFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी सीज़न (All)</option></select>
+            <select id="gpCropFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी फसलें (All)</option></select>
+            <select id="gpVillageFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी गाँव (All)</option></select>
+            <input type="date" id="gpFromDate" oninput="renderGatePassTable()" style="margin:0;" placeholder="From">
+            <input type="date" id="gpToDate" oninput="renderGatePassTable()" style="margin:0;" placeholder="To">
+            <button onclick="clearGpFilters()" style="margin:0; background:var(--secondary); padding:8px;">Clear Filter</button>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+            <button onclick="exportGatePassExcel()" style="background:#7c3aed; margin:0; flex:1;">⬇️ Export Gate Pass Excel</button>
+            <button onclick="window.print()" style="background:#000; margin:0; flex:1;">🖨️ Print List</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="gatePassPrintArea" class="tableBox" style="max-height:65vh;">
+    <table>
+      <thead>
+        <tr style="background:#0f172a; color:white;">
+          <th style="width:40px;">#</th>
+          <th>Farmer / Customer</th>
+          <th>Date</th>
+          <th>Gatepass No</th>
+          <th>Village</th>
+          <th>Season</th>
+          <th>Crop</th>
+          <th>Bore</th>
+          <th>Qty (Qtl)</th>
+        </tr>
+      </thead>
+      <tbody id="gpTableBody">
+        <tr><td colspan="9" style="text-align:center; padding:20px; color:#64748b;">Gate Pass डेटा लोड हो रहा है...</td></tr>
+      </tbody>
+      <tfoot id="gpTableFoot" style="position:sticky; bottom:0; background:#e2e8f0; font-weight:bold;"></tfoot>
+    </table>
+  </div>
+</div>
+
 </div> 
 
 <script>  
 const MASTER_PASSWORD = "786786";
 let isCreatingNewSeason = false; 
 let globalSeasonsObject = {}; 
+
+/* --- POPUP MENU LOGIC --- */
+function toggleTopMenu() {
+    const m = document.getElementById("topDropdownMenu");
+    m.style.display = (m.style.display === "block") ? "none" : "block";
+}
+
+document.addEventListener("click", function(e) {
+    const container = document.querySelector(".dropdown-menu-container");
+    if (container && !container.contains(e.target)) {
+        const m = document.getElementById("topDropdownMenu");
+        if (m) m.style.display = "none";
+    }
+});
+
+function menuAction(action) {
+    document.getElementById("topDropdownMenu").style.display = "none";
+    if (action === 'ai') {
+        toggleAIPanel();
+    } else if (action === 'sukhai') {
+        openSukhaiManager();
+    } else if (action === 'gatepass') {
+        openGatePassScreen();
+    } else if (action === 'setpin') {
+        setupNewPin();
+    }
+}
 
 function updateAppIconBadge(count) {
   const totalBags = Math.max(0, parseInt(count) || 0);
@@ -979,7 +1110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      // Search bar auto extraction from rich format
       document.getElementById("searchName").addEventListener(evtName, function() {
         let parsed = parseRichCustomerName(this.value);
         if (parsed) {
@@ -1035,6 +1165,7 @@ function unlockApp() {
     document.getElementById("mainAppWrapper").style.display = "block";
     document.getElementById("pinInput").value = "";
     loadSeasons(); 
+    initGatePassDatabase();
 }
 
 function handlePinSubmit() {
@@ -1145,6 +1276,214 @@ const sainiFirebaseConfig = {
 };
 const sainiAppInstance = firebase.initializeApp(sainiFirebaseConfig, "sainiApp");
 const sainiDb = sainiAppInstance.database();
+
+/* --- 2ND APP (GATE PASS) FIREBASE CONNECTION ENGINE --- */
+const gatePassFirebaseConfig = {
+  apiKey: "AIzaSyDZcOc-H9DUGPj_5euImVr8QGMBvyhv8LA",
+  authDomain: "jform-5b6fa.firebaseapp.com",
+  databaseURL: "https://jform-5b6fa-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jform-5b6fa"
+};
+const gatePassAppInstance = firebase.initializeApp(gatePassFirebaseConfig, "gatePassApp");
+const gatePassDb = gatePassAppInstance.database();
+const gatePassAuth = gatePassAppInstance.auth();
+
+let gatePassRecords = [];
+let gatePassMaster = { seasons: ["2026","2025"], crops: [{name:"Wheat",weightKg:50},{name:"Mustard",weightKg:50},{name:"Paddy",weightKg:37.5}] };
+
+async function initGatePassDatabase() {
+    try {
+        const badge = document.getElementById("gpStatusBadge");
+        if(badge) badge.innerText = "Connecting & Authenticating...";
+        
+        if (!gatePassAuth.currentUser) {
+            await gatePassAuth.signInAnonymously();
+        }
+
+        gatePassDb.ref("gatePassMasterData").on("value", snap => {
+            let v = snap.val();
+            if(v && typeof v === "object") {
+                if(Array.isArray(v.seasons)) gatePassMaster.seasons = v.seasons;
+                if(Array.isArray(v.crops)) gatePassMaster.crops = v.crops;
+            }
+            updateGpFiltersOptions();
+        });
+
+        gatePassDb.ref("gatePassExcelRecords").on("value", snap => {
+            let v = snap.val() || {};
+            gatePassRecords = Object.entries(v).map(([k, val]) => ({ id: k, ...(typeof val === 'object' ? val : {}) }));
+            if(badge) badge.innerText = `🟢 Connected Live (${gatePassRecords.length} Records)`;
+            renderGatePassTable();
+        }, err => {
+            if(badge) badge.innerText = "❌ Error: " + err.message;
+            console.error("Gatepass read error:", err);
+        });
+    } catch(err) {
+        console.error("Gatepass Auth init error:", err);
+        const badge = document.getElementById("gpStatusBadge");
+        if(badge) badge.innerText = "❌ Auth Failed: " + err.message;
+    }
+}
+
+function openGatePassScreen() {
+    document.getElementById("gatePassScreen").style.display = "block";
+    if(gatePassRecords.length === 0) {
+        initGatePassDatabase();
+    }
+    renderGatePassTable();
+}
+
+function closeGatePassScreen() {
+    document.getElementById("gatePassScreen").style.display = "none";
+}
+
+async function syncGatePassData() {
+    try {
+        if (!gatePassAuth.currentUser) await gatePassAuth.signInAnonymously();
+        const snap = await gatePassDb.ref("gatePassExcelRecords").once("value");
+        let v = snap.val() || {};
+        gatePassRecords = Object.entries(v).map(([k, val]) => ({ id: k, ...(typeof val === 'object' ? val : {}) }));
+        renderGatePassTable();
+        alert("Gate Pass Records Synced Live! ✅ (" + gatePassRecords.length + " entries)");
+    } catch(err) {
+        alert("Sync error: " + err.message);
+    }
+}
+
+function normText(v) {
+    return String(v ?? "").toLowerCase().replace(/[\s._\-/#()[\]]/g, "").replace(/[^a-z0-9\u0900-\u097f]/g, "");
+}
+
+function getGpField(row, names) {
+    let keys = Object.keys(row || {});
+    for(let name of names) {
+        let found = keys.find(k => normText(k) === normText(name));
+        if(found !== undefined) return row[found];
+    }
+    return "";
+}
+
+function updateGpFiltersOptions() {
+    let sSel = document.getElementById("gpSeasonFilter");
+    let cSel = document.getElementById("gpCropFilter");
+    if(!sSel || !cSel) return;
+    
+    let curS = sSel.value;
+    let curC = cSel.value;
+    
+    sSel.innerHTML = '<option value="">सभी सीज़न (All)</option>' + (gatePassMaster.seasons || []).map(s => `<option value="${s}">${s}</option>`).join("");
+    cSel.innerHTML = '<option value="">सभी फसलें (All)</option>' + (gatePassMaster.crops || []).map(c => `<option value="${c.name || c}">${c.name || c}</option>`).join("");
+    
+    if(curS) sSel.value = curS;
+    if(curC) cSel.value = curC;
+}
+
+function renderGatePassTable() {
+    const q = normText(document.getElementById("gpSearch").value);
+    const sFilter = document.getElementById("gpSeasonFilter").value;
+    const cFilter = document.getElementById("gpCropFilter").value;
+    const vFilter = document.getElementById("gpVillageFilter").value;
+    const fDate = document.getElementById("gpFromDate").value;
+    const tDate = document.getElementById("gpToDate").value;
+
+    let list = gatePassRecords.filter(r => {
+        let cust = String(getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]));
+        let village = String(getGpField(r, ["Village", "Village Name", "गाँव", "गांव"]));
+        let gpNo = String(getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]));
+        let sVal = String(getGpField(r, ["Season Year", "Season", "सीज़न"]));
+        let cropVal = String(getGpField(r, ["Crop", "Crop Name", "फसल"]));
+        let dVal = String(getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]));
+
+        if(sFilter && normText(sVal) !== normText(sFilter)) return false;
+        if(cFilter && normText(cropVal) !== normText(cFilter)) return false;
+        if(vFilter && village !== vFilter) return false;
+        if(fDate && dVal < fDate) return false;
+        if(tDate && dVal > tDate) return false;
+        if(q) {
+            let combined = cust + " " + village + " " + gpNo;
+            if(!normText(combined).includes(q)) return false;
+        }
+        return true;
+    });
+
+    let villages = [...new Set(gatePassRecords.map(r => String(getGpField(r, ["Village", "Village Name", "गाँव", "गांव"])).trim()).filter(Boolean))].sort();
+    let vSel = document.getElementById("gpVillageFilter");
+    let prevV = vSel.value;
+    vSel.innerHTML = '<option value="">सभी गाँव (All)</option>' + villages.map(v => `<option value="${v}">${v}</option>`).join("");
+    if(villages.includes(prevV)) vSel.value = prevV;
+
+    document.getElementById("gpTotalRows").innerText = gatePassRecords.length;
+    document.getElementById("gpVisibleRows").innerText = list.length;
+
+    let totQtl = 0, totBore = 0;
+    let tbody = document.getElementById("gpTableBody");
+    tbody.innerHTML = "";
+
+    if(list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:20px; color:#64748b;">कोई Gate Pass रिकॉर्ड नहीं मिला।</td></tr>`;
+        document.getElementById("gpTableFoot").innerHTML = "";
+        document.getElementById("gpTotalQty").innerText = "0.00";
+        document.getElementById("gpTotalBore").innerText = "0";
+        return;
+    }
+
+    list.forEach((r, idx) => {
+        let cust = getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]) || "-";
+        let dVal = getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]) || "-";
+        let gpNo = getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]) || "-";
+        let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव"]) || "-";
+        let sVal = getGpField(r, ["Season Year", "Season", "सीज़न"]) || "-";
+        let cropVal = getGpField(r, ["Crop", "Crop Name", "फसल"]) || "-";
+        let boreVal = Number(getGpField(r, ["Bore", "Bores", "Bags", "Bag", "बोरे"]) || 0);
+        let qtyVal = Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
+
+        totQtl += qtyVal;
+        totBore += boreVal;
+
+        tbody.innerHTML += `
+          <tr style="border-bottom:1px solid #e2e8f0;">
+             <td>${idx + 1}</td>
+             <td style="font-weight:bold; color:var(--primary);">${cust}</td>
+             <td>${dVal}</td>
+             <td><b>${gpNo}</b></td>
+             <td>${village}</td>
+             <td><span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-size:11px;">${sVal}</span></td>
+             <td><span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-size:11px;">${cropVal}</span></td>
+             <td>${boreVal}</td>
+             <td style="font-weight:bold; color:var(--success);">${qtyVal.toFixed(2)}</td>
+          </tr>
+        `;
+    });
+
+    document.getElementById("gpTotalQty").innerText = totQtl.toFixed(2);
+    document.getElementById("gpTotalBore").innerText = totBore;
+
+    document.getElementById("gpTableFoot").innerHTML = `
+      <tr>
+         <td colspan="7" style="text-align:right; padding:10px;"><b>कुल Total:</b></td>
+         <td style="padding:10px; color:#7c3aed;"><b>${totBore}</b></td>
+         <td style="padding:10px; color:var(--success);"><b>${totQtl.toFixed(2)} Qtl</b></td>
+      </tr>
+    `;
+}
+
+function clearGpFilters() {
+    document.getElementById("gpSearch").value = "";
+    document.getElementById("gpSeasonFilter").value = "";
+    document.getElementById("gpCropFilter").value = "";
+    document.getElementById("gpVillageFilter").value = "";
+    document.getElementById("gpFromDate").value = "";
+    document.getElementById("gpToDate").value = "";
+    renderGatePassTable();
+}
+
+function exportGatePassExcel() {
+    if(gatePassRecords.length === 0) { alert("कोई डेटा नहीं है!"); return; }
+    let ws = XLSX.utils.json_to_sheet(gatePassRecords);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "GatePass");
+    XLSX.writeFile(wb, "GatePass_Data.xlsx");
+}
 
 let editID=null, currentDefaultBW=37.5, sortMode = "newest", editOldTimestamp = null, editOldDate = null;
 let editOldOrder = null;
@@ -1621,7 +1960,6 @@ function updateTable(arr){
     totalKgRaw += origEntryKg;
     totalB += bore;
     
-    // Accurate calculation: cutQtl ko seedha minus karke remaining weight calculate karna
     let cutKgThisRow = Number(r.cutQtl || 0) * 100;
     let actualRemainingRowKg = origEntryKg - cutKgThisRow;
     if (actualRemainingRowKg < 0) actualRemainingRowKg = 0;
@@ -1708,7 +2046,6 @@ function updateTable(arr){
   const finalBoreCount = Math.floor(totalKgRaw / bw);
   const finalExtraKg = Math.round((totalKgRaw % bw) * 10) / 10;
 
-  // Cut ke baad sahi kam hue bags & kg[span_0](start_span)[span_0](end_span)
   const finalBoreAfterCut = Math.floor(totalFinalKgRaw / bw);
   const finalExtraAfterCut = Math.round((totalFinalKgRaw % bw) * 10) / 10;
 
@@ -2436,7 +2773,6 @@ function loadSuggestions(){
     document.getElementById("customerList").innerHTML = uniqRich.map(n => `<option value="${n}">`).join("");
     document.getElementById("jformCustomerList").innerHTML = uniqRich.map(n => `<option value="${n}">`).join("");
     
-    // Live Search Bar Datalist update
     const searchDatalist = document.getElementById("searchCustomerList");
     if(searchDatalist) {
       searchDatalist.innerHTML = uniqRich.map(n => `<option value="${n}">`).join("");
