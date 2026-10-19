@@ -410,7 +410,7 @@ background: #e2e8f0 !important;
     <span class="ai-chip" onclick="viewCommissionTracker()" style="background:#7c3aed; color:#fff;">⚠️ Missing Comm Tracker</span>
   </div>
 
-  <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin: 8px 0; border: 1px solid #cbd5e1;">
+  <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-8px 0; border: 1px solid #cbd5e1;">
     <b style="color: #4338ca; font-size: 13px;">📊 Quick Commission Modifier (No Typing):</b>
     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px;">
       <select id="commTargetSelect" style="flex: 1; min-width: 120px; padding:8px; margin:0;" onchange="toggleCommTargetView()">
@@ -513,11 +513,10 @@ background: #e2e8f0 !important;
   <th style="width:30px;"><input type="checkbox" onclick="toggleAll(this)"></th>
   <th>Date</th>  
   <th>Customer</th>  
-  <th>Bore</th>  
-  <th>Extra</th>
-  <th>Note</th>
+  <th>Bags & Weight</th>  
   <th style="min-width: 165px;">Weight (Pehle/Baad)</th>
   <th>Payment Details</th>
+  <th>Note</th>
   <th>Edit</th>
 </tr>  
 </thead>  
@@ -1526,10 +1525,14 @@ function openCustomPreview() {
         let cName = tr.getAttribute('data-customer') || "";
         let fName = tr.getAttribute('data-father') || "";
         let vName = tr.getAttribute('data-village') || "";
-        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cName}</td><td>${fName}</td><td>${vName}</td><td>${cells[3].innerText}</td><td>${cells[4].innerText}</td><td>${cells[5].innerText}</td><td>${cells[6].innerText}</td><td>${cells[7].innerText.replace(/Comm:.*\n?/g,"")}</td></tr>`;
-        
         let b = Number(tr.getAttribute('data-bore') || 0);
         let e = Number(tr.getAttribute('data-extra') || 0);
+        let noteTxt = tr.getAttribute('data-note') || "";
+        let qtlTxt = tr.getAttribute('data-qtl') || "";
+        let amtTxt = tr.getAttribute('data-amt') || "";
+        
+        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cName}</td><td>${fName}</td><td>${vName}</td><td>${b}</td><td>${e}</td><td>${noteTxt}</td><td>${qtlTxt}</td><td>${amtTxt}</td></tr>`;
+        
         let w = Number(tr.getAttribute('data-bw') || currentDefaultBW || 37.5);
         totalKgRaw += (b * w) + e;
     });
@@ -2006,8 +2009,11 @@ function updateTable(arr){
       metaSubText = `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(V: ${shortVillage})</div>`;
     }
 
+    // Single column formatting: e.g. "18 Bag 10 Kg" or "18 Bag"
+    let bagsWeightTxt = extra > 0 ? `<b>${bore} Bag</b> ${extra} Kg` : `<b>${bore} Bag</b>`;
+
     output.innerHTML += `
-    <tr data-id="${r.id}" data-customer="${r.customer || ''}" data-father="${r.father || ''}" data-village="${r.village || ''}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" ${rowBgStyle}>
+    <tr data-id="${r.id}" data-customer="${r.customer || ''}" data-father="${r.father || ''}" data-village="${r.village || ''}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" data-note="${r.note || ''}" data-qtl="${r.quintal || ''}" data-amt="${r.amount || 0}" ${rowBgStyle}>
       <td><input type="checkbox" class="print-row-check"></td>
       <td>${r.date || ""}</td>
       <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="singleClickPrint('${r.id}')" ondblclick="doubleClickEdit('${r.id}')">
@@ -2015,9 +2021,7 @@ function updateTable(arr){
         ${metaSubText}
         ${jformBadge}
       </td>
-      <td>${r.bore || ""}</td>
-      <td>${r.extra || 0}</td>
-      <td><small>${r.note || ""}</small></td>
+      <td>${bagsWeightTxt}</td>
       <td style="font-size:12px; line-height:1.4; white-space:nowrap; min-width:165px;">
         <div>⏳ <b>Pehle:</b> ${pehleBagsTxt} (${preCutQtlPart}Q ${preCutKgPart}K)</div>
         <div style="color:#dc2626;">📉 <b>Cut:</b> ${(r.cutQtl || 0).toFixed(2)}Q</div>
@@ -2033,6 +2037,7 @@ function updateTable(arr){
           ${sukhaiBadge}
         </div>
       </td>
+      <td><small>${r.note || ""}</small></td>
       <td>
         <button class="actionBtn" style="background:#b7791f; font-size:11px;" onclick="openForcedPreview('${r.id}', 'khachi')">📄 Kachhi</button>
         <button class="actionBtn" style="background:#2563eb; font-size:11px;" onclick="openForcedPreview('${r.id}', 'pakki')">🏛️ Pakki</button>
