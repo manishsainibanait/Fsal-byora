@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>  
 
-:root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; color: #1e293b; }
+:root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; color: #1e293b; --p-zoom: 1.0; }
 body{font-family:'Segoe UI',Arial,sans-serif;padding:12px;background: var(--bg); color: #1e293b;}  
 button,input,select{  
  width:100%;padding:12px;margin:6px 0;border-radius:8px;  
@@ -38,39 +38,60 @@ th{background: var(--primary);color:#fff; position: sticky; top: 0;}
   background: rgba(0,0,0,0.95); z-index: 10000; display: none;
   flex-direction: column;
 }
-.previewHeader { background: #fff; padding: 15px; display: flex; gap: 10px; align-items: center; justify-content: space-between;}
-.previewBody { flex: 1; overflow: auto; padding: 20px; background: #334155; display: block; }
-#previewContent { background: #fff; padding: 30px; transform-origin: top left; width: fit-content; margin: 0 auto; box-shadow: 0 0 50px rgba(0,0,0,0.5);}
-#previewContent thead th{
- position: sticky;
- top: 0;
- background: #2563eb;
- color: white;
- z-index: 10;
+.previewHeader { background: #fff; padding: 10px 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; z-index: 10001; }
+.previewBody { 
+  flex: 1; 
+  overflow: auto; 
+  padding: 10px; 
+  background: #334155; 
+  display: block; 
+  -webkit-overflow-scrolling: touch; 
 }
-.previewBody{
- overflow-y:auto;
- height:100%;
- max-height:80vh;
+#previewContent { 
+  background: #fff; 
+  padding: 16px; 
+  transform-origin: top left; 
+  width: fit-content !important; 
+  min-width: 960px; 
+  margin: 0 auto; 
+  box-shadow: 0 0 35px rgba(0,0,0,0.5); 
+  box-sizing: border-box; 
 }
 
-#previewContent table{
- border-collapse:collapse;
- width:100%;
-}
-
-#previewContent thead th{
- position: sticky;
- top: 0;
- background:#2563eb;
- color:#fff;
- z-index:999;
-}
+/* FIXED PERFECT PRINT STYLES FOR A4 LANDSCAPE */
 @media print {
-  @page{ size: A4 landscape; margin: 8mm; }
-  body * { visibility: hidden; }
-  #previewContent, #previewContent *, #gatePassPrintArea, #gatePassPrintArea * { visibility: visible; }
-  #previewContent { position: absolute; left: 0; top: 0; width: 100% !important; transform: scale(var(--p-zoom)) !important; transform-origin: top left; padding: 0; margin: 0; }
+  @page{ size: A4 landscape; margin: 6mm; }
+  html, body { background: #fff !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  body * { visibility: hidden !important; }
+  #previewContent, #previewContent * { visibility: visible !important; }
+  #previewContent { 
+    position: absolute !important; 
+    left: 0 !important; 
+    top: 0 !important; 
+    width: 100% !important; 
+    min-width: 100% !important; 
+    max-width: 100% !important; 
+    transform: none !important; 
+    padding: 0 !important; 
+    margin: 0 !important; 
+    box-shadow: none !important; 
+    overflow: visible !important;
+  }
+  #previewContent table { 
+    width: 100% !important; 
+    border-collapse: collapse !important; 
+    font-size: 11px !important; 
+    table-layout: auto !important;
+  }
+  #previewContent th, #previewContent td { 
+    border: 1px solid #333 !important; 
+    padding: 5px 4px !important; 
+    color: #000 !important; 
+  }
+  #previewContent thead th { 
+    background: #e2e8f0 !important; 
+    color: #000 !important; 
+  }
   .no-print { display: none !important; }
 }
 
@@ -260,16 +281,6 @@ font-size:14px;
 font-weight:bold;
 padding:10px;
 background: #e2e8f0 !important; 
-}
-#previewContent table th,
-#previewContent table td {
-  padding: 5px !important;
-  font-size: 12px !important;
-}
-
-#previewContent h2 {
-  font-size: 16px;
-  margin: 5px 0;
 }
 
 /* --- AI STYLING --- */
@@ -526,12 +537,12 @@ background: #e2e8f0 !important;
 
 <div id="printPreviewModal">
     <div class="previewHeader no-print">
-        <button onclick="closePreview()" style="background:var(--danger); width:auto;">Cancel</button>
+        <button onclick="closePreview()" style="background:var(--danger); width:auto; padding:8px 16px;">Cancel ❌</button>
         <div style="display:flex; align-items:center; gap:8px;">
-            <span>Zoom:</span>
-            <input type="range" id="zoomRange" min="0.5" max="2.0" step="0.05" value="1.0" style="width:120px;" oninput="applyZoom()">
+            <span style="font-weight:bold; font-size:13px;">Zoom:</span>
+            <input type="range" id="zoomRange" min="0.25" max="1.5" step="0.02" value="1.0" style="width:130px;" oninput="applyZoom()">
         </div>
-        <button onclick="window.print()" style="background:var(--success); width:auto;">Print Now</button>
+        <button onclick="window.print()" style="background:var(--success); width:auto; padding:8px 20px; font-weight:bold;">Print Now 🖨️</button>
     </div>
     <div class="previewBody">
         <div id="previewContent"></div>
@@ -913,8 +924,8 @@ background: #e2e8f0 !important;
     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
         <div class="gp-stat-box"><small>कुल रिकॉर्ड</small><strong id="gpTotalRows" style="color:#0f172a;">0</strong></div>
         <div class="gp-stat-box"><small>फिल्टर रिकॉर्ड</small><strong id="gpVisibleRows" style="color:#1e40af;">0</strong></div>
+        <div class="gp-stat-box"><small>चयनित (Selected)</small><strong id="gpSelectedRows" style="color:#dc2626;">0</strong></div>
         <div class="gp-stat-box"><small>कुल क्विंटल</small><strong id="gpTotalQty" style="color:var(--success);">0.00</strong></div>
-        <div class="gp-stat-box"><small>कुल बोरे</small><strong id="gpTotalBore" style="color:#7c3aed;">0</strong></div>
     </div>
 
     <!-- Filters from 2nd App with Biometric & Auction Filters -->
@@ -952,21 +963,22 @@ background: #e2e8f0 !important;
     <table>
       <thead>
         <tr style="background:#0f172a; color:white;">
-          <th style="width:40px;">#</th>
-          <th>Farmer / Customer</th>
+          <th style="width:30px; text-align:center;"><input type="checkbox" id="masterGpCheck" onclick="toggleAllGp(this)"></th>
+          <th style="width:35px;">#</th>
+          <th>Farmer Name</th>
           <th>Date</th>
           <th>Gatepass No</th>
-          <th>Mobile No</th>
+          <th>Mobile</th>
           <th>Village</th>
-          <th>Status (Bio/Auc)</th>
+          <th>Qty (Qtl)</th>
+          <th>Biometric</th>
+          <th>Auction</th>
           <th>Season</th>
           <th>Crop</th>
-          <th>Bore</th>
-          <th>Qty (Qtl)</th>
         </tr>
       </thead>
       <tbody id="gpTableBody">
-        <tr><td colspan="11" style="text-align:center; padding:20px; color:#64748b;">Gate Pass डेटा लोड हो रहा है...</td></tr>
+        <tr><td colspan="12" style="text-align:center; padding:20px; color:#64748b;">Gate Pass डेटा लोड हो रहा है...</td></tr>
       </tbody>
       <tfoot id="gpTableFoot" style="position:sticky; bottom:0; background:#e2e8f0; font-weight:bold;"></tfoot>
     </table>
@@ -1331,17 +1343,14 @@ function checkGpBooleanField(row, names) {
     let raw = getGpField(row, names).toLowerCase().trim();
     if (!raw) return false;
 
-    // Check for explicit negative status
     if (raw.includes("pending") || raw.includes("unsold") || raw.includes("unauction") || raw.includes("reject") || raw.includes("fail") || raw.includes("not") || raw === "no" || raw === "0" || raw === "false") {
         return false;
     }
 
-    // Check for explicit positive status
     if (raw.includes("auction") || raw.includes("sold") || raw.includes("yes") || raw.includes("done") || raw.includes("ok") || raw.includes("success") || raw.includes("verif") || raw.includes("auth") || raw.includes("complete") || raw.includes("pass")) {
         return true;
     }
 
-    // If numerical (e.g. auction rate or weight > 0)
     let numVal = parseFloat(raw.replace(/,/g, ""));
     if (!isNaN(numVal) && numVal > 0) {
         return true;
@@ -1388,7 +1397,6 @@ async function initGatePassDatabase() {
 function openGatePassScreen() {
     document.getElementById("gatePassScreen").style.display = "block";
     
-    // Auto-select season based on active workspace year/season if not yet set
     const curSeasonEl = document.getElementById("season");
     const activeSeasonVal = curSeasonEl ? curSeasonEl.value : "";
     const gpSeasonSel = document.getElementById("gpSeasonFilter");
@@ -1435,21 +1443,29 @@ function updateGpFiltersOptions() {
     let curC = cSel.value;
     let curV = vSel.value;
     
-    // Combine Master Seasons with Any Unique Seasons in Database Records
     let recordSeasons = gatePassRecords.map(r => getGpField(r, ["Season Year", "Season", "सीज़न"])).filter(Boolean);
     let allSeasons = [...new Set([...(gatePassMaster.seasons || []), ...recordSeasons])].filter(Boolean).sort().reverse();
     sSel.innerHTML = '<option value="">सभी सीज़न (All)</option>' + allSeasons.map(s => `<option value="${s}">${s}</option>`).join("");
     
-    // Crops
     cSel.innerHTML = '<option value="">सभी फसलें (All)</option>' + (gatePassMaster.crops || []).map(c => `<option value="${c.name || c}">${c.name || c}</option>`).join("");
     
-    // Dynamic All Villages from Records
     let allVillages = [...new Set(gatePassRecords.map(r => getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"])).filter(Boolean))].sort();
     vSel.innerHTML = '<option value="">सभी गाँव (All)</option>' + allVillages.map(v => `<option value="${v}">${v}</option>`).join("");
 
     if(curS && [...sSel.options].some(o => o.value === curS)) sSel.value = curS;
     if(curC && [...cSel.options].some(o => o.value === curC)) cSel.value = curC;
     if(curV && [...vSel.options].some(o => o.value === curV)) vSel.value = curV;
+}
+
+function toggleAllGp(master) {
+    document.querySelectorAll('.gp-row-checkbox').forEach(chk => chk.checked = master.checked);
+    updateGpSelectedCount();
+}
+
+function updateGpSelectedCount() {
+    let cnt = document.querySelectorAll('.gp-row-checkbox:checked').length;
+    let selBadge = document.getElementById("gpSelectedRows");
+    if(selBadge) selBadge.innerText = cnt;
 }
 
 function getFilteredGatePassList() {
@@ -1497,16 +1513,19 @@ function renderGatePassTable() {
 
     document.getElementById("gpTotalRows").innerText = gatePassRecords.length;
     document.getElementById("gpVisibleRows").innerText = list.length;
+    document.getElementById("gpSelectedRows").innerText = "0";
 
-    let totQtl = 0, totBore = 0;
+    const mCheck = document.getElementById("masterGpCheck");
+    if(mCheck) mCheck.checked = false;
+
+    let totQtl = 0;
     let tbody = document.getElementById("gpTableBody");
     tbody.innerHTML = "";
 
     if(list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px; color:#64748b;">कोई Gate Pass रिकॉर्ड नहीं मिला।</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:20px; color:#64748b;">कोई Gate Pass रिकॉर्ड नहीं मिला।</td></tr>`;
         document.getElementById("gpTableFoot").innerHTML = "";
         document.getElementById("gpTotalQty").innerText = "0.00";
-        document.getElementById("gpTotalBore").innerText = "0";
         return;
     }
 
@@ -1518,43 +1537,46 @@ function renderGatePassTable() {
         let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]) || "-";
         let sVal = getGpField(r, ["Season Year", "Season", "सीज़न"]) || "-";
         let cropVal = getGpField(r, ["Crop", "Crop Name", "फसल"]) || "-";
-        let boreVal = Number(getGpField(r, ["Bore", "Bores", "Bags", "Bag", "बोरे"]) || 0);
         let qtyVal = Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
 
         let isBio = checkGpBooleanField(r, ["Biometric", "Bio", "Thumb", "Biometric Status", "Aadhaar Bio"]);
         let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate", "Buyer", "Purchaser Name"]);
 
         totQtl += qtyVal;
-        totBore += boreVal;
 
-        let bioBadge = isBio ? `<span style="background:#dcfce7; color:#15803d; padding:2px 5px; border-radius:4px; font-size:10px; font-weight:bold;">🧬 Bio</span>` : `<span style="background:#fee2e2; color:#b91c1c; padding:2px 5px; border-radius:4px; font-size:10px;">No Bio</span>`;
-        let aucBadge = isAuction ? `<span style="background:#fef3c7; color:#b45309; padding:2px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚖️ Auc Done</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 5px; border-radius:4px; font-size:10px;">Pending</span>`;
+        let bioBadge = isBio 
+          ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">✅ Yes</span>` 
+          : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">❌ No</span>`;
+        
+        let aucBadge = isAuction 
+          ? `<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">✅ Done</span>` 
+          : `<span style="background:#f1f5f9; color:#64748b; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">⏳ Pending</span>`;
 
         tbody.innerHTML += `
-          <tr style="border-bottom:1px solid #e2e8f0;">
-             <td>${idx + 1}</td>
+          <tr style="border-bottom:1px solid #e2e8f0;" data-id="${r.id}">
+             <td style="text-align:center;"><input type="checkbox" class="gp-row-checkbox" value="${r.id}" onchange="updateGpSelectedCount()"></td>
+             <td style="text-align:center;">${idx + 1}</td>
              <td style="font-weight:bold; color:var(--primary);">${cust}</td>
              <td>${dVal}</td>
              <td><b>${gpNo}</b></td>
              <td><span style="color:#0f766e; font-weight:600;">${mobile}</span></td>
              <td style="font-weight:bold; color:#1e293b;">${village}</td>
-             <td><div style="display:flex; gap:3px; flex-wrap:wrap;">${bioBadge} ${aucBadge}</div></td>
+             <td style="font-weight:bold; color:var(--success);">${qtyVal.toFixed(2)}</td>
+             <td style="text-align:center;">${bioBadge}</td>
+             <td style="text-align:center;">${aucBadge}</td>
              <td><span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-size:11px;">${sVal}</span></td>
              <td><span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-size:11px;">${cropVal}</span></td>
-             <td>${boreVal}</td>
-             <td style="font-weight:bold; color:var(--success);">${qtyVal.toFixed(2)}</td>
           </tr>
         `;
     });
 
     document.getElementById("gpTotalQty").innerText = totQtl.toFixed(2);
-    document.getElementById("gpTotalBore").innerText = totBore;
 
     document.getElementById("gpTableFoot").innerHTML = `
       <tr>
-         <td colspan="9" style="text-align:right; padding:10px;"><b>कुल Total:</b></td>
-         <td style="padding:10px; color:#7c3aed;"><b>${totBore}</b></td>
+         <td colspan="7" style="text-align:right; padding:10px;"><b>कुल Total:</b></td>
          <td style="padding:10px; color:var(--success);"><b>${totQtl.toFixed(2)} Qtl</b></td>
+         <td colspan="4"></td>
       </tr>
     `;
 }
@@ -1573,70 +1595,106 @@ function clearGpFilters() {
 
 function exportGatePassExcel() {
     let list = getFilteredGatePassList();
+    
+    // Check if user has selected rows
+    const selectedChecks = document.querySelectorAll('.gp-row-checkbox:checked');
+    if (selectedChecks.length > 0) {
+        let selIds = new Set(Array.from(selectedChecks).map(c => c.value));
+        list = list.filter(r => selIds.has(r.id));
+    }
+
     if(list.length === 0) { alert("कोई डेटा नहीं है!"); return; }
-    let ws = XLSX.utils.json_to_sheet(list);
+    
+    let cleanExport = list.map((r, idx) => ({
+        "Sr No": idx + 1,
+        "Farmer Name": getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]) || "-",
+        "Date": getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]) || "-",
+        "Gatepass No": getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]) || "-",
+        "Mobile": getGpField(r, ["Mobile No.", "Mobile No", "Mobile", "Phone", "Mobile Number", "Contact"]) || "-",
+        "Village": getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]) || "-",
+        "Qty (Qtl)": Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0).toFixed(2),
+        "Biometric": checkGpBooleanField(r, ["Biometric", "Bio", "Thumb"]) ? "Yes" : "No",
+        "Auction": checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate"]) ? "Done" : "Pending",
+        "Season": getGpField(r, ["Season Year", "Season", "सीज़न"]) || "-",
+        "Crop": getGpField(r, ["Crop", "Crop Name", "फसल"]) || "-"
+    }));
+
+    let ws = XLSX.utils.json_to_sheet(cleanExport);
     let wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "GatePass");
     XLSX.writeFile(wb, "GatePass_Data.xlsx");
 }
 
-/* --- DIRECT PRINT PREVIEW FOR GATE PASS --- */
+/* --- DIRECT PRINT PREVIEW FOR GATE PASS (OPTIMIZED AUTO-ZOOM TO FIT SCREEN) --- */
 function openGatePassDirectPreview() {
     let list = getFilteredGatePassList();
+    const selectedChecks = document.querySelectorAll('.gp-row-checkbox:checked');
+    let isSelectedMode = false;
+    
+    if (selectedChecks.length > 0) {
+        let selIds = new Set(Array.from(selectedChecks).map(c => c.value));
+        list = list.filter(r => selIds.has(r.id));
+        isSelectedMode = true;
+    }
+
     if(list.length === 0) { alert("प्रिंट के लिए कोई डेटा नहीं है!"); return; }
     
     let curSeason = document.getElementById("gpSeasonFilter").value || "All Seasons";
     let curCrop = document.getElementById("gpCropFilter").value || "All Crops";
+    let modeText = isSelectedMode ? `<span style="color:#dc2626; font-weight:bold;">(Selected Entries Only: ${list.length})</span>` : `Total Entries: <b>${list.length}</b>`;
     
-    let content = `<h2 style="text-align:center; color:#0f172a; margin-bottom:4px;">🎫 Gate Pass Records Report</h2>`;
-    content += `<p style="text-align:center; margin-bottom:10px; font-size:12px; color:#475569;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | Total Entries: <b>${list.length}</b></p>`;
+    let content = `<h2 style="text-align:center; color:#0f172a; margin: 0 0 4px 0; font-size:18px;">🎫 Gate Pass Records Report</h2>`;
+    content += `<p style="text-align:center; margin: 0 0 12px 0; font-size:12px; color:#475569;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | ${modeText}</p>`;
     
     let tableHTML = `
-      <table border="1" style="width:100%; border-collapse:collapse; font-size:11px;">
+      <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap;">
         <thead>
           <tr style="background:#0f172a; color:white;">
-            <th style="padding:6px;">#</th>
-            <th style="padding:6px;">Customer Name</th>
-            <th style="padding:6px;">Date</th>
-            <th style="padding:6px;">Gatepass No</th>
-            <th style="padding:6px;">Mobile</th>
-            <th style="padding:6px;">Village</th>
-            <th style="padding:6px;">Status</th>
-            <th style="padding:6px;">Bore</th>
-            <th style="padding:6px;">Qty (Qtl)</th>
+            <th style="padding:6px 4px; width:28px; text-align:center;">#</th>
+            <th style="padding:6px 8px;">Farmer Name</th>
+            <th style="padding:6px 6px; text-align:center;">Date</th>
+            <th style="padding:6px 8px; text-align:center;">Gatepass No</th>
+            <th style="padding:6px 6px; text-align:center;">Mobile</th>
+            <th style="padding:6px 8px;">Village</th>
+            <th style="padding:6px 8px; text-align:right;">Qty (Qtl)</th>
+            <th style="padding:6px 6px; text-align:center;">Biometric</th>
+            <th style="padding:6px 6px; text-align:center;">Auction</th>
+            <th style="padding:6px 6px; text-align:center;">Season</th>
+            <th style="padding:6px 6px; text-align:center;">Crop</th>
           </tr>
         </thead>
         <tbody>
     `;
 
-    let totB = 0, totQ = 0;
+    let totQ = 0;
     list.forEach((r, idx) => {
         let cust = getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]) || "-";
         let dVal = getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]) || "-";
         let gpNo = getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]) || "-";
         let mobile = getGpField(r, ["Mobile No.", "Mobile No", "Mobile", "Phone", "Mobile Number", "Contact"]) || "-";
         let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]) || "-";
-        let boreVal = Number(getGpField(r, ["Bore", "Bores", "Bags", "Bag", "बोरे"]) || 0);
+        let sVal = getGpField(r, ["Season Year", "Season", "सीज़न"]) || "-";
+        let cropVal = getGpField(r, ["Crop", "Crop Name", "फसल"]) || "-";
         let qtyVal = Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
         
         let isBio = checkGpBooleanField(r, ["Biometric", "Bio", "Thumb"]);
-        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate", "Buyer", "Purchaser Name"]);
-        let statusTxt = (isBio ? "Bio" : "NoBio") + "/" + (isAuction ? "Auc" : "Pend");
+        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate"]);
 
-        totB += boreVal;
         totQ += qtyVal;
 
         tableHTML += `
           <tr>
-            <td style="padding:5px; text-align:center;">${idx+1}</td>
-            <td style="padding:5px; font-weight:bold;">${cust}</td>
-            <td style="padding:5px; text-align:center;">${dVal}</td>
-            <td style="padding:5px; text-align:center;">${gpNo}</td>
-            <td style="padding:5px; text-align:center;">${mobile}</td>
-            <td style="padding:5px;">${village}</td>
-            <td style="padding:5px; text-align:center; font-size:10px;">${statusTxt}</td>
-            <td style="padding:5px; text-align:center;">${boreVal}</td>
-            <td style="padding:5px; text-align:right; font-weight:bold;">${qtyVal.toFixed(2)}</td>
+            <td style="padding:5px 4px; text-align:center;">${idx+1}</td>
+            <td style="padding:5px 8px; font-weight:bold; color:#1e40af;">${cust}</td>
+            <td style="padding:5px 6px; text-align:center; font-size:11px;">${dVal}</td>
+            <td style="padding:5px 8px; text-align:center; font-weight:bold;">${gpNo}</td>
+            <td style="padding:5px 6px; text-align:center;">${mobile}</td>
+            <td style="padding:5px 8px;">${village}</td>
+            <td style="padding:5px 8px; text-align:right; font-weight:bold; color:#15803d;">${qtyVal.toFixed(2)}</td>
+            <td style="padding:5px 6px; text-align:center; font-weight:bold; color:${isBio ? '#15803d' : '#b91c1c'};">${isBio ? 'Yes' : 'No'}</td>
+            <td style="padding:5px 6px; text-align:center; font-weight:bold; color:${isAuction ? '#b45309' : '#64748b'};">${isAuction ? 'Done' : 'Pending'}</td>
+            <td style="padding:5px 6px; text-align:center;">${sVal}</td>
+            <td style="padding:5px 6px; text-align:center;">${cropVal}</td>
           </tr>
         `;
     });
@@ -1645,18 +1703,29 @@ function openGatePassDirectPreview() {
         </tbody>
         <tfoot>
           <tr style="background:#e2e8f0; font-weight:bold;">
-            <td colspan="7" style="text-align:right; padding:6px;">कुल Total:</td>
-            <td style="padding:6px; text-align:center;">${totB}</td>
-            <td style="padding:6px; text-align:right;">${totQ.toFixed(2)} Qtl</td>
+            <td colspan="6" style="text-align:right; padding:8px;">कुल Total:</td>
+            <td style="padding:8px; text-align:right; color:#15803d; font-size:13px;">${totQ.toFixed(2)} Qtl</td>
+            <td colspan="4"></td>
           </tr>
         </tfoot>
       </table>
     `;
 
-    document.getElementById('previewContent').innerHTML = content + tableHTML;
+    const prevContent = document.getElementById('previewContent');
+    prevContent.innerHTML = content + tableHTML;
+
+    // Adjusted auto-scale to ensure right-most columns (Auction, Season, Crop) stay inside mobile display
+    const screenWidth = window.innerWidth;
+    let autoScale = 1.0;
+    if (screenWidth < 1100) {
+        autoScale = Math.max(0.30, Math.min(0.85, (screenWidth - 25) / 1060));
+    }
+
+    prevContent.style.transform = `scale(${autoScale.toFixed(2)})`;
+    prevContent.style.transformOrigin = "top left";
+    document.documentElement.style.setProperty('--p-zoom', autoScale.toFixed(2));
+    document.getElementById('zoomRange').value = autoScale.toFixed(2);
     document.getElementById('printPreviewModal').style.display = 'flex';
-    document.getElementById('zoomRange').value = 0.85;
-    applyZoom();
 }
 
 let editID=null, currentDefaultBW=37.5, sortMode = "newest", editOldTimestamp = null, editOldDate = null;
@@ -1720,7 +1789,7 @@ function openCustomPreview() {
     content += `<p style="text-align:center;"><b>Entries:</b> ${rowsToPrint.length} | <b>Total Bore:</b> ${finalBoreCount} Bore | <b>Extra:</b> ${finalExtraKg} Kg</p>` + tableHTML;
     document.getElementById('previewContent').innerHTML = content;
     document.getElementById('printPreviewModal').style.display = 'flex';
-    document.getElementById('zoomRange').value = 0.7;
+    document.getElementById('zoomRange').value = 1.0;
     applyZoom();
 }
 
