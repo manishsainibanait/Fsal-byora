@@ -917,25 +917,38 @@ background: #e2e8f0 !important;
         <div class="gp-stat-box"><small>कुल बोरे</small><strong id="gpTotalBore" style="color:#7c3aed;">0</strong></div>
     </div>
 
-    <!-- Filters from 2nd App -->
+    <!-- Filters from 2nd App with Biometric & Auction Filters -->
     <div class="searchBar" style="background:#f8fafc; border:1px solid #cbd5e1;">
         <input id="gpSearch" placeholder="🔍 खोजें: किसान नाम, गाँव, मोबाइल, या Gatepass No..." oninput="renderGatePassTable()" style="margin:0 0 8px 0; font-weight:bold; background:white;">
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:6px;">
-            <select id="gpSeasonFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी सीज़न (All)</option></select>
+            <select id="gpSeasonFilter" onchange="renderGatePassTable()" style="margin:0; font-weight:bold; border:2px solid var(--primary);"><option value="">सभी सीज़न (All)</option></select>
             <select id="gpCropFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी फसलें (All)</option></select>
             <select id="gpVillageFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी गाँव (All)</option></select>
+            
+            <!-- BIOMETRIC & AUCTION FILTERS -->
+            <select id="gpBioFilter" onchange="renderGatePassTable()" style="margin:0; border:1px solid #0f766e; font-weight:600;">
+                <option value="all">🧬 Biometric (All)</option>
+                <option value="yes">✅ Biometric Yes</option>
+                <option value="no">❌ Biometric No</option>
+            </select>
+            <select id="gpAuctionFilter" onchange="renderGatePassTable()" style="margin:0; border:1px solid #b45309; font-weight:600;">
+                <option value="all">⚖️ Auction (All)</option>
+                <option value="yes">✅ Auction Done</option>
+                <option value="no">⏳ Auction Pending</option>
+            </select>
+
             <input type="date" id="gpFromDate" oninput="renderGatePassTable()" style="margin:0;" placeholder="From">
             <input type="date" id="gpToDate" oninput="renderGatePassTable()" style="margin:0;" placeholder="To">
             <button onclick="clearGpFilters()" style="margin:0; background:var(--secondary); padding:8px;">Clear Filter</button>
         </div>
         <div style="display:flex; gap:8px; margin-top:8px;">
             <button onclick="exportGatePassExcel()" style="background:#7c3aed; margin:0; flex:1;">⬇️ Export Gate Pass Excel</button>
-            <button onclick="window.print()" style="background:#000; margin:0; flex:1;">🖨️ Print List</button>
+            <button onclick="openGatePassDirectPreview()" style="background:#000; margin:0; flex:1;">🖨️ Direct Print Preview</button>
         </div>
     </div>
   </div>
 
-  <div id="gatePassPrintArea" class="tableBox" style="max-height:65vh;">
+  <div class="tableBox" style="max-height:65vh;">
     <table>
       <thead>
         <tr style="background:#0f172a; color:white;">
@@ -945,6 +958,7 @@ background: #e2e8f0 !important;
           <th>Gatepass No</th>
           <th>Mobile No</th>
           <th>Village</th>
+          <th>Status (Bio/Auc)</th>
           <th>Season</th>
           <th>Crop</th>
           <th>Bore</th>
@@ -952,7 +966,7 @@ background: #e2e8f0 !important;
         </tr>
       </thead>
       <tbody id="gpTableBody">
-        <tr><td colspan="10" style="text-align:center; padding:20px; color:#64748b;">Gate Pass डेटा लोड हो रहा है...</td></tr>
+        <tr><td colspan="11" style="text-align:center; padding:20px; color:#64748b;">Gate Pass डेटा लोड हो रहा है...</td></tr>
       </tbody>
       <tfoot id="gpTableFoot" style="position:sticky; bottom:0; background:#e2e8f0; font-weight:bold;"></tfoot>
     </table>
@@ -1312,6 +1326,30 @@ function getGpField(row, names) {
     return "";
 }
 
+// SMART RECOGNIZER FOR AUCTION & BIOMETRIC
+function checkGpBooleanField(row, names) {
+    let raw = getGpField(row, names).toLowerCase().trim();
+    if (!raw) return false;
+
+    // Check for explicit negative status
+    if (raw.includes("pending") || raw.includes("unsold") || raw.includes("unauction") || raw.includes("reject") || raw.includes("fail") || raw.includes("not") || raw === "no" || raw === "0" || raw === "false") {
+        return false;
+    }
+
+    // Check for explicit positive status
+    if (raw.includes("auction") || raw.includes("sold") || raw.includes("yes") || raw.includes("done") || raw.includes("ok") || raw.includes("success") || raw.includes("verif") || raw.includes("auth") || raw.includes("complete") || raw.includes("pass")) {
+        return true;
+    }
+
+    // If numerical (e.g. auction rate or weight > 0)
+    let numVal = parseFloat(raw.replace(/,/g, ""));
+    if (!isNaN(numVal) && numVal > 0) {
+        return true;
+    }
+
+    return false;
+}
+
 async function initGatePassDatabase() {
     try {
         const badge = document.getElementById("gpStatusBadge");
@@ -1414,15 +1452,17 @@ function updateGpFiltersOptions() {
     if(curV && [...vSel.options].some(o => o.value === curV)) vSel.value = curV;
 }
 
-function renderGatePassTable() {
+function getFilteredGatePassList() {
     const q = normText(document.getElementById("gpSearch").value);
     const sFilter = normText(document.getElementById("gpSeasonFilter").value);
     const cFilter = normText(document.getElementById("gpCropFilter").value);
     const vFilter = document.getElementById("gpVillageFilter").value.trim().toLowerCase();
+    const bioFilter = document.getElementById("gpBioFilter").value;
+    const auctionFilter = document.getElementById("gpAuctionFilter").value;
     const fDate = document.getElementById("gpFromDate").value;
     const tDate = document.getElementById("gpToDate").value;
 
-    let list = gatePassRecords.filter(r => {
+    return gatePassRecords.filter(r => {
         let cust = getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]);
         let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]);
         let mobile = getGpField(r, ["Mobile No.", "Mobile No", "Mobile", "Phone", "Mobile Number", "Contact"]);
@@ -1431,9 +1471,16 @@ function renderGatePassTable() {
         let cropVal = getGpField(r, ["Crop", "Crop Name", "फसल"]);
         let dVal = getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]);
 
+        let isBio = checkGpBooleanField(r, ["Biometric", "Bio", "Thumb", "Biometric Status", "Aadhaar Bio"]);
+        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate", "Buyer", "Purchaser Name"]);
+
         if(sFilter && !normText(sVal).includes(sFilter) && !sFilter.includes(normText(sVal))) return false;
         if(cFilter && !normText(cropVal).includes(cFilter)) return false;
         if(vFilter && village.toLowerCase() !== vFilter) return false;
+        if(bioFilter === "yes" && !isBio) return false;
+        if(bioFilter === "no" && isBio) return false;
+        if(auctionFilter === "yes" && !isAuction) return false;
+        if(auctionFilter === "no" && isAuction) return false;
         if(fDate && dVal < fDate) return false;
         if(tDate && dVal > tDate) return false;
         
@@ -1443,6 +1490,10 @@ function renderGatePassTable() {
         }
         return true;
     });
+}
+
+function renderGatePassTable() {
+    let list = getFilteredGatePassList();
 
     document.getElementById("gpTotalRows").innerText = gatePassRecords.length;
     document.getElementById("gpVisibleRows").innerText = list.length;
@@ -1452,7 +1503,7 @@ function renderGatePassTable() {
     tbody.innerHTML = "";
 
     if(list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px; color:#64748b;">कोई Gate Pass रिकॉर्ड नहीं मिला।</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px; color:#64748b;">कोई Gate Pass रिकॉर्ड नहीं मिला।</td></tr>`;
         document.getElementById("gpTableFoot").innerHTML = "";
         document.getElementById("gpTotalQty").innerText = "0.00";
         document.getElementById("gpTotalBore").innerText = "0";
@@ -1470,8 +1521,14 @@ function renderGatePassTable() {
         let boreVal = Number(getGpField(r, ["Bore", "Bores", "Bags", "Bag", "बोरे"]) || 0);
         let qtyVal = Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
 
+        let isBio = checkGpBooleanField(r, ["Biometric", "Bio", "Thumb", "Biometric Status", "Aadhaar Bio"]);
+        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate", "Buyer", "Purchaser Name"]);
+
         totQtl += qtyVal;
         totBore += boreVal;
+
+        let bioBadge = isBio ? `<span style="background:#dcfce7; color:#15803d; padding:2px 5px; border-radius:4px; font-size:10px; font-weight:bold;">🧬 Bio</span>` : `<span style="background:#fee2e2; color:#b91c1c; padding:2px 5px; border-radius:4px; font-size:10px;">No Bio</span>`;
+        let aucBadge = isAuction ? `<span style="background:#fef3c7; color:#b45309; padding:2px 5px; border-radius:4px; font-size:10px; font-weight:bold;">⚖️ Auc Done</span>` : `<span style="background:#f1f5f9; color:#64748b; padding:2px 5px; border-radius:4px; font-size:10px;">Pending</span>`;
 
         tbody.innerHTML += `
           <tr style="border-bottom:1px solid #e2e8f0;">
@@ -1481,6 +1538,7 @@ function renderGatePassTable() {
              <td><b>${gpNo}</b></td>
              <td><span style="color:#0f766e; font-weight:600;">${mobile}</span></td>
              <td style="font-weight:bold; color:#1e293b;">${village}</td>
+             <td><div style="display:flex; gap:3px; flex-wrap:wrap;">${bioBadge} ${aucBadge}</div></td>
              <td><span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-size:11px;">${sVal}</span></td>
              <td><span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-size:11px;">${cropVal}</span></td>
              <td>${boreVal}</td>
@@ -1494,7 +1552,7 @@ function renderGatePassTable() {
 
     document.getElementById("gpTableFoot").innerHTML = `
       <tr>
-         <td colspan="8" style="text-align:right; padding:10px;"><b>कुल Total:</b></td>
+         <td colspan="9" style="text-align:right; padding:10px;"><b>कुल Total:</b></td>
          <td style="padding:10px; color:#7c3aed;"><b>${totBore}</b></td>
          <td style="padding:10px; color:var(--success);"><b>${totQtl.toFixed(2)} Qtl</b></td>
       </tr>
@@ -1506,17 +1564,99 @@ function clearGpFilters() {
     document.getElementById("gpSeasonFilter").value = "";
     document.getElementById("gpCropFilter").value = "";
     document.getElementById("gpVillageFilter").value = "";
+    document.getElementById("gpBioFilter").value = "all";
+    document.getElementById("gpAuctionFilter").value = "all";
     document.getElementById("gpFromDate").value = "";
     document.getElementById("gpToDate").value = "";
     renderGatePassTable();
 }
 
 function exportGatePassExcel() {
-    if(gatePassRecords.length === 0) { alert("कोई डेटा नहीं है!"); return; }
-    let ws = XLSX.utils.json_to_sheet(gatePassRecords);
+    let list = getFilteredGatePassList();
+    if(list.length === 0) { alert("कोई डेटा नहीं है!"); return; }
+    let ws = XLSX.utils.json_to_sheet(list);
     let wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "GatePass");
     XLSX.writeFile(wb, "GatePass_Data.xlsx");
+}
+
+/* --- DIRECT PRINT PREVIEW FOR GATE PASS --- */
+function openGatePassDirectPreview() {
+    let list = getFilteredGatePassList();
+    if(list.length === 0) { alert("प्रिंट के लिए कोई डेटा नहीं है!"); return; }
+    
+    let curSeason = document.getElementById("gpSeasonFilter").value || "All Seasons";
+    let curCrop = document.getElementById("gpCropFilter").value || "All Crops";
+    
+    let content = `<h2 style="text-align:center; color:#0f172a; margin-bottom:4px;">🎫 Gate Pass Records Report</h2>`;
+    content += `<p style="text-align:center; margin-bottom:10px; font-size:12px; color:#475569;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | Total Entries: <b>${list.length}</b></p>`;
+    
+    let tableHTML = `
+      <table border="1" style="width:100%; border-collapse:collapse; font-size:11px;">
+        <thead>
+          <tr style="background:#0f172a; color:white;">
+            <th style="padding:6px;">#</th>
+            <th style="padding:6px;">Customer Name</th>
+            <th style="padding:6px;">Date</th>
+            <th style="padding:6px;">Gatepass No</th>
+            <th style="padding:6px;">Mobile</th>
+            <th style="padding:6px;">Village</th>
+            <th style="padding:6px;">Status</th>
+            <th style="padding:6px;">Bore</th>
+            <th style="padding:6px;">Qty (Qtl)</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    let totB = 0, totQ = 0;
+    list.forEach((r, idx) => {
+        let cust = getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]) || "-";
+        let dVal = getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]) || "-";
+        let gpNo = getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]) || "-";
+        let mobile = getGpField(r, ["Mobile No.", "Mobile No", "Mobile", "Phone", "Mobile Number", "Contact"]) || "-";
+        let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]) || "-";
+        let boreVal = Number(getGpField(r, ["Bore", "Bores", "Bags", "Bag", "बोरे"]) || 0);
+        let qtyVal = Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
+        
+        let isBio = checkGpBooleanField(r, ["Biometric", "Bio", "Thumb"]);
+        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate", "Buyer", "Purchaser Name"]);
+        let statusTxt = (isBio ? "Bio" : "NoBio") + "/" + (isAuction ? "Auc" : "Pend");
+
+        totB += boreVal;
+        totQ += qtyVal;
+
+        tableHTML += `
+          <tr>
+            <td style="padding:5px; text-align:center;">${idx+1}</td>
+            <td style="padding:5px; font-weight:bold;">${cust}</td>
+            <td style="padding:5px; text-align:center;">${dVal}</td>
+            <td style="padding:5px; text-align:center;">${gpNo}</td>
+            <td style="padding:5px; text-align:center;">${mobile}</td>
+            <td style="padding:5px;">${village}</td>
+            <td style="padding:5px; text-align:center; font-size:10px;">${statusTxt}</td>
+            <td style="padding:5px; text-align:center;">${boreVal}</td>
+            <td style="padding:5px; text-align:right; font-weight:bold;">${qtyVal.toFixed(2)}</td>
+          </tr>
+        `;
+    });
+
+    tableHTML += `
+        </tbody>
+        <tfoot>
+          <tr style="background:#e2e8f0; font-weight:bold;">
+            <td colspan="7" style="text-align:right; padding:6px;">कुल Total:</td>
+            <td style="padding:6px; text-align:center;">${totB}</td>
+            <td style="padding:6px; text-align:right;">${totQ.toFixed(2)} Qtl</td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+
+    document.getElementById('previewContent').innerHTML = content + tableHTML;
+    document.getElementById('printPreviewModal').style.display = 'flex';
+    document.getElementById('zoomRange').value = 0.85;
+    applyZoom();
 }
 
 let editID=null, currentDefaultBW=37.5, sortMode = "newest", editOldTimestamp = null, editOldDate = null;
@@ -2044,7 +2184,6 @@ function updateTable(arr){
       metaSubText = `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(V: ${shortVillage})</div>`;
     }
 
-    // Single Column Formatting: e.g. "18 Bag 10 Kg" ya "18 Bag"
     let bagsWeightTxt = extra > 0 ? `<b>${bore} Bag</b> ${extra} Kg` : `<b>${bore} Bag</b>`;
 
     output.innerHTML += `
@@ -2969,7 +3108,7 @@ function openForcedPreview(id, forceType) {
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold; width:45%;">Date</th><td style="padding:8px; color:#1e293b; font-weight:500;">${r.date || ""}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#b7791f; font-weight:bold;">${r.customer || ""}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags (Bore)</th><td style="padding:8px; color:#1e293b;"><b>${r.bore || 0} Bags</b></td></tr>
-             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Quintal Weight</th><td style="padding:8px; color:#1e293b;">${r.quintal || ""}</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Quintal Weight</th><td style="padding:8px; color:#1e293b;">${r.quintal || ""}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Rate (Bhav)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">₹${rateVal} / Qtl</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
              <tr style="background:#fffaf0; font-size:16px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Amount</th><td style="padding:10px; color:#b91c1c;"><b>₹${netKhachi.toFixed(2)}</b></td></tr>
