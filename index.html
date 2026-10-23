@@ -25,7 +25,7 @@ th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}
 th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
 .actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
 .searchBar{background:#dbeafe;padding:12px;border-radius:10px;margin-bottom:12px; border: 1px solid #bfdbfe;}  
-#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen,#gatePassScreen{  
+#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen,#gatePassScreen,#kisanSummaryScreen,#entryLinkModal{  
  position:fixed;top:0;left:0;right:0;bottom:0;  
  background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
 }  
@@ -58,7 +58,6 @@ th{background: var(--primary);color:#fff; position: sticky; top: 0;}
   box-sizing: border-box; 
 }
 
-/* FIXED PERFECT PRINT STYLES FOR A4 LANDSCAPE */
 @media print {
   @page{ size: A4 landscape; margin: 6mm; }
   html, body { background: #fff !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
@@ -328,6 +327,67 @@ background: #e2e8f0 !important;
   color: var(--primary);
 }
 .dropdown-menu-list button:last-child { border-bottom: none; }
+
+/* --- KISAN GATEPASS SUMMARY CARDS --- */
+.farmer-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  padding: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.farmer-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.farmer-badge-amt {
+  color: #16a34a;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+.farmer-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.farmer-sub-table th {
+  background: #f8fafc;
+  color: #475569;
+  padding: 6px 4px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  font-size: 11px;
+}
+.farmer-sub-table td {
+  padding: 6px 4px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  font-size: 12px;
+}
+
+.mandi-match-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.balance-pill-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
 </style>  
 </head>  
 <body>  
@@ -362,13 +422,13 @@ background: #e2e8f0 !important;
         <button onclick="openReport()" style="width:auto; padding:8px 14px; background:var(--warning); margin:0;">📊 Report</button>
         <button onclick="openCutReport()" style="width:auto; padding:8px 14px; background:#dc2626; margin:0;">📉 Cut Report</button>
         
-        <!-- POPUP MENU (AI, SUKHAI, GATEPASS, SETPIN) -->
         <div class="dropdown-menu-container">
             <button onclick="toggleTopMenu()" style="width:auto; padding:8px 14px; background:#0f172a; margin:0; font-weight:bold; display:flex; align-items:center; gap:5px;">☰ Menu ▼</button>
             <div id="topDropdownMenu" class="dropdown-menu-list">
                 <button onclick="menuAction('ai')">🤖 Ask AI</button>
                 <button onclick="menuAction('sukhai')">♨️ Sukhai Manager</button>
                 <button onclick="menuAction('gatepass')">🎫 Gatepass Details</button>
+                <button onclick="menuAction('kisansummary')">📑 किसान Summary</button>
                 <button onclick="menuAction('setpin')">🔑 Set PIN</button>
             </div>
         </div>
@@ -485,13 +545,19 @@ background: #e2e8f0 !important;
     <button onclick="fixAllOrder()" style="background:red;">Fix Order</button>
 </div>
 
-<!-- LIVE SEARCH BAR WITH CUSTOMER LIST AUTO-SUGGESTIONS -->
+<!-- LIVE SEARCH BAR WITH CUSTOMER LIST AUTO-SUGGESTIONS & VILLAGE FILTER -->
 <div class="searchBar">  
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-    <span style="font-weight:bold; color:var(--primary); font-size:13px;">🔍 Search Customer (With Auto Suggestion):</span>
+    <span style="font-weight:bold; color:var(--primary); font-size:13px;">🔍 Main Search & Gaon Filter:</span>
     <button type="button" onclick="clearLiveSearch()" style="width:auto; padding:3px 10px; margin:0; font-size:11px; background:var(--danger); border-radius:4px;">Clear ❌</button>
   </div>
-  <input id="searchName" list="searchCustomerList" placeholder="🔍 Type ya select karein (Name, Father, Village)..." oninput="handleSearch()" style="margin:0 0 6px 0; background:#fff; font-weight:bold; border:2px solid var(--primary);">
+  
+  <div style="display:flex; gap:6px; margin-bottom:6px;">
+      <input id="searchName" list="searchCustomerList" placeholder="🔍 Type ya select karein (Name, Father)..." oninput="handleSearch()" style="margin:0; background:#fff; font-weight:bold; border:2px solid var(--primary); flex:1.2;">
+      <select id="mainVillageFilter" onchange="filterData()" style="margin:0; background:#fff; font-weight:bold; border:2px solid var(--primary); flex:1;">
+          <option value="">🏡 सभी गाँव (All Villages)</option>
+      </select>
+  </div>
   <datalist id="searchCustomerList"></datalist>
   <div style="display:flex; gap:6px;">
       <input type="date" id="fromDate" oninput="filterData()" style="margin:0; background:#fff;">  
@@ -504,7 +570,6 @@ background: #e2e8f0 !important;
 <b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span> |  
 <b>Total Comm:</b> <span id="totalComm" style="color:var(--warning); font-size: 18px;">0</span>
 
-<!-- LIVE SUKHAI SUMMARY COUNTER BOX -->
 <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #c084fc; font-size:14px; background:#f3e8ff; padding:8px; border-radius:6px; border:1px solid #d8b4fe; color:#581c87;">
   ♨️ <b>Sukhai Applied Total Bags:</b> <span id="dashboardSukhaiBags" style="color:#7c3aed; font-size:17px; font-weight:bold;">0 Bags</span> | 
   <b>Farmers Count:</b> <span id="dashboardSukhaiFarmers" style="color:#6b21a8; font-size:16px; font-weight:bold;">0 Kisan</span>
@@ -651,21 +716,30 @@ background: #e2e8f0 !important;
   <input id="quintal" readonly style="background:#e5e7eb;">
 </div>
 
+<!-- FASAL CUT WITH MANUAL CUT OPTION -->
 <div style="background:#fff1f2; padding:10px; border-radius:8px; margin-top:10px; border:1px solid #fecdd3;">
-  <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cult</div>
+  <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cut (फसल कट / कट्टी)</div>
 
-  <select id="fasalCutType" onchange="calcAmount()" style="margin-bottom:5px;">
-    <option value="quintal" selected>Per Quintal</option>
-    <option value="bag">Per Bag</option>
+  <select id="fasalCutType" onchange="onFasalCutTypeChange()" style="margin-bottom:5px; font-weight:bold;">
+    <option value="quintal" selected>Per Quintal Formula (प्रति क्विंटल कट)</option>
+    <option value="bag">Per Bag Formula (प्रति बोरी कट)</option>
+    <option value="manual_qtl">✍️ Manual Cut Direct (सीधा क्विंटल में कट)</option>
+    <option value="manual_kg">✍️ Manual Cut Direct (सीधा KG में कट)</option>
   </select>  
-  <div style="display:flex; gap:8px;">
-    <input id="fasalCutWeight" type="number" step="0.5" value="3" placeholder="Weight" oninput="calcAmount()" style="flex:2;">
+  
+  <div id="standardCutBox" style="display:flex; gap:8px;">
+    <input id="fasalCutWeight" type="number" step="0.5" value="3" placeholder="Weight Value" oninput="calcAmount()" style="flex:2;">
     <select id="fasalCutUnit" onchange="calcAmount()" style="flex:1;">
       <option value="kg">KG</option>
       <option value="gram">Gram</option>
     </select>
   </div>
-  <div style="font-size:13px; margin-top:5px; color:#be123c;">Fasal Cut: <span id="fasalCutDisplay">0 Kg</span></div>
+
+  <div id="manualCutBox" style="display:none; margin-top:4px;">
+    <input id="manualFasalCutInput" type="number" step="0.01" placeholder="सीधा Manual Cut वजन दर्ज करें..." oninput="calcAmount()" style="border:2px solid #be123c; background:#fff;">
+  </div>
+
+  <div style="font-size:13px; margin-top:5px; color:#be123c; font-weight:bold;">Total Fasal Cut: <span id="fasalCutDisplay">0 Qtl 0 Kg</span></div>
 </div>
 
 <div id="sukhaiContainerBox" style="background: #faf5ff; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #e9d5ff;">
@@ -915,12 +989,12 @@ background: #e2e8f0 !important;
           <small id="gpStatusBadge" style="color:#93c5fd; font-weight:600;">डेटा कनेक्ट हो रहा है...</small>
         </div>
         <div style="display:flex; gap:8px;">
+          <button onclick="openKisanSummaryScreen()" style="width:auto; background:#16a34a; padding:6px 14px; margin:0; font-size:13px; font-weight:bold;">📑 किसान Summary</button>
           <button onclick="syncGatePassData()" style="width:auto; background:#1e40af; padding:6px 14px; margin:0; font-size:13px;">🔄 Sync</button>
           <button onclick="closeGatePassScreen()" style="width:auto; background:var(--danger); padding:6px 14px; margin:0; font-size:13px;">Close ❌</button>
         </div>
     </div>
 
-    <!-- Quick Stats from 2nd App -->
     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
         <div class="gp-stat-box"><small>कुल रिकॉर्ड</small><strong id="gpTotalRows" style="color:#0f172a;">0</strong></div>
         <div class="gp-stat-box"><small>फिल्टर रिकॉर्ड</small><strong id="gpVisibleRows" style="color:#1e40af;">0</strong></div>
@@ -928,15 +1002,13 @@ background: #e2e8f0 !important;
         <div class="gp-stat-box"><small>कुल क्विंटल</small><strong id="gpTotalQty" style="color:var(--success);">0.00</strong></div>
     </div>
 
-    <!-- Filters from 2nd App with Biometric & Auction Filters -->
     <div class="searchBar" style="background:#f8fafc; border:1px solid #cbd5e1;">
         <input id="gpSearch" placeholder="🔍 खोजें: किसान नाम, गाँव, मोबाइल, या Gatepass No..." oninput="renderGatePassTable()" style="margin:0 0 8px 0; font-weight:bold; background:white;">
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:6px;">
             <select id="gpSeasonFilter" onchange="renderGatePassTable()" style="margin:0; font-weight:bold; border:2px solid var(--primary);"><option value="">सभी सीज़न (All)</option></select>
-            <select id="gpCropFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी फसलें (All)</option></select>
+            <select id="gpCropFilter" onchange="onGpCropFilterChange()" style="margin:0; font-weight:bold; border:2px solid #16a34a;"><option value="">सभी फसलें (All)</option></select>
             <select id="gpVillageFilter" onchange="renderGatePassTable()" style="margin:0;"><option value="">सभी गाँव (All)</option></select>
             
-            <!-- BIOMETRIC & AUCTION FILTERS -->
             <select id="gpBioFilter" onchange="renderGatePassTable()" style="margin:0; border:1px solid #0f766e; font-weight:600;">
                 <option value="all">🧬 Biometric (All)</option>
                 <option value="yes">✅ Biometric Yes</option>
@@ -985,8 +1057,106 @@ background: #e2e8f0 !important;
   </div>
 </div>
 
-</div> 
+<!-- ==================================================== -->
+<!-- 3RD SCREEN: किसान अनुसार GATEPASS SUMMARY (SCREENSHOT MODAL) -->
+<!-- ==================================================== -->
+<div id="kisanSummaryScreen">
+  <div class="no-print">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #cbd5e1; padding-bottom:8px; margin-bottom:10px;">
+      <h3 style="margin:0; font-size:18px; color:#1e293b; display:flex; align-items:center; gap:6px;">📑 किसान अनुसार Gatepass Summary</h3>
+      <button onclick="closeKisanSummaryScreen()" style="background:none; border:none; font-size:24px; color:#64748b; cursor:pointer; width:auto; padding:0; line-height:1;">&times;</button>
+    </div>
 
+    <!-- Search and Village Filter -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+      <div>
+        <label style="font-size:11px; font-weight:bold; color:#475569; display:block; margin-bottom:2px;">🔍 MULTI-SEARCH (E.G. BALBIR, SUNIL)</label>
+        <input id="ksMultiSearch" placeholder="Kisan Name search..." oninput="renderKisanSummary()" style="margin:0; padding:10px; font-weight:bold; border:2px solid var(--primary); background:#fff;">
+      </div>
+      <div>
+        <label style="font-size:11px; font-weight:bold; color:#475569; display:block; margin-bottom:2px;">🏡 FILTER VILLAGE (गाँव)</label>
+        <select id="ksVillageFilter" onchange="renderKisanSummary()" style="margin:0; padding:10px; font-weight:bold; border:1px solid #cbd5e1; background:#fff;">
+          <option value="">सभी गाँव (All Villages)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Metrics Bar with Live Balance Quintal Display -->
+    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:10px; margin-bottom:10px;">
+      <div style="font-size:14px; font-weight:700; color:#1e293b; line-height:1.6;">
+        चुने किसान: <span id="ksCountFarmers" style="color:#0f172a;">0/0</span> | 
+        GP: <span id="ksCountGP" style="color:#0f172a;">0</span> | 
+        बोरे: <span id="ksCountBore" style="color:#7c3aed;">0</span> | 
+        क्विंटल (GP): <span id="ksCountQtl" style="color:#16a34a;">0.00</span> | 
+        राशि: <span id="ksTotalAmount" style="color:#16a34a; font-size:16px;">₹0.00</span>
+      </div>
+      <div style="font-size:13px; font-weight:800; margin-top:4px; padding:5px 8px; border-radius:6px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; display:flex; justify-content:space-between; flex-wrap:wrap;">
+        <span>🌾 Mandi Pro Data: <b id="ksCountMandiQtl" style="color:#2563eb;">0.00 Qtl</b></span>
+        <span>⚖️ Balance (GP - Mandi): <b id="ksCountBalanceQtl" style="color:#dc2626;">0.00 Qtl</b></span>
+      </div>
+      <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+        <button onclick="toggleKsShowOnlyChecked()" id="ksShowCheckedBtn" style="background:#7c3aed; width:auto; padding:6px 14px; font-size:12px; margin:0; border-radius:6px;">👁 Show Checked (<span id="ksCheckedBadge">0</span>)</button>
+        <button onclick="ksSelectAll(true)" style="background:#334155; width:auto; padding:6px 14px; font-size:12px; margin:0; border-radius:6px;">✓ All</button>
+        <button onclick="ksSelectAll(false)" style="background:#64748b; width:auto; padding:6px 14px; font-size:12px; margin:0; border-radius:6px;">✕ Clear</button>
+        <button onclick="printKisanSummaryDirect()" style="background:#16a34a; width:auto; padding:6px 14px; font-size:12px; margin:0; border-radius:6px; font-weight:bold;">🖨 Direct Print</button>
+        <button onclick="closeKisanSummaryScreen()" style="background:#475569; width:auto; padding:6px 14px; font-size:12px; margin:0; border-radius:6px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="kisanSummaryContainer">
+    <!-- Populated Dynamically -->
+  </div>
+</div>
+
+<!-- ==================================================== -->
+<!-- 4TH MODAL: ENTRY LINKING MANAGER WITH SEARCH OPTION -->
+<!-- ==================================================== -->
+<div id="entryLinkModal">
+  <div style="max-width:750px; margin:0 auto; background:#fff; padding:15px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:8px; margin-bottom:12px;">
+      <div>
+        <h3 style="margin:0; color:var(--primary); font-size:17px;">🔗 Mandi App Entries Linker</h3>
+        <small id="entryLinkModalSubtitle" style="color:#64748b; font-weight:bold;">किसान की एंट्री चुनें</small>
+      </div>
+      <button onclick="closeEntryLinkModal()" style="width:auto; padding:5px 12px; background:var(--danger); margin:0;">बंद करें ✕</button>
+    </div>
+
+    <!-- Live Search Input inside Modal -->
+    <div style="margin-bottom:10px;">
+      <input type="text" id="modalEntrySearch" placeholder="🔍 खोजें: तारीख, नाम, गाँव, बोरे या क्विंटल..." oninput="filterModalEntriesTable()" style="margin:0; padding:10px; font-weight:bold; border:2px solid var(--primary); background:#fff;">
+    </div>
+    
+    <p style="font-size:12px; color:#475569; margin:0 0 10px 0;">
+      अगर Mandi App में इस किसान के एक से ज़्यादा उपनाम (जैसे: Sunil Kumar Foji, Sunil Rinku) या कई एंट्रियां हैं, तो नीचे टिक लगाकर जोड़ें या हटाएं[span_5](start_span)[span_5](end_span):
+    </p>
+
+    <div class="tableBox" style="max-height:360px;">
+      <table>
+        <thead>
+          <tr style="background:#2563eb; color:white;">
+            <th style="width:35px; text-align:center;"><input type="checkbox" id="masterLinkCheck" onclick="toggleAllModalLinkChecks(this)"></th>
+            <th>दिनांक</th>
+            <th>Customer Name</th>
+            <th>गाँव</th>
+            <th>बोरे</th>
+            <th>क्विंटल</th>
+            <th>राशि ₹</th>
+          </tr>
+        </thead>
+        <tbody id="entryLinkModalTbody"></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid #e2e8f0;">
+      <span style="font-size:13px; font-weight:bold; color:#1e293b;">चयनित एंट्रियां: <span id="entryLinkSelectedCount" style="color:var(--success);">0</span></span>
+      <button onclick="saveManualLinkedEntries()" style="width:auto; padding:8px 20px; background:var(--success); margin:0; font-weight:bold;">लिंक सुरक्षित करें ✅</button>
+    </div>
+  </div>
+</div>
+
+</div> 
+<!-- ================= PART 1 ENDS HERE ================= -->
 <script>  
 const MASTER_PASSWORD = "786786";
 let isCreatingNewSeason = false; 
@@ -1014,6 +1184,8 @@ function menuAction(action) {
         openSukhaiManager();
     } else if (action === 'gatepass') {
         openGatePassScreen();
+    } else if (action === 'kisansummary') {
+        openKisanSummaryScreen();
     } else if (action === 'setpin') {
         setupNewPin();
     }
@@ -1321,7 +1493,6 @@ function normText(v) {
     return String(v ?? "").toLowerCase().replace(/[\s._\-/#()[\]]/g, "").replace(/[^a-z0-9\u0900-\u097f]/g, "");
 }
 
-// Universal deep-scan field matcher for Gatepass data
 function getGpField(row, names) {
     if (!row || typeof row !== 'object') return "";
     let keys = Object.keys(row);
@@ -1338,7 +1509,6 @@ function getGpField(row, names) {
     return "";
 }
 
-// SMART RECOGNIZER FOR AUCTION & BIOMETRIC
 function checkGpBooleanField(row, names) {
     let raw = getGpField(row, names).toLowerCase().trim();
     if (!raw) return false;
@@ -1433,6 +1603,14 @@ async function syncGatePassData() {
     }
 }
 
+function onGpCropFilterChange() {
+    const cSel = document.getElementById("gpCropFilter");
+    if(cSel) {
+        localStorage.setItem("gpSelectedCropLock", cSel.value);
+    }
+    renderGatePassTable();
+}
+
 function updateGpFiltersOptions() {
     let sSel = document.getElementById("gpSeasonFilter");
     let cSel = document.getElementById("gpCropFilter");
@@ -1440,7 +1618,8 @@ function updateGpFiltersOptions() {
     if(!sSel || !cSel || !vSel) return;
     
     let curS = sSel.value;
-    let curC = cSel.value;
+    let savedLockedCrop = localStorage.getItem("gpSelectedCropLock") || "";
+    let curC = cSel.value || savedLockedCrop;
     let curV = vSel.value;
     
     let recordSeasons = gatePassRecords.map(r => getGpField(r, ["Season Year", "Season", "सीज़न"])).filter(Boolean);
@@ -1453,7 +1632,9 @@ function updateGpFiltersOptions() {
     vSel.innerHTML = '<option value="">सभी गाँव (All)</option>' + allVillages.map(v => `<option value="${v}">${v}</option>`).join("");
 
     if(curS && [...sSel.options].some(o => o.value === curS)) sSel.value = curS;
-    if(curC && [...cSel.options].some(o => o.value === curC)) cSel.value = curC;
+    if(curC && [...cSel.options].some(o => o.value === curC)) {
+        cSel.value = curC;
+    }
     if(curV && [...vSel.options].some(o => o.value === curV)) vSel.value = curV;
 }
 
@@ -1585,6 +1766,7 @@ function clearGpFilters() {
     document.getElementById("gpSearch").value = "";
     document.getElementById("gpSeasonFilter").value = "";
     document.getElementById("gpCropFilter").value = "";
+    localStorage.removeItem("gpSelectedCropLock");
     document.getElementById("gpVillageFilter").value = "";
     document.getElementById("gpBioFilter").value = "all";
     document.getElementById("gpAuctionFilter").value = "all";
@@ -1596,7 +1778,6 @@ function clearGpFilters() {
 function exportGatePassExcel() {
     let list = getFilteredGatePassList();
     
-    // Check if user has selected rows
     const selectedChecks = document.querySelectorAll('.gp-row-checkbox:checked');
     if (selectedChecks.length > 0) {
         let selIds = new Set(Array.from(selectedChecks).map(c => c.value));
@@ -1625,7 +1806,7 @@ function exportGatePassExcel() {
     XLSX.writeFile(wb, "GatePass_Data.xlsx");
 }
 
-/* --- DIRECT PRINT PREVIEW FOR GATE PASS (OPTIMIZED AUTO-ZOOM TO FIT SCREEN) --- */
+/* --- DIRECT PRINT PREVIEW FOR GATE PASS --- */
 function openGatePassDirectPreview() {
     let list = getFilteredGatePassList();
     const selectedChecks = document.querySelectorAll('.gp-row-checkbox:checked');
@@ -1714,7 +1895,560 @@ function openGatePassDirectPreview() {
     const prevContent = document.getElementById('previewContent');
     prevContent.innerHTML = content + tableHTML;
 
-    // Adjusted auto-scale to ensure right-most columns (Auction, Season, Crop) stay inside mobile display
+    const screenWidth = window.innerWidth;
+    let autoScale = 1.0;
+    if (screenWidth < 1100) {
+        autoScale = Math.max(0.30, Math.min(0.85, (screenWidth - 25) / 1060));
+    }
+
+    prevContent.style.transform = `scale(${autoScale.toFixed(2)})`;
+    prevContent.style.transformOrigin = "top left";
+    document.documentElement.style.setProperty('--p-zoom', autoScale.toFixed(2));
+    document.getElementById('zoomRange').value = autoScale.toFixed(2);
+    document.getElementById('printPreviewModal').style.display = 'flex';
+}
+
+/* ============================================================= */
+/* --- 3. KISAN ANUSAAR GATEPASS SUMMARY (SCREENSHOT MODAL) --- */
+/* ============================================================= */
+let kisanSelectedIds = new Set();
+let ksShowOnlyCheckedMode = false;
+let globalMandiEntriesCache = [];
+let manualLinkedEntriesMap = {};
+
+function loadManualLinkedStorage() {
+    try {
+        let saved = localStorage.getItem("mandiManualLinkedMap");
+        if(saved) manualLinkedEntriesMap = JSON.parse(saved);
+    } catch(e) { manualLinkedEntriesMap = {}; }
+}
+loadManualLinkedStorage();
+
+function openKisanSummaryScreen() {
+    document.getElementById("kisanSummaryScreen").style.display = "block";
+    loadManualLinkedStorage();
+    
+    let vSel = document.getElementById("ksVillageFilter");
+    if(vSel) {
+        let curV = vSel.value;
+        let allVillages = [...new Set(gatePassRecords.map(r => getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"])).filter(Boolean))].sort();
+        vSel.innerHTML = '<option value="">सभी गाँव (All Villages)</option>' + allVillages.map(v => `<option value="${v}">${v}</option>`).join("");
+        if(curV) vSel.value = curV;
+    }
+
+    const activeSeason = document.getElementById("season") ? document.getElementById("season").value : "";
+    if(activeSeason) {
+        db.ref("seasons/" + activeSeason + "/entries").once("value", snap => {
+            let val = snap.val() || {};
+            globalMandiEntriesCache = Object.entries(val).map(([k, v]) => ({ id: k, ...v }));
+            renderKisanSummary();
+        });
+    } else {
+        renderKisanSummary();
+    }
+}
+
+function closeKisanSummaryScreen() {
+    document.getElementById("kisanSummaryScreen").style.display = "none";
+}
+
+function toggleKsShowOnlyChecked() {
+    ksShowOnlyCheckedMode = !ksShowOnlyCheckedMode;
+    const btn = document.getElementById("ksShowCheckedBtn");
+    if(btn) {
+        btn.style.background = ksShowOnlyCheckedMode ? "#dc2626" : "#7c3aed";
+        btn.innerHTML = ksShowOnlyCheckedMode 
+          ? `👁 Show All (${kisanSelectedIds.size})` 
+          : `👁 Show Checked (<span id="ksCheckedBadge">${kisanSelectedIds.size}</span>)`;
+    }
+    renderKisanSummary();
+}
+
+function ksSelectAll(boolVal) {
+    const list = getFilteredGatePassList();
+    let grouped = getGroupedKisanData(list);
+    if(boolVal) {
+        Object.keys(grouped).forEach(k => kisanSelectedIds.add(k));
+    } else {
+        kisanSelectedIds.clear();
+    }
+    renderKisanSummary();
+}
+
+function toggleFarmerCardCheck(farmerKey) {
+    if(kisanSelectedIds.has(farmerKey)) {
+        kisanSelectedIds.delete(farmerKey);
+    } else {
+        kisanSelectedIds.add(farmerKey);
+    }
+    renderKisanSummary();
+}
+
+function getGroupedKisanData(recordsList) {
+    let grouped = {};
+    let activeBw = currentDefaultBW || 37.5;
+    
+    const activeSeason = document.getElementById("season") ? document.getElementById("season").value : "";
+    let defaultBhav = parseFloat(localStorage.getItem('mandiLastRate_' + activeSeason) || localStorage.getItem('mandiLastRate') || 2320);
+
+    recordsList.forEach(r => {
+        let cust = getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]) || "Unknown Kisan";
+        let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]) || "-";
+        let mobile = getGpField(r, ["Mobile No.", "Mobile No", "Mobile", "Phone", "Mobile Number", "Contact"]) || "";
+        let gpNo = getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]) || "-";
+        let dVal = getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]) || "-";
+        let qtl = parseFloat(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
+
+        let bagFromRecord = parseFloat(getGpField(r, ["Bags", "Bore", "Bori", "Bag", "बोरे"]) || 0);
+        let calculatedBags = bagFromRecord > 0 ? bagFromRecord : Math.round((qtl * 100) / activeBw);
+
+        let cutKg = parseFloat(getGpField(r, ["Cut", "Cut Qtl", "Fasal Cut"]) || 0) * 100;
+        let postCutKg = Math.max(0, (qtl * 100) - cutKg);
+        let postCutBags = Math.round(postCutKg / activeBw);
+
+        let rowRate = parseFloat(getGpField(r, ["Rate", "Bhav", "Auction Rate"]) || defaultBhav);
+        let amount = qtl * rowRate;
+
+        let key = normText(cust) + "_" + normText(village.split(",")[0].trim());
+        if(!grouped[key]) {
+            grouped[key] = {
+                key: key,
+                name: cust,
+                village: village,
+                mobile: mobile,
+                records: [],
+                totalBags: 0,
+                totalPostCutBags: 0,
+                totalQtl: 0,
+                totalAmount: 0
+            };
+        }
+        
+        grouped[key].records.push({
+            gpNo: gpNo,
+            date: dVal,
+            bags: calculatedBags,
+            postCutBags: postCutBags,
+            qtl: qtl,
+            amount: amount
+        });
+
+        grouped[key].totalBags += calculatedBags;
+        grouped[key].totalPostCutBags += postCutBags;
+        grouped[key].totalQtl += qtl;
+        grouped[key].totalAmount += amount;
+    });
+
+    return grouped;
+}
+
+// SMART MATCHING ENGINE (SUPPORTS OVERRIDE LINKING)
+function getMandiEntriesForFarmer(farmerName, farmerVillage, farmerKey) {
+    if(!globalMandiEntriesCache || globalMandiEntriesCache.length === 0) return [];
+    
+    // Explicit User Link Check
+    if(farmerKey && manualLinkedEntriesMap && manualLinkedEntriesMap[farmerKey]) {
+        let explicitIds = new Set(manualLinkedEntriesMap[farmerKey]);
+        return globalMandiEntriesCache.filter(e => explicitIds.has(e.id));
+    }
+
+    let normF = normText(farmerName);
+    let normV = normText(farmerVillage.split(",")[0].trim());
+
+    return globalMandiEntriesCache.filter(e => {
+        let cust = normText(e.customer || "");
+        let vill = normText(e.village || "");
+
+        let nameMatch = cust.includes(normF) || normF.includes(cust);
+        let villMatch = (!vill || !normV) ? true : (vill.includes(normV) || normV.includes(vill) || vill.substring(0,4) === normV.substring(0,4));
+
+        return nameMatch && villMatch;
+    });
+}
+
+/* --- MANUAL ENTRY LINKING POPUP WITH LIVE SEARCH --- */
+let activeLinkingFarmerKey = null;
+
+function openEntryLinkModal(farmerKey, farmerName, farmerVillage) {
+    activeLinkingFarmerKey = farmerKey;
+    document.getElementById("entryLinkModal").style.display = "block";
+    document.getElementById("entryLinkModalSubtitle").innerText = `किसान: ${farmerName} (${farmerVillage})`;
+    if(document.getElementById("modalEntrySearch")) document.getElementById("modalEntrySearch").value = "";
+
+    renderModalEntriesTable();
+}
+
+function renderModalEntriesTable() {
+    if(!activeLinkingFarmerKey) return;
+    const sQuery = (document.getElementById("modalEntrySearch") ? document.getElementById("modalEntrySearch").value : "").toLowerCase().trim();
+
+    // Find farmer details
+    let currentMatches = [];
+    if(manualLinkedEntriesMap && manualLinkedEntriesMap[activeLinkingFarmerKey]) {
+        let explicitIds = new Set(manualLinkedEntriesMap[activeLinkingFarmerKey]);
+        currentMatches = globalMandiEntriesCache.filter(e => explicitIds.has(e.id));
+    } else {
+        let parts = activeLinkingFarmerKey.split("_");
+        currentMatches = getMandiEntriesForFarmer(parts[0], parts[1] || "", activeLinkingFarmerKey);
+    }
+    let currentMatchedIds = new Set(currentMatches.map(m => m.id));
+
+    let tbody = document.getElementById("entryLinkModalTbody");
+    tbody.innerHTML = "";
+
+    let filteredCache = globalMandiEntriesCache.filter(e => {
+        if(!sQuery) return true;
+        let combined = `${e.date || ''} ${e.customer || ''} ${e.village || ''} ${e.bore || ''} ${e.quintal || ''} ${e.amount || ''}`.toLowerCase();
+        return combined.includes(sQuery);
+    });
+
+    let sortedCache = [...filteredCache].sort((a,b) => {
+        let aMatch = currentMatchedIds.has(a.id) ? 1 : 0;
+        let bMatch = currentMatchedIds.has(b.id) ? 1 : 0;
+        return bMatch - aMatch;
+    });
+
+    if(sortedCache.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">कोई Mandi Entry नहीं मिली।</td></tr>`;
+        updateModalLinkCount();
+        return;
+    }
+
+    sortedCache.forEach(e => {
+        let isChk = currentMatchedIds.has(e.id);
+        tbody.innerHTML += `
+          <tr style="border-bottom:1px solid #e2e8f0; ${isChk ? 'background:#eff6ff;' : ''}">
+            <td style="text-align:center;"><input type="checkbox" class="entry-link-chk" value="${e.id}" ${isChk ? 'checked' : ''} onchange="updateModalLinkCount()"></td>
+            <td>${e.date || '-'}</td>
+            <td style="font-weight:bold; color:var(--primary);">${e.customer || '-'}</td>
+            <td>${e.village || '-'}</td>
+            <td>${e.bore || 0}</td>
+            <td style="font-weight:bold; color:#16a34a;">${Number(e.finalQtl || e.qtlValue || 0).toFixed(2)}</td>
+            <td style="font-weight:bold;">₹${Number(e.amount || 0).toFixed(2)}</td>
+          </tr>
+        `;
+    });
+
+    updateModalLinkCount();
+}
+
+function filterModalEntriesTable() {
+    renderModalEntriesTable();
+}
+
+function closeEntryLinkModal() {
+    document.getElementById("entryLinkModal").style.display = "none";
+    activeLinkingFarmerKey = null;
+}
+
+function toggleAllModalLinkChecks(master) {
+    document.querySelectorAll('.entry-link-chk').forEach(c => c.checked = master.checked);
+    updateModalLinkCount();
+}
+
+function updateModalLinkCount() {
+    let count = document.querySelectorAll('.entry-link-chk:checked').length;
+    document.getElementById("entryLinkSelectedCount").innerText = count;
+}
+
+function saveManualLinkedEntries() {
+    if(!activeLinkingFarmerKey) return;
+    let selectedIds = Array.from(document.querySelectorAll('.entry-link-chk:checked')).map(c => c.value);
+    
+    manualLinkedEntriesMap[activeLinkingFarmerKey] = selectedIds;
+    localStorage.setItem("mandiManualLinkedMap", JSON.stringify(manualLinkedEntriesMap));
+    
+    alert("एंट्रियां सुरक्षित कर दी गईं! ✅");
+    closeEntryLinkModal();
+    renderKisanSummary();
+}
+
+function renderKisanSummary() {
+    const multiSearchVal = (document.getElementById("ksMultiSearch") ? document.getElementById("ksMultiSearch").value : "").toLowerCase().trim();
+    const villFilterVal = (document.getElementById("ksVillageFilter") ? document.getElementById("ksVillageFilter").value : "").toLowerCase().trim();
+
+    let list = getFilteredGatePassList();
+    let grouped = getGroupedKisanData(list);
+    let farmerKeys = Object.keys(grouped);
+
+    let searchTokens = multiSearchVal ? multiSearchVal.split(",").map(t => t.trim()).filter(Boolean) : [];
+
+    let filteredKeys = farmerKeys.filter(k => {
+        let f = grouped[k];
+        if(villFilterVal && f.village.toLowerCase() !== villFilterVal) return false;
+        
+        if(searchTokens.length > 0) {
+            let combined = (f.name + " " + f.village + " " + f.mobile).toLowerCase();
+            let matchedAny = searchTokens.some(token => combined.includes(token));
+            if(!matchedAny) return false;
+        }
+
+        if(ksShowOnlyCheckedMode && !kisanSelectedIds.has(k)) return false;
+
+        return true;
+    });
+
+    if(kisanSelectedIds.size === 0 && !ksShowOnlyCheckedMode && multiSearchVal === "") {
+        filteredKeys.forEach(k => kisanSelectedIds.add(k));
+    }
+
+    let totalSelectedFarmers = 0;
+    let totalSelectedGP = 0;
+    let totalSelectedBags = 0;
+    let totalSelectedQtl = 0;
+    let totalSelectedAmt = 0;
+    let totalSelectedMandiQtl = 0;
+
+    filteredKeys.forEach(k => {
+        if(kisanSelectedIds.has(k)) {
+            let f = grouped[k];
+            totalSelectedFarmers++;
+            totalSelectedGP += f.records.length;
+            totalSelectedBags += f.totalBags;
+            totalSelectedQtl += f.totalQtl;
+            totalSelectedAmt += f.totalAmount;
+
+            // Mandi entries calculation for summary metrics
+            let mandiMatches = getMandiEntriesForFarmer(f.name, f.village, k);
+            let rowMandiQtl = mandiMatches.reduce((acc, m) => acc + Number(m.finalQtl || m.qtlValue || 0), 0);
+            totalSelectedMandiQtl += rowMandiQtl;
+        }
+    });
+
+    let totalBalanceQtl = totalSelectedQtl - totalSelectedMandiQtl;
+
+    document.getElementById("ksCountFarmers").innerText = `${totalSelectedFarmers}/${filteredKeys.length}`;
+    document.getElementById("ksCountGP").innerText = totalSelectedGP;
+    document.getElementById("ksCountBore").innerText = totalSelectedBags;
+    document.getElementById("ksCountQtl").innerText = totalSelectedQtl.toFixed(2);
+    document.getElementById("ksTotalAmount").innerText = `₹${totalSelectedAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    
+    // Top Balance metrics elements
+    if(document.getElementById("ksCountMandiQtl")) document.getElementById("ksCountMandiQtl").innerText = `${totalSelectedMandiQtl.toFixed(2)} Qtl`;
+    if(document.getElementById("ksCountBalanceQtl")) {
+        const balEl = document.getElementById("ksCountBalanceQtl");
+        balEl.innerText = `${totalBalanceQtl.toFixed(2)} Qtl`;
+        balEl.style.color = (Math.abs(totalBalanceQtl) < 0.05) ? "#16a34a" : "#dc2626";
+    }
+
+    let chkBadge = document.getElementById("ksCheckedBadge");
+    if(chkBadge) chkBadge.innerText = kisanSelectedIds.size;
+
+    const container = document.getElementById("kisanSummaryContainer");
+    if(filteredKeys.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#64748b;">कोई किसान Gatepass रिकॉर्ड नहीं मिला।</div>`;
+        return;
+    }
+
+    let cardsHtml = "";
+    filteredKeys.forEach((k, idx) => {
+        let f = grouped[k];
+        let isChecked = kisanSelectedIds.has(k);
+        let phoneTxt = f.mobile ? `<span style="color:#0f766e; font-size:12px; margin-left:6px;">📞 ${f.mobile}</span>` : "";
+
+        let mandiMatches = getMandiEntriesForFarmer(f.name, f.village, k);
+        let mandiInfoBox = "";
+
+        let mandiTotBags = 0;
+        let mandiPostCutBags = 0;
+        let mandiTotQtl = 0;
+        let mandiTotAmt = 0;
+        let bw = currentDefaultBW || 37.5;
+
+        mandiMatches.forEach(m => {
+            let b = Number(m.bore || 0);
+            let e = Number(m.extra || 0);
+            let origKg = (b * bw) + e;
+            mandiTotBags += b;
+
+            let cutKg = Number(m.cutQtl || 0) * 100;
+            let remKg = Math.max(0, origKg - cutKg);
+            mandiPostCutBags += Math.floor(remKg / bw);
+            mandiTotQtl += Number(m.finalQtl || m.qtlValue || 0);
+            mandiTotAmt += Number(m.amount || 0);
+        });
+
+        // Balance calculation for individual farmer
+        let farmerBalanceQtl = f.totalQtl - mandiTotQtl;
+        let isMatched = Math.abs(farmerBalanceQtl) < 0.05;
+        let balanceStyle = isMatched ? "background:#dcfce7; color:#15803d; border:1px solid #86efac;" : "background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;";
+        let balanceIcon = isMatched ? "✅" : "⚠️";
+
+        let linkCountLabel = mandiMatches.length > 0 ? `${mandiMatches.length} Entries Linked` : `0 Linked (Click to link)`;
+        
+        mandiInfoBox = `
+          <div class="mandi-match-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:bold; color:#1e40af;">
+                🌾 Mandi App Pro Saved Entries (${linkCountLabel}):
+              </span>
+              <button onclick="openEntryLinkModal('${k}', '${f.name}', '${f.village}')" style="width:auto; padding:4px 10px; margin:0; font-size:11px; background:#2563eb; border-radius:5px; font-weight:bold;">⚙ Fix / Select Entries</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; font-weight:600; color:#334155; font-size:12px; margin-bottom:4px;">
+              <span>कुल बोरे (Pehle): <b>${mandiTotBags} Bags</b></span>
+              <span style="color:#15803d;">कट के बाद: <b>${mandiPostCutBags} Bags</b></span>
+              <span>क्विंटल: <b>${mandiTotQtl.toFixed(2)} Qtl</b></span>
+              <span style="color:#b91c1c;">नेट राशि: <b>₹${mandiTotAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</b></span>
+            </div>
+            
+            <!-- LIVE BALANCE QUINTAL HIGHLIGHT -->
+            <div style="margin-top:6px; padding:6px 8px; border-radius:6px; ${balanceStyle} display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:bold;">
+              <span>⚖️ Balance (Gatepass Qtl - Mandi Qtl):</span>
+              <span class="balance-pill-badge">${balanceIcon} ${farmerBalanceQtl > 0 ? '+' : ''}${farmerBalanceQtl.toFixed(2)} Qtl</span>
+            </div>
+          </div>
+        `;
+
+        let subRowsHtml = "";
+        f.records.forEach((r, rIdx) => {
+            subRowsHtml += `
+              <tr>
+                <td>${rIdx + 1}</td>
+                <td style="color:#2563eb; font-weight:bold;">${r.gpNo}</td>
+                <td>${r.date}</td>
+                <td style="color:#7c3aed; font-weight:bold;">${r.bags}</td>
+                <td style="color:#16a34a; font-weight:bold;">${r.qtl.toFixed(2)}</td>
+              </tr>
+            `;
+        });
+
+        cardsHtml += `
+          <div class="farmer-card">
+            <div class="farmer-card-header">
+              <div style="display:flex; align-items:flex-start; gap:8px;">
+                <input type="checkbox" style="width:20px; height:20px; margin-top:2px;" ${isChecked ? "checked" : ""} onchange="toggleFarmerCardCheck('${k}')">
+                <div>
+                  <div style="font-size:15px; font-weight:bold; color:#1e293b;">
+                    ${idx + 1}. 👤 <span style="color:#2563eb;">${f.name}</span>
+                  </div>
+                  <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                    🏡 ${f.village} ${phoneTxt}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px; color:#64748b; text-align:right;">कुल GP: <b>${f.records.length}</b></div>
+                <div class="farmer-badge-amt">₹${f.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+              </div>
+            </div>
+
+            ${mandiInfoBox}
+
+            <table class="farmer-sub-table">
+              <thead>
+                <tr>
+                  <th style="width:24px;">#</th>
+                  <th>Gatepass No.</th>
+                  <th>दिनांक</th>
+                  <th>बोरे</th>
+                  <th>क्विंटल</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${subRowsHtml}
+              </tbody>
+              <tfoot>
+                <tr style="background:#f1f5f9; font-weight:bold;">
+                  <td colspan="3" style="text-align:right;">कुल: ${f.totalBags} बोरे (Cut Baad: ${f.totalPostCutBags}) |</td>
+                  <td style="color:#7c3aed;">${f.totalBags}</td>
+                  <td style="color:#16a34a;">${f.totalQtl.toFixed(2)} Qtl</td>
+                </tr>
+                <tr style="background:#fffbeb; font-weight:bold; font-size:11.5px;">
+                  <td colspan="3" style="text-align:right; color:#92400e;">Gatepass: ${f.totalQtl.toFixed(2)} Qtl | Mandi: ${mandiTotQtl.toFixed(2)} Qtl</td>
+                  <td colspan="2" style="text-align:right; color:${isMatched ? '#16a34a' : '#dc2626'};">
+                    Balance: <b>${farmerBalanceQtl > 0 ? '+' : ''}${farmerBalanceQtl.toFixed(2)} Qtl</b>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        `;
+    });
+
+    container.innerHTML = cardsHtml;
+}
+
+function printKisanSummaryDirect() {
+    let list = getFilteredGatePassList();
+    let grouped = getGroupedKisanData(list);
+    let selectedFarmers = Object.keys(grouped).filter(k => kisanSelectedIds.has(k)).map(k => grouped[k]);
+
+    if(selectedFarmers.length === 0) {
+        alert("प्रिंट करने के लिए कम से कम 1 किसान सिलेक्ट करें!");
+        return;
+    }
+
+    let curCrop = document.getElementById("gpCropFilter").value || "All Crops";
+    let curSeason = document.getElementById("gpSeasonFilter").value || "2026";
+
+    let content = `
+      <h2 style="text-align:center; margin:0 0 4px 0; color:#0f172a;">📑 किसान अनुसार Gate Pass Summary Report</h2>
+      <p style="text-align:center; font-size:12px; color:#475569; margin:0 0 15px 0;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | कुल किसान: <b>${selectedFarmers.length}</b></p>
+    `;
+
+    selectedFarmers.forEach((f, idx) => {
+        let mandiMatches = getMandiEntriesForFarmer(f.name, f.village, f.key);
+        let mQtl = mandiMatches.reduce((acc, m) => acc + Number(m.finalQtl || m.qtlValue || 0), 0);
+        let mBags = mandiMatches.reduce((acc, m) => acc + Number(m.bore || 0), 0);
+        let balQtl = f.totalQtl - mQtl;
+        
+        let mandiTxt = "";
+        if(mandiMatches.length > 0) {
+            mandiTxt = ` | <span style="color:#16a34a; font-weight:bold;">Mandi Saved: ${mBags} Bags (${mQtl.toFixed(2)} Qtl) | Balance: ${balQtl.toFixed(2)} Qtl</span>`;
+        }
+
+        content += `
+          <div style="border:1px solid #333; margin-bottom:12px; padding:8px; page-break-inside:avoid;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px;">
+              <div><b>${idx + 1}. किसान:</b> ${f.name} | <b>गाँव:</b> ${f.village} ${f.mobile ? '| ' + f.mobile : ''}${mandiTxt}</div>
+              <div style="color:#16a34a; font-weight:bold;">कुल राशि: ₹${f.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+            </div>
+            <table border="1" style="width:100%; border-collapse:collapse; font-size:11px; text-align:center;">
+              <thead style="background:#e2e8f0;">
+                <tr>
+                  <th style="padding:4px;">#</th>
+                  <th style="padding:4px;">Gatepass No.</th>
+                  <th style="padding:4px;">दिनांक</th>
+                  <th style="padding:4px;">बोरे</th>
+                  <th style="padding:4px;">क्विंटल</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        f.records.forEach((r, rIdx) => {
+            content += `
+              <tr>
+                <td style="padding:3px;">${rIdx + 1}</td>
+                <td style="padding:3px; font-weight:bold;">${r.gpNo}</td>
+                <td style="padding:3px;">${r.date}</td>
+                <td style="padding:3px;">${r.bags}</td>
+                <td style="padding:3px;">${r.qtl.toFixed(2)}</td>
+              </tr>
+            `;
+        });
+
+        content += `
+              <tr style="background:#f8fafc; font-weight:bold;">
+                <td colspan="3" style="text-align:right; padding:4px;">कुल Gatepass:</td>
+                <td style="padding:4px;">${f.totalBags} बोरे (Cut Baad: ${f.totalPostCutBags})</td>
+                <td style="padding:4px; color:#16a34a;">${f.totalQtl.toFixed(2)} Qtl</td>
+              </tr>
+              <tr style="background:#f1f5f9; font-weight:bold;">
+                <td colspan="3" style="text-align:right; padding:4px;">Mandi Saved: ${mQtl.toFixed(2)} Qtl |</td>
+                <td colspan="2" style="padding:4px; text-align:right; color:${Math.abs(balQtl) < 0.05 ? '#16a34a' : '#dc2626'};">
+                  Balance Qtl: <b>${balQtl.toFixed(2)} Qtl</b>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        `;
+    });
+
+    const prevContent = document.getElementById('previewContent');
+    prevContent.innerHTML = content;
+
     const screenWidth = window.innerWidth;
     let autoScale = 1.0;
     if (screenWidth < 1100) {
@@ -1734,6 +2468,7 @@ let clickTimer = null;
 
 function clearLiveSearch() {
   document.getElementById("searchName").value = "";
+  if(document.getElementById("mainVillageFilter")) document.getElementById("mainVillageFilter").value = "";
   document.getElementById("fromDate").value = "";
   document.getElementById("toDate").value = "";
   filterData();
@@ -1800,7 +2535,25 @@ function applyZoom() {
     document.documentElement.style.setProperty('--p-zoom', z);
 }
 function closePreview() { document.getElementById('printPreviewModal').style.display='none'; }
-  
+
+function onFasalCutTypeChange() {
+    let type = document.getElementById("fasalCutType").value;
+    let stdBox = document.getElementById("standardCutBox");
+    let manBox = document.getElementById("manualCutBox");
+
+    if(type.startsWith("manual")) {
+        stdBox.style.display = "none";
+        manBox.style.display = "block";
+        document.getElementById("manualFasalCutInput").placeholder = (type === "manual_qtl") 
+          ? "सीधा क्विंटल कट दर्ज करें (उदा. 0.50)" 
+          : "सीधा KG कट दर्ज करें (उदा. 25)";
+    } else {
+        stdBox.style.display = "flex";
+        manBox.style.display = "none";
+    }
+    calcAmount();
+}
+
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
@@ -1811,7 +2564,7 @@ function openEntryScreen(){
   editOldTimestamp = null;
   editOldDate = null;
   editOldOrder = null;
-  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight","cutManualVal", "mandiTaxPercent", "sukhaiBags"]
+  ["customer","father","village","bore","extra","quintal","note","rate","cutTotal","amount","extraDeduction","commissionPercent","commission","customBWInput","fasalCutWeight","manualFasalCutInput","cutManualVal", "mandiTaxPercent", "sukhaiBags"]
     .forEach(id=>document.getElementById(id).value="");
   
   document.getElementById("liveParchiToggleWrapper").style.display = "none";
@@ -1824,9 +2577,10 @@ function openEntryScreen(){
   document.getElementById("mandiTaxPercent").value = "1"; 
   
   document.getElementById("fasalCutType").value = "quintal";
-  document.getElementById("fasalCutWeight").value = "0";
+  document.getElementById("fasalCutWeight").value = "3";
   document.getElementById("fasalCutUnit").value = "kg";
-  document.getElementById("fasalCutDisplay").innerText = "0 Qtl 0 Kg";
+  document.getElementById("manualFasalCutInput").value = "";
+  onFasalCutTypeChange();
   
   document.getElementById("cutBagVal").value = localStorage.getItem("lastLabour_" + s) || localStorage.getItem("lastLabour") || "60";
   if(localStorage.getItem('mandiLastRate_' + s)) document.getElementById('rate').value = localStorage.getItem('mandiLastRate_' + s);
@@ -1916,18 +2670,25 @@ function calcAmount(){
   const originalQtl = Number(((b * bwUsed + Number(document.getElementById("extra").value || 0)) / 100).toFixed(3));
 
   let fasalCutKg = 0;
-  const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
   const cutType = document.getElementById("fasalCutType").value;
 
-  if(fcWeightInput > 0){
-     const unit = document.getElementById("fasalCutUnit").value;
-     let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
+  if(cutType === "manual_qtl") {
+     let manQtl = Number(document.getElementById("manualFasalCutInput").value || 0);
+     fasalCutKg = manQtl * 100;
+  } else if(cutType === "manual_kg") {
+     fasalCutKg = Number(document.getElementById("manualFasalCutInput").value || 0);
+  } else {
+     const fcWeightInput = Number(document.getElementById("fasalCutWeight").value || 0);
+     if(fcWeightInput > 0){
+        const unit = document.getElementById("fasalCutUnit").value;
+        let weightKg = unit === "gram" ? (fcWeightInput / 1000) : fcWeightInput;
 
-     if(cutType === "bag"){
-        fasalCutKg = b * weightKg;
-     } 
-     else if(cutType === "quintal"){
-        fasalCutKg = originalQtl * weightKg;
+        if(cutType === "bag"){
+           fasalCutKg = b * weightKg;
+        } 
+        else if(cutType === "quintal"){
+           fasalCutKg = originalQtl * weightKg;
+        }
      }
   }
 
@@ -2092,6 +2853,7 @@ function saveEntry(){
   fasalCutType: document.getElementById("fasalCutType").value,
   fasalCutWeight: document.getElementById("fasalCutWeight").value,
   fasalCutUnit: document.getElementById("fasalCutUnit").value,
+  manualFasalCutInput: document.getElementById("manualFasalCutInput").value || 0,
   isJForm: false 
  };
  
@@ -2298,8 +3060,9 @@ function updateTable(arr){
   const finalExtraAfterCut = Math.round((totalFinalKgRaw % bw) * 10) / 10;
 
   const searchInputVal = document.getElementById("searchName").value.trim();
+  const villFilterVal = document.getElementById("mainVillageFilter") ? document.getElementById("mainVillageFilter").value : "";
 
-  if(searchInputVal !== "") {
+  if(searchInputVal !== "" || villFilterVal !== "") {
     document.getElementById("totalBore").innerHTML = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${finalBoreAfterCut} Bore ${finalExtraAfterCut} Kg</b></span>`;
     
     const totalQtlBeforeCut = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
@@ -2379,6 +3142,7 @@ repSort==="oldest" ? a.localeCompare(b) : b.localeCompare(a)
 let bw = currentDefaultBW || 37.5;
 let grandTotalKgRaw = 0;
 let grandTotalKgSum = 0;
+let grandTotalRemainingKg = 0;
 let grandTotalSukhaiBags = 0;
 let sukhaiCustomersSet = new Set();
 
@@ -2386,8 +3150,13 @@ arr.forEach(r => {
   let rowBw = Number(r.customBW || bw);
   let rowBore = Number(r.bore || 0);
   let rowExtra = Number(r.extra || 0);
-  grandTotalKgRaw += (rowBore * rowBw) + rowExtra;
+  let origKg = (rowBore * rowBw) + rowExtra;
+  grandTotalKgRaw += origKg;
   grandTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+
+  let rowCutKg = Number(r.cutQtl || 0) * 100;
+  let remainingKg = Math.max(0, origKg - rowCutKg);
+  grandTotalRemainingKg += remainingKg;
   
   if(r.applySukhaiChecked) {
      let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
@@ -2399,11 +3168,15 @@ arr.forEach(r => {
 let grandFinalBore = Math.floor(grandTotalKgRaw / bw);
 let grandFinalExtra = Math.round((grandTotalKgRaw % bw) * 10) / 10;
 
+let grandFinalRemainingBore = Math.floor(grandTotalRemainingKg / bw);
+let grandFinalRemainingExtra = Math.round((grandTotalRemainingKg % bw) * 10) / 10;
+
 let html = `
-<div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.5;">
+<div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.6;">
   <b>📊 All Dates Combined Grand Total:</b><br>
-  Total Entries: <b>${arr.length}</b> | All Bore: <b>${grandFinalBore} Bags</b> | All Extra: <b>${grandFinalExtra} Kg</b> | Kul Vazan: <b>${Math.floor(grandTotalKgSum / 100)} Qtl ${Math.round((grandTotalKgSum % 100) * 10) / 10} Kg</b><br>
-  <span style="color:#fde047; font-weight:bold; font-size:15px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span>
+  Total Entries: <b>${arr.length}</b> | All Bore (Pehle): <b>${grandFinalBore} Bags</b> | Extra: <b>${grandFinalExtra} Kg</b><br>
+  <span style="color:#86efac; font-size:15px; font-weight:800;">✅ Grand Total (Cut Ke Baad): ${grandFinalRemainingBore} Bags | Extra: ${grandFinalRemainingExtra} Kg (${Math.floor(grandTotalRemainingKg / 100)} Qtl ${Math.round((grandTotalRemainingKg % 100) * 10) / 10} Kg)</span><br>
+  <span style="color:#fde047; font-weight:bold; font-size:14px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span>
 </div>
 <table>
 <thead>
@@ -2424,31 +3197,43 @@ let html = `
 let chronologicalArr = [...arr].sort((a,b) => a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
 let runningTotalKgRaw = 0;
 let runningTotalKgSum = 0;
+let runningTotalRemainingKg = 0;
 let cumulativeTotalsByDate = {};
 
 chronologicalArr.forEach(r => {
   let rowBw = Number(r.customBW || bw);
   let rowBore = Number(r.bore || 0);
   let rowExtra = Number(r.extra || 0);
-  runningTotalKgRaw += (rowBore * rowBw) + rowExtra;
+  let origKg = (rowBore * rowBw) + rowExtra;
+  runningTotalKgRaw += origKg;
   runningTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+
+  let rowCutKg = Number(r.cutQtl || 0) * 100;
+  runningTotalRemainingKg += Math.max(0, origKg - rowCutKg);
+
   cumulativeTotalsByDate[r.date] = {
     kgRaw: runningTotalKgRaw,
-    qtlSum: runningTotalKgSum
+    qtlSum: runningTotalKgSum,
+    remainingKg: runningTotalRemainingKg
   };
 });
 
 sortedDates.forEach(date=>{
   let dayTotalKgRaw = 0;
   let dayTotalKgSum = 0;
+  let dayTotalRemainingKg = 0;
   let dayTotalSukhai = 0;
 
   grouped[date].forEach(r=>{
     let rowBw = Number(r.customBW || bw);
     let rowBore = Number(r.bore || 0);
     let rowExtra = Number(r.extra || 0);
-    dayTotalKgRaw += (rowBore * rowBw) + rowExtra;
+    let origKg = (rowBore * rowBw) + rowExtra;
+    dayTotalKgRaw += origKg;
     dayTotalKgSum += Number(r.finalQtl || r.qtlValue || 0) * 100;
+
+    let rowCutKg = Number(r.cutQtl || 0) * 100;
+    dayTotalRemainingKg += Math.max(0, origKg - rowCutKg);
     
     if(r.applySukhaiChecked) {
       let actualSukhaiBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : rowBore;
@@ -2459,16 +3244,27 @@ sortedDates.forEach(date=>{
   let dayFinalBore = Math.floor(dayTotalKgRaw / bw);
   let dayFinalExtra = Math.round((dayTotalKgRaw % bw) * 10) / 10;
 
-  const dayQtlPart = Math.floor(dayTotalKgSum / 100);
-  const dayKgPart = Math.round((dayTotalKgSum % 100) * 10) / 10;
+  let dayRemainingBore = Math.floor(dayTotalRemainingKg / bw);
+  let dayRemainingExtra = Math.round((dayTotalRemainingKg % bw) * 10) / 10;
+  let dayRemainingQtlPart = Math.floor(dayTotalRemainingKg / 100);
+  let dayRemainingKgPart = Math.round((dayTotalRemainingKg % 100) * 10) / 10;
 
   const cum = cumulativeTotalsByDate[date];
   let cumFinalBore = Math.floor(cum.kgRaw / bw);
   let cumFinalExtra = Math.round((cum.kgRaw % bw) * 10) / 10;
-  const cumQtlPart = Math.floor(cum.qtlSum / 100);
-  const cumKgPart = Math.round((cum.qtlSum % 100) * 10) / 10;
+  let cumRemainingBore = Math.floor(cum.remainingKg / bw);
+  let cumRemainingExtra = Math.round((cum.remainingKg % bw) * 10) / 10;
 
-  html += `<tr class="report-date-row"><td colspan="8" style="text-align:left; padding:10px; line-height:1.6;"><b>📅 ${date} | Entries: ${grouped[date].length}</b><br><span style="color:#1e40af;">● Aaj Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Vazan: <b>${dayQtlPart} Qtl ${dayKgPart} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br><span style="color:#16a34a;">● Is Tareekh Tak Kul:</span> Bore: <b>${cumFinalBore}</b> | Extra: <b>${cumFinalExtra} Kg</b> | Kul Vazan: <b>${cumQtlPart} Qtl ${cumKgPart} Kg</b></td></tr>`;
+  html += `<tr class="report-date-row">
+    <td colspan="8" style="text-align:left; padding:10px; line-height:1.7;">
+      <b>📅 ${date} | कुल Entries: ${grouped[date].length}</b><br>
+      <span style="color:#1e40af;">● Pehle Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br>
+      <span style="color:#15803d; font-size:14px; font-weight:800; background:#dcfce7; padding:2px 8px; border-radius:4px; display:inline-block; margin:3px 0;">
+        ✅ Aaj Cut Ke Baad Total Bags: <b>${dayRemainingBore} Bore ${dayRemainingExtra > 0 ? (dayRemainingExtra + ' Kg') : ''}</b> (${dayRemainingQtlPart} Qtl ${dayRemainingKgPart} Kg)
+      </span><br>
+      <span style="color:#475569; font-size:12px;">● Is Tareekh Tak Kul (Cum. After Cut): <b>${cumRemainingBore} Bore ${cumRemainingExtra > 0 ? (cumRemainingExtra + ' Kg') : ''}</b></span>
+    </td>
+  </tr>`;
 
   grouped[date].forEach((r,i)=>{
     const qKg = Number(r.finalQtl || r.qtlValue || 0) * 100;
@@ -2537,6 +3333,8 @@ function editEntry(id){
     document.getElementById("fasalCutType").value = d.fasalCutType || "quintal";
     document.getElementById("fasalCutWeight").value = d.fasalCutWeight || "3";
     document.getElementById("fasalCutUnit").value = d.fasalCutUnit || "kg";
+    document.getElementById("manualFasalCutInput").value = d.manualFasalCutInput || "";
+    onFasalCutTypeChange();
 
     document.getElementById("entryDate").value = d.date || "";
     if(d.commMode) document.getElementById("commMode").value = d.commMode;
@@ -2802,6 +3600,7 @@ function filterData(){
     nameInput = parsed.name.toLowerCase();
   }
 
+  const selectedVillage = document.getElementById("mainVillageFilter") ? document.getElementById("mainVillageFilter").value.trim().toLowerCase() : "";
   const from = document.getElementById("fromDate").value; 
   const to = document.getElementById("toDate").value;
   const s = document.getElementById("season").value; 
@@ -2820,6 +3619,10 @@ function filterData(){
         (r.father || "").toLowerCase().includes(nameInput) ||
         (r.village || "").toLowerCase().includes(nameInput)
       );
+    }
+
+    if(selectedVillage){
+      arr = arr.filter(r => (r.village || "").trim().toLowerCase() === selectedVillage);
     }
 
     if(from) arr = arr.filter(r => r.date >= from);
@@ -3036,6 +3839,13 @@ function loadSuggestions(){
     document.getElementById("villageList").innerHTML = allVillages.map(n=>`<option value="${n}">`).join("");
     document.getElementById("jformVillageList").innerHTML = allVillages.map(n=>`<option value="${n}">`).join("");
 
+    const mainVillSel = document.getElementById("mainVillageFilter");
+    if(mainVillSel) {
+        let curV = mainVillSel.value;
+        mainVillSel.innerHTML = '<option value="">🏡 सभी गाँव (All Villages)</option>' + allVillages.map(v => `<option value="${v}">${v}</option>`).join("");
+        if(curV) mainVillSel.value = curV;
+    }
+
     const uniqueCustomers = [...new Set(localData.map(d => d.customer).filter(Boolean))].sort();
     const commCustSel = document.getElementById("commCustomerSelect");
     if(commCustSel) {
@@ -3100,7 +3910,17 @@ function deleteEntry(id){
   } 
 }
 
-function loadSeason(){ const s = document.getElementById("season").value; if(!s) return; db.ref("seasonsInfo/" + s).once("value", snap => { let dataS = snap.val() || {}; currentDefaultBW = Number(dataS.defaultBw || 37.5); filterData(); loadSuggestions(); }); }
+function loadSeason(){ 
+  const s = document.getElementById("season").value; 
+  if(!s) return; 
+  db.ref("seasonsInfo/" + s).once("value", snap => { 
+    let dataS = snap.val() || {}; 
+    currentDefaultBW = Number(dataS.defaultBw || 37.5); 
+    filterData(); 
+    loadSuggestions(); 
+  }); 
+}
+
 function closeSeasonScreen(){ document.getElementById("seasonScreen").style.display = "none"; isCreatingNewSeason = false; }
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
@@ -3178,7 +3998,7 @@ function openForcedPreview(id, forceType) {
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#b7791f; font-weight:bold;">${r.customer || ""}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags (Bore)</th><td style="padding:8px; color:#1e293b;"><b>${r.bore || 0} Bags</b></td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Quintal Weight</th><td style="padding:8px; color:#1e293b;">${r.quintal || ""}</td></tr>
-             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Rate (Bhav)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">₹${rateVal} / Qtl</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Rate (Bhav)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">₹${rateVal} / Qtl</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
              <tr style="background:#fffaf0; font-size:16px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Amount</th><td style="padding:10px; color:#b91c1c;"><b>₹${netKhachi.toFixed(2)}</b></td></tr>
            </table>
