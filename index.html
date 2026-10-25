@@ -1139,7 +1139,7 @@ background: #e2e8f0 !important;
     </div>
     
     <p style="font-size:12px; color:#475569; margin:0 0 10px 0;">
-      अगर Mandi App में इस किसान के एक से ज़्यादा उपनाम (जैसे: Sunil Kumar Foji, Sunil Rinku) या कई एंट्रियां हैं, तो नीचे टिक लगाकर जोड़ें या हटाएं:
+      अगर Mandi App में इस किसान के एक से ज़्यादा उपनाम (जैसे: Sunil Kumar Foji, Sunil Rinku) या कई एंट्रियां हैं, तो नीचे टिक लगाकर जोड़ें या हटाएं[span_2](start_span)[span_2](end_span):
     </p>
 
     <div class="tableBox" style="max-height:360px;">
@@ -1150,7 +1150,7 @@ background: #e2e8f0 !important;
             <th>दिनांक</th>
             <th>Customer Name</th>
             <th>गाँव</th>
-            <th>बोरे</th>
+            <th>बोरे & वजन</th>
             <th>क्विंटल</th>
             <th>राशि ₹</th>
           </tr>
@@ -1241,7 +1241,7 @@ background: #e2e8f0 !important;
 const MASTER_PASSWORD = "786786";
 let isCreatingNewSeason = false; 
 let globalSeasonsObject = {}; 
-let isEditingFromCutReport = false; // Flag to return back to Cut Report after edit
+let isEditingFromCutReport = false; 
 
 /* --- HELPER: CASE-INSENSITIVE & CLEAN DEDUPLICATION --- */
 function cleanAndDedupeList(arr) {
@@ -2421,7 +2421,9 @@ function getMandiEntriesForFarmer(farmerName, farmerVillage, farmerKey) {
     });
 }
 
-/* --- MANUAL ENTRY LINKING POPUP WITH LIVE SEARCH --- */
+/* ========================================================================================= */
+/* --- MANUAL ENTRY LINKING: FATHER NAME IN SMALL & BORE + EXTRA KG DISPLAY (10 BAG 5 KG) --- */
+/* ========================================================================================= */
 let activeLinkingFarmerKey = null;
 
 function openEntryLinkModal(farmerKey, farmerName, farmerVillage) {
@@ -2452,7 +2454,7 @@ function renderModalEntriesTable() {
 
     let filteredCache = globalMandiEntriesCache.filter(e => {
         if(!sQuery) return true;
-        let combined = `${e.date || ''} ${e.customer || ''} ${e.village || ''} ${e.bore || ''} ${e.quintal || ''} ${e.amount || ''}`.toLowerCase();
+        let combined = `${e.date || ''} ${e.customer || ''} ${e.father || ''} ${e.village || ''} ${e.bore || ''} ${e.extra || ''} ${e.quintal || ''} ${e.amount || ''}`.toLowerCase();
         return combined.includes(sQuery);
     });
 
@@ -2470,13 +2472,23 @@ function renderModalEntriesTable() {
 
     sortedCache.forEach(e => {
         let isChk = currentMatchedIds.has(e.id);
+        let shortFather = (e.father || "").trim();
+        let fatherTxt = shortFather ? `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(S/O: ${shortFather})</div>` : '';
+        
+        let b = Number(e.bore || 0);
+        let extraKg = Number(e.extra || 0);
+        let boreWeightDisplay = (extraKg > 0) ? `<b>${b} Bag</b> <span style="color:#d97706; font-weight:bold;">${extraKg} Kg</span>` : `<b>${b} Bag</b>`;
+
         tbody.innerHTML += `
           <tr style="border-bottom:1px solid #e2e8f0; ${isChk ? 'background:#eff6ff;' : ''}">
             <td style="text-align:center;"><input type="checkbox" class="entry-link-chk" value="${e.id}" ${isChk ? 'checked' : ''} onchange="updateModalLinkCount()"></td>
             <td>${e.date || '-'}</td>
-            <td style="font-weight:bold; color:var(--primary);">${e.customer || '-'}</td>
+            <td>
+              <div style="font-weight:bold; color:var(--primary);">${e.customer || '-'}</div>
+              ${fatherTxt}
+            </td>
             <td>${e.village || '-'}</td>
-            <td>${e.bore || 0}</td>
+            <td>${boreWeightDisplay}</td>
             <td style="font-weight:bold; color:#16a34a;">${Number(e.finalQtl || e.qtlValue || 0).toFixed(2)}</td>
             <td style="font-weight:bold;">₹${Number(e.amount || 0).toFixed(2)}</td>
           </tr>
@@ -2655,7 +2667,6 @@ function renderKisanSummary() {
             mandiTotAmt += Number(m.amount || 0);
         });
 
-        /* --- EXACT PEECHE KA EXTRA KG DISPLAY (215 BAGS 30 KG FIX) --- */
         let mandiOrigBags = Math.floor(mandiTotKgRaw / bw);
         let mandiOrigExtraKg = Math.round((mandiTotKgRaw % bw) * 10) / 10;
         let mandiPehleTxt = (mandiOrigExtraKg > 0) ? `${mandiOrigBags} Bags ${mandiOrigExtraKg} Kg` : `${mandiOrigBags} Bags`;
@@ -2968,7 +2979,6 @@ function openEntryScreen(){
   editOldDate = null;
   editOldOrder = null;
 
-  // 1. Clear Form fields
   const fieldsToClear = [
     "customer", "father", "village", "bore", "extra", "quintal", 
     "note", "cutTotal", "amount", "extraDeduction", 
@@ -2980,14 +2990,12 @@ function openEntryScreen(){
     if(el) el.value = "";
   });
 
-  // 2. FASAL CUT IS NOW 100% BLANK (NO 3 KG DEFAULT)
   document.getElementById("fasalCutWeight").value = "";
   document.getElementById("manualFasalCutInput").value = "";
   document.getElementById("fasalCutType").value = "quintal";
   document.getElementById("fasalCutUnit").value = "kg";
   onFasalCutTypeChange();
   
-  // 3. Clear Live Preview & Text Displays
   document.getElementById("liveParchiToggleWrapper").style.display = "none";
   document.getElementById("cutTotalText").innerText = "0";
   document.getElementById("commissionText").innerText = "0";
@@ -3002,7 +3010,6 @@ function openEntryScreen(){
   document.getElementById("postCutBagsDisplay").innerText = "0 Bore";
   document.getElementById("postCutQtlDisplay").innerText = "0 Quintal";
 
-  // 4. Reset Checkboxes
   document.getElementById("useCustomBW").checked = false;
   document.getElementById("customBWContainer").style.display = "none";
   document.getElementById("cutManual").checked = false;
@@ -3010,10 +3017,8 @@ function openEntryScreen(){
   document.getElementById("applyMandiTax").checked = false; 
   document.getElementById("applySukhai").checked = false; 
 
-  // 5. Fresh Date
   document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
 
-  // 6. RATE JO DALA WAHI PRESERVED RAHEGA (LAST RATE RETRIEVED)
   if(localStorage.getItem('mandiLastRate_' + s)) {
       document.getElementById('rate').value = localStorage.getItem('mandiLastRate_' + s);
   } else if(localStorage.getItem('mandiLastRate')) {
@@ -3022,7 +3027,6 @@ function openEntryScreen(){
       document.getElementById('rate').value = "";
   }
 
-  // 7. Commission & Labour Defaults Preserved
   document.getElementById("cutBag").checked = true;
   document.getElementById("cutBagVal").value = localStorage.getItem("lastLabour_" + s) || localStorage.getItem("lastLabour") || "60";
   document.getElementById("cutQtl").checked = false;
@@ -3551,6 +3555,7 @@ function updateTable(arr){
   const sukhaiBagsEl = document.getElementById("dashboardSukhaiBags");
   const sukhaiFarmersEl = document.getElementById("dashboardSukhaiFarmers");
   if(sukhaiBagsEl) sukhaiBagsEl.innerText = totalSukhaiBagsApplied + " Bags";
+  if(sukhaiFarmersEl) sukhaiFarmersEl.innerText = totalSukhaiBagsApplied + " Bags";
   if(sukhaiFarmersEl) sukhaiFarmersEl.innerText = sukhaiFarmersSet.size + " Kisan";
 
   calculateTdsAmount();
@@ -4496,7 +4501,7 @@ function openForcedPreview(id, forceType) {
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags (Bore)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">${bagsDisplay}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Quintal Weight</th><td style="padding:8px; color:#1e293b;">${r.quintal || ""}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Rate (Bhav)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">₹${rateVal} / Qtl</td></tr>
-             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
              <tr style="background:#fffaf0; font-size:16px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Amount</th><td style="padding:10px; color:#b91c1c;"><b>₹${netKhachi.toFixed(2)}</b></td></tr>
            </table>
          </div>
