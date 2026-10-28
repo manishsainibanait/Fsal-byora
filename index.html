@@ -9,294 +9,381 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>  
 
-:root { --primary: #2563eb; --secondary: #475569; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --bg: #f1f5f9; color: #1e293b; --p-zoom: 1.0; }
-body{font-family:'Segoe UI',Arial,sans-serif;padding:12px;background: var(--bg); color: #1e293b;}  
-button,input,select{  
- width:100%;padding:12px;margin:6px 0;border-radius:8px;  
- border:1px solid #cbd5e1;font-size:15px; box-sizing: border-box;
-}  
-button{background: var(--primary); color:#fff; border:none; cursor: pointer; font-weight: 600; transition: 0.3s;}  
-button:hover{opacity: 0.9;}
-.tableBox{background:#fff;border-radius:10px;overflow-y:auto;max-height:500px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); width: 100%; box-sizing: border-box;}  
-table{width:100%;border-collapse:collapse;}  
-th,td{border:1px solid #e2e8f0;padding:10px;font-size:14px; text-align: left;}  
-th{background: var(--primary);color:#fff; position: sticky; top: 0;}  
-.actionBtn{padding:6px 10px;background: var(--secondary);color:#fff;border:none;border-radius:6px; width: auto; margin: 2px;}  
-.searchBar{background:#dbeafe;padding:12px;border-radius:10px;margin-bottom:12px; border: 1px solid #bfdbfe;}  
-#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen,#gatePassScreen,#kisanSummaryScreen,#entryLinkModal,#customerUpdateModal{  
- position:fixed;top:0;left:0;right:0;bottom:0;  
- background:#fff;padding:20px;display:none;z-index:999;overflow-y:auto;  
+:root { 
+  --primary: #0265d2; 
+  --primary-dark: #0051a8;
+  --secondary: #475569; 
+  --success: #16a34a; 
+  --danger: #dc2626; 
+  --warning: #d97706; 
+  --bg: #f1f5f9; 
+  --text: #1e293b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  padding: 8px;
+  background: var(--bg); 
+  color: var(--text);
+  margin: 0;
 }  
 
-.print-check { width: 22px; height: 22px; cursor: pointer; }
-.card { background: #fff; padding: 12px; border-radius: 10px; margin: 10px 0; border-left: 5px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+button, input, select {  
+  width: 100%;
+  padding: 10px;
+  margin: 4px 0;
+  border-radius: 8px;  
+  border: 1px solid #cbd5e1;
+  font-size: 14px; 
+}  
 
+button {
+  background: var(--primary); 
+  color: #fff; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: 600; 
+  transition: 0.2s;
+}  
+button:hover { opacity: 0.92; }
+
+.tableBox {
+  background: #fff;
+  border-radius: 10px;
+  overflow-y: auto;
+  overflow-x: auto;
+  max-height: 520px; 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+  width: 100%; 
+  border: 1px solid #e2e8f0;
+}  
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}  
+
+th, td {
+  border: 1px solid #e2e8f0;
+  padding: 7px 5px;
+  font-size: 12.5px; 
+  text-align: left;
+}  
+
+th {
+  background: var(--primary);
+  color: #fff; 
+  position: sticky; 
+  top: 0;
+  z-index: 5;
+}  
+
+.actionBtn {
+  padding: 5px 8px;
+  background: var(--secondary);
+  color: #fff;
+  border: none;
+  border-radius: 6px; 
+  width: auto; 
+  margin: 2px;
+}  
+
+.searchBar {
+  background: #dbeafe;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px; 
+  border: 1px solid #bfdbfe;
+}  
+
+#entryScreen,#seasonScreen,#reportScreen,#cutReportScreen,#sukhaiManagerScreen,#jformScreen,#gatePassScreen,#kisanSummaryScreen,#entryLinkModal,#customerUpdateModal {  
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;  
+  background: #fff;
+  padding: 14px;
+  display: none;
+  z-index: 999;
+  overflow-y: auto;  
+}  
+
+.print-check { width: 20px; height: 20px; cursor: pointer; }
+.card { 
+  background: #fff; 
+  padding: 12px; 
+  border-radius: 12px; 
+  margin: 10px 0; 
+  border-left: 6px solid var(--primary); 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.summary-block-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.summary-box-pre {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+.summary-box-post {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* Modal for Print Preview - Center Locked */
 #printPreviewModal {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(15, 23, 42, 0.9); z-index: 10000; display: none;
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: #182232; z-index: 10000; display: none;
   flex-direction: column;
 }
-.previewHeader { background: #fff; padding: 10px 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; z-index: 10001; }
+.previewHeader { 
+  background: #ffffff; padding: 10px 14px; display: flex; gap: 8px; align-items: center; justify-content: space-between; z-index: 10001; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25); flex-wrap: wrap;
+}
 .previewBody { 
   flex: 1; 
-  overflow: auto; 
-  padding: 12px; 
-  background: #1e293b; 
-  display: flex; 
+  overflow-x: auto; 
+  overflow-y: auto; 
+  padding: 20px 0; 
+  background: #182232; 
+  -webkit-overflow-scrolling: touch; 
+  display: flex;
   justify-content: center;
   align-items: flex-start;
-  -webkit-overflow-scrolling: touch; 
-}
-#previewContent { 
-  background: #fff; 
-  padding: 16px; 
-  transform-origin: top center; 
-  width: 100%; 
-  max-width: 500px;
-  margin: 0 auto; 
-  box-shadow: 0 10px 25px rgba(0,0,0,0.4); 
-  box-sizing: border-box; 
-  border-radius: 12px;
 }
 
+#previewWrapper {
+  display: inline-block;
+  margin: 0 auto;
+}
+
+/* Exact Sheet Styling - No Sticky Interference */
+#previewContent { 
+  background: #ffffff !important; 
+  padding: 16px 14px; 
+  width: 960px !important; 
+  min-width: 960px !important;
+  max-width: 960px !important;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.7); 
+  border-radius: 6px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/* Disable sticky positioning inside preview content so columns never float */
+#previewContent th, #previewContent td {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+}
+
+/* Print Specific */
 @media print {
-  @page{ size: A4 portrait; margin: 8mm; }
+  @page { size: A4 landscape; margin: 4mm; }
   html, body { background: #fff !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
   body * { visibility: hidden !important; }
-  #previewContent, #previewContent * { visibility: visible !important; }
+  #previewContent, #previewContent *, #reportOutput, #reportOutput *, #cutReportOutput, #cutReportOutput * { visibility: visible !important; }
   #previewContent { 
     position: absolute !important; 
     left: 0 !important; 
     top: 0 !important; 
     width: 100% !important; 
+    min-width: 100% !important;
     max-width: 100% !important; 
-    transform: none !important; 
     padding: 0 !important; 
     margin: 0 !important; 
     box-shadow: none !important; 
-    overflow: visible !important;
+    transform: none !important;
   }
-  #previewContent table { 
+  #reportOutput, #cutReportOutput {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+  }
+  table { 
     width: 100% !important; 
     border-collapse: collapse !important; 
-    font-size: 13px !important; 
+    font-size: 10px !important; 
     table-layout: auto !important;
   }
-  #previewContent th, #previewContent td { 
-    border: 1px solid #333 !important; 
-    padding: 6px 8px !important; 
+  th, td { 
+    border: 1px solid #cbd5e1 !important; 
+    padding: 3px 4px !important; 
     color: #000 !important; 
   }
-  #previewContent thead th { 
-    background: #e2e8f0 !important; 
-    color: #000 !important; 
+  thead th { 
+    background: #0265d2 !important; 
+    color: #fff !important; 
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .no-print { display: none !important; }
 }
 
-.tableBox{ overflow-x:auto; }
-thead th:nth-child(3){ position: sticky; left: 0; background: var(--primary); z-index: 2; }
-tbody td:nth-child(3){
- position: sticky;
- left: 0;
- background:#fff;
- z-index: 1;
- font-weight: bold;
- color: var(--primary);
+/* Main Dashboard Sticky for 3rd Column only */
+.tableBox thead th:nth-child(3) { position: sticky; left: 0; background: var(--primary); z-index: 2; }
+.tableBox tbody td:nth-child(3) {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+  font-weight: bold;
+  color: var(--primary);
 }
 
-/* --- ADVANCED SECURITY LOCK UI STYLING --- */
+/* Lock Screen */
 #lockScreen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    z-index: 99999; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  z-index: 99999; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 20px;
 }
 .lock-card { 
-    background: rgba(30, 41, 59, 0.75); 
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 40px 25px; 
-    border-radius: 28px; 
-    width: 100%; 
-    max-width: 350px; 
-    text-align: center; 
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 41, 59, 0.85); 
+  backdrop-filter: blur(16px);
+  padding: 34px 22px; 
+  border-radius: 24px; 
+  width: 100%; 
+  max-width: 340px; 
+  text-align: center; 
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .lock-title {
-    font-size: 28px;
-    font-weight: 800;
-    color: #ffffff;
-    margin: 0 0 6px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    letter-spacing: -0.5px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 .lock-status {
-    font-size: 13px;
-    color: #94a3b8;
-    margin-bottom: 24px;
-    font-weight: 500;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 20px;
+  font-weight: 500;
 }
 .pin-dot-input { 
-    letter-spacing: 16px; 
-    font-size: 32px; 
-    text-align: center; 
-    font-weight: bold; 
-    border: 2px solid #334155; 
-    border-radius: 14px;
-    background: #0f172a;
-    color: #ffffff;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 12px;
-}
-.pin-dot-input:focus {
-    border-color: #3b82f6;
-    background: #0f172a;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
-    outline: none;
+  letter-spacing: 14px; 
+  font-size: 28px; 
+  text-align: center; 
+  font-weight: bold; 
+  border: 2px solid #334155; 
+  border-radius: 14px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 10px;
 }
 .lock-btn {
-    font-size: 16px;
-    font-weight: 600;
-    padding: 14px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
-    border: none;
-    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-    transition: all 0.2s ease;
-}
-.lock-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 20px -3px rgba(37, 99, 235, 0.4);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0265d2 0%, #0051a8 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 10px 15px -3px rgba(2, 101, 210, 0.3);
 }
 .lock-footer-dev {
-    margin-top: 35px;
-    border-top: 1px solid #334155;
-    padding-top: 20px;
-    font-size: 12px;
-    color: #94a3b8;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+  margin-top: 30px;
+  border-top: 1px solid #334155;
+  padding-top: 16px;
+  font-size: 12px;
+  color: #94a3b8;
 }
 .lock-footer-dev span {
-    color: #3b82f6;
-    font-weight: 700;
-    background: rgba(59, 130, 246, 0.1);
-    padding: 6px 14px;
-    border-radius: 8px;
-    display: inline-block;
-    margin-top: 6px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 4px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-top: 6px;
 }
 #mainAppWrapper { display: none; }
 
 .tds-calculator { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 10px; }
 .tds-calculator input { margin: 0; padding: 5px 8px; width: 80px; text-align: center; }
 
-/* --- REPORT LAYOUT --- */
-#reportOutput { width: 100%; overflow: hidden; padding: 0; margin-top: 10px; }
+#reportOutput { width: 100%; overflow-x: auto; padding: 0; margin-top: 10px; }
 #reportOutput table { 
-    width: 100%; 
-    table-layout: fixed;
-    border-collapse: collapse; 
-    background: #fff;
+  width: 100%; 
+  border-collapse: collapse; 
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  table-layout: auto;
 }
-#reportOutput th{
-font-size:13px;
-padding:10px 4px;
-background: var(--primary); 
-color: white; 
-text-align: center;
-position: sticky; 
-top: 0; 
-z-index: 10; 
+#reportOutput th {
+  font-size: 12px;
+  padding: 8px 3px;
+  background: #0265d2; 
+  color: white; 
+  text-align: center;
+  position: sticky; 
+  top: 0; 
+  z-index: 10; 
+  border: 1px solid #0051a8;
+}
+#reportOutput td {
+  font-size: 12px;
+  padding: 6px 3px;
+  text-align: center; 
+  border: 1px solid #e2e8f0;
 }
 
-#reportOutput td{
-font-size:13px;
-padding:8px 4px;
-text-align: center; 
-word-wrap: break-word; 
-overflow-wrap: break-word;
-border: 1px solid #e2e8f0;
-}
-
-#reportOutput th:nth-child(1), #reportOutput td:nth-child(1) { width: 8%; }
-#reportOutput th:nth-child(2), #reportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; }
-#reportOutput th:nth-child(3), #reportOutput td:nth-child(3) { width: 16%; }
-#reportOutput th:nth-child(4), #reportOutput td:nth-child(4) { width: 15%; }
-#reportOutput th:nth-child(5), #reportOutput td:nth-child(5) { width: 9%; }
-#reportOutput th:nth-child(6), #reportOutput td:nth-child(6) { width: 9%; }
-#reportOutput th:nth-child(7), #reportOutput td:nth-child(7) { width: 11%; }
-#reportOutput th:nth-child(8), #reportOutput td:nth-child(8) { width: 14%; }
-
-/* --- CUT REPORT LAYOUT --- */
-#cutReportOutput { width: 100%; overflow-x: hidden; padding: 0; margin-top: 10px; }
+#cutReportOutput { width: 100%; overflow-x: auto; padding: 0; margin-top: 10px; }
 #cutReportOutput table { 
-    width: 100%; 
-    table-layout: fixed; 
-    border-collapse: collapse; 
-    background: #fff; 
+  width: 100%; 
+  border-collapse: collapse; 
+  background: #fff; 
 }
 #cutReportOutput th { 
-    font-size: 11px; 
-    padding: 8px 3px; 
-    background: var(--danger); 
-    color: white; 
-    text-align: center; 
-    position: sticky; 
-    top: 0; 
-    z-index: 10; 
-    word-wrap: break-word; 
-    overflow-wrap: break-word; 
+  font-size: 11px; 
+  padding: 8px 4px; 
+  background: var(--danger); 
+  color: white; 
+  text-align: center; 
+  position: sticky; 
+  top: 0; 
+  z-index: 10; 
 }
 #cutReportOutput td { 
-    font-size: 11px; 
-    padding: 6px 3px; 
-    text-align: center; 
-    border: 1px solid #e2e8f0; 
-    word-wrap: break-word; 
-    overflow-wrap: break-word; 
+  font-size: 11px; 
+  padding: 6px 4px; 
+  text-align: center; 
+  border: 1px solid #e2e8f0; 
 }
 
-#cutReportOutput th:nth-child(1), #cutReportOutput td:nth-child(1) { width: 10%; } 
-#cutReportOutput th:nth-child(2), #cutReportOutput td:nth-child(2) { width: 18%; text-align: left; padding-left: 4px; }
-#cutReportOutput th:nth-child(2) { position: sticky; left: 0; background: var(--danger); z-index: 20; }
-#cutReportOutput td:nth-child(2) { position: sticky; left: 0; background: #fff; z-index: 5; font-weight: bold; color: var(--primary); }
-#cutReportOutput th:nth-child(3), #cutReportOutput td:nth-child(3) { width: 13%; } 
-#cutReportOutput th:nth-child(4), #cutReportOutput td:nth-child(4) { width: 14%; } 
-#cutReportOutput th:nth-child(5), #cutReportOutput td:nth-child(5) { width: 10%; } 
-#cutReportOutput th:nth-child(6), #cutReportOutput td:nth-child(6) { width: 10%; } 
-#cutReportOutput th:nth-child(7), #cutReportOutput td:nth-child(7) { width: 13%; } 
-#cutReportOutput th:nth-child(8), #cutReportOutput td:nth-child(8) { width: 12%; } 
-
-.report-date-row{
-font-size:14px;
-font-weight:bold;
-padding:10px;
-background: #e2e8f0 !important; 
+.report-date-row {
+  font-size: 13px;
+  font-weight: bold;
+  padding: 10px 8px;
+  background: #f1f5f9 !important; 
+  color: #1e293b;
 }
 
-/* --- AI STYLING --- */
-.ai-panel { display: none; background: #eff6ff; border: 2px solid #3b82f6; border-radius: 12px; padding: 15px; margin: 15px 0; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15); }
+.ai-panel { display: none; background: #eff6ff; border: 2px solid #3b82f6; border-radius: 12px; padding: 15px; margin: 15px 0; }
 .ai-header { display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #1e40af; font-size: 16px; margin-bottom: 8px; }
-.ai-chip { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #bfdbfe; font-weight: 500; display: inline-block; margin: 3px; width: auto;}
-.ai-chip:hover { background: #bfdbfe; }
+.ai-chip { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #bfdbfe; font-weight: 500; display: inline-block; margin: 3px; }
 .ai-result { background: white; border-radius: 8px; padding: 12px; border: 1px solid #cbd5e1; margin-top: 10px; font-size: 14px; line-height: 1.6; color: #334155; max-height: 250px; overflow-y: auto;}
 
-/* --- 2ND APP GATE PASS UI INTEGRATION --- */
 .gp-stat-box { background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:8px; text-align:center; flex:1; min-width:80px; }
 .gp-stat-box small { display:block; font-size:11px; color:#64748b; font-weight:600; }
 .gp-stat-box strong { font-size:15px; font-weight:800; }
 
-/* --- APP DROPDOWN MENU UI --- */
 .dropdown-menu-container { position: relative; display: inline-block; }
 .dropdown-menu-list {
   display: none;
@@ -328,9 +415,7 @@ background: #e2e8f0 !important;
   background: #f1f5f9;
   color: var(--primary);
 }
-.dropdown-menu-list button:last-child { border-bottom: none; }
 
-/* --- KISAN GATEPASS SUMMARY CARDS --- */
 .farmer-card {
   background: #ffffff;
   border: 1px solid #cbd5e1;
@@ -358,19 +443,10 @@ background: #e2e8f0 !important;
   margin-top: 8px;
   font-size: 12px;
 }
-.farmer-sub-table th {
-  background: #f8fafc;
-  color: #475569;
+.farmer-sub-table th, .farmer-sub-table td {
   padding: 6px 4px;
   border: 1px solid #e2e8f0;
   text-align: center;
-  font-size: 11px;
-}
-.farmer-sub-table td {
-  padding: 6px 4px;
-  border: 1px solid #e2e8f0;
-  text-align: center;
-  font-size: 12px;
 }
 
 .mandi-match-box {
@@ -388,7 +464,6 @@ background: #e2e8f0 !important;
   border-radius: 6px;
   font-weight: bold;
   font-size: 12px;
-  letter-spacing: 0.2px;
 }
 </style>  
 </head>  
@@ -397,17 +472,17 @@ background: #e2e8f0 !important;
 <div id="lockScreen">
     <div class="lock-card">
         <h2 class="lock-title">🔐 Mandi App Pro</h2>
-        <p id="lockStatus" class="lock-status">Unlock करने के लिए PIN या Fingerprint का उपयोग करें</p>
+        <p id="lockStatus" class="lock-status">Unlock karne ke liye PIN ya Fingerprint ka use karein</p>
         
         <input type="password" id="pinInput" class="pin-dot-input" placeholder="••••" maxlength="6" inputmode="numeric">
         <button onclick="handlePinSubmit()" class="lock-btn" style="margin-top:16px; width:100%;">Unlock with PIN</button>
         
         <div id="biometricContainer" style="margin-top:12px; width:100%;">
             <button id="unlockFingerBtn" onclick="authenticateFingerprint()" class="lock-btn" style="background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); display:none; margin: 0; width:100%; box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3);">🧬 Unlock with Fingerprint</button>
-            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:#334155; color:#fff; border:none; width:100%; font-size:13px; border-radius:14px; padding:12px; font-weight:600; cursor:pointer; transition:0.3s; box-sizing:border-box;">📝 Register Fingerprint</button>
+            <button id="regFingerBtn" onclick="registerFingerprint()" style="background:#334155; color:#fff; border:none; width:100%; font-size:13px; border-radius:14px; padding:12px; font-weight:600; cursor:pointer;">📝 Register Fingerprint</button>
         </div>
 
-        <button onclick="handleForgotPin()" style="background:none; border:none; color:#ef4444; text-decoration:underline; font-size:13px; margin-top:20px; width:auto; padding:0; display:inline-block; cursor:pointer; font-weight:500;">Forgot PIN?</button>
+        <button onclick="handleForgotPin()" style="background:none; border:none; color:#ef4444; text-decoration:underline; font-size:13px; margin-top:20px; width:auto; padding:0; cursor:pointer;">Forgot PIN?</button>
 
         <div class="lock-footer-dev">
             🛠️ App Developed by:<br><span>Manish Saini Dhanani</span>
@@ -418,7 +493,7 @@ background: #e2e8f0 !important;
 <div id="mainAppWrapper"> 
 <div class="no-print">
 
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:white; padding:10px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.08);">
     <button onclick="logoutApp()" style="width:auto; padding:8px 15px; background:var(--danger); margin:0;">Logout 🚪</button>
     <div style="display:flex; gap:6px; align-items:center;">
         <button onclick="openReport()" style="width:auto; padding:8px 14px; background:var(--warning); margin:0;">📊 Report</button>
@@ -484,15 +559,15 @@ background: #e2e8f0 !important;
     <span class="ai-chip" onclick="viewCommissionTracker()" style="background:#7c3aed; color:#fff;">⚠️ Missing Comm Tracker</span>
   </div>
 
-  <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin: 8px 0; border: 1px solid #cbd5e1;">
-    <b style="color: #4338ca; font-size: 13px;">📊 Quick Commission Modifier (No Typing):</b>
+  <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #cbd5e1;">
+    <b style="color: #4338ca; font-size: 13px;">📊 Quick Commission Modifier:</b>
     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px;">
       <select id="commTargetSelect" style="flex: 1; min-width: 120px; padding:8px; margin:0;" onchange="toggleCommTargetView()">
         <option value="all">👥 Sabki Ek Sath (Bulk)</option>
         <option value="single">👤 Ek Person Ki (Single)</option>
       </select>
       <select id="commCustomerSelect" style="flex: 1.2; min-width: 150px; display: none; padding:8px; margin:0; border:1px solid #7c3aed;">
-        </select>
+      </select>
       <select id="commModeSelect" style="width: 110px; padding:8px; margin:0;">
         <option value="percent">Comm %</option>
         <option value="perQtl">Comm ₹/Qtl</option>
@@ -502,8 +577,8 @@ background: #e2e8f0 !important;
     </div>
   </div>
 
-  <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin: 8px 0; border: 1px solid #bbf7d0;">
-    <b style="color: #166534; font-size: 13px;">🌾 Quick Rate Modifier (Bulk / Single Season Rates):</b>
+  <div style="background: #f0fdf4; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #bbf7d0;">
+    <b style="color: #166534; font-size: 13px;">🌾 Quick Rate Modifier:</b>
     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px;">
       <select id="rateTargetSelect" style="flex: 1; min-width: 120px; padding:8px; margin:0;" onchange="toggleRateTargetView()">
         <option value="all">👥 Sabki Ek Sath (Bulk Rate)</option>
@@ -520,19 +595,18 @@ background: #e2e8f0 !important;
   </div>
 
   <div style="display: flex; gap:6px;">
-    <input type="text" id="aiQueryInput" list="aiSuggestionsList" placeholder="Sawal ya command (e.g. app info)..." style="margin:0; padding:10px;">
+    <input type="text" id="aiQueryInput" list="aiSuggestionsList" placeholder="Sawal ya command..." style="margin:0; padding:10px;">
     <datalist id="aiSuggestionsList"></datalist>
     <button onclick="handleAIQuery()" style="width:auto; background:#1e40af; margin:0; padding:0 15px;">Ask AI</button>
   </div>
-  <div style="font-size:11px; margin-top:3px; color:#475569;">💡 <b>Help:</b> Type "app info" to check all hidden master prompt actions and commands.</div>
-  <div class="ai-result" id="aiResultView">Pura data summary dekhne ke liye 'Auto Summary' dabayein ya naam/gaon/reports search karein.</div>
+  <div class="ai-result" id="aiResultView">Pura data summary dekhne ke liye 'Auto Summary' dabayein...</div>
 </div>
 
 <div style="display:flex; gap:6px; margin: 10px 0; align-items: center; flex-wrap: wrap;">  
 <button onclick="sortNewest()" style="background: #fff; color: #444; border: 1px solid #ccc; width: auto; flex: 1;">Newest</button>  
 <button onclick="sortOldest()" style="background: #fff; color: #444; border: 1px solid #ccc; width: auto; flex: 1;">Oldest</button>
 
-<select id="entryTypeFilter" onchange="localStorage.setItem('mandiEntryTypeFilter', this.value); filterData();" style="width: auto; flex: 1.5; margin: 0; padding: 11px; font-weight: bold; border: 2px solid #db2777; background: #fff;">
+<select id="entryTypeFilter" onchange="localStorage.setItem('mandiEntryTypeFilter', this.value); filterData();" style="width: auto; flex: 1.5; margin: 0; padding: 10px; font-weight: bold; border: 2px solid #db2777; background: #fff;">
     <option value="regular">🌾 Regular Entries Only</option>
     <option value="all">🌐 View All Data Mixed</option>
     <option value="jform">📝 J-Form Entries Only</option>
@@ -548,15 +622,14 @@ background: #e2e8f0 !important;
     <button onclick="fixAllOrder()" style="background:red;">Fix Order</button>
 </div>
 
-<!-- LIVE SEARCH BAR WITH CUSTOMER LIST AUTO-SUGGESTIONS & STRICT VILLAGE FILTER -->
 <div class="searchBar">  
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-    <span style="font-weight:bold; color:var(--primary); font-size:13px;">🔍 Main Search & Gaon Filter:</span>
+    <span style="font-weight:bold; color:var(--primary); font-size:13px;">🔍 Main Customer Search & Gaon Filter:</span>
     <button type="button" onclick="clearLiveSearch()" style="width:auto; padding:3px 10px; margin:0; font-size:11px; background:var(--danger); border-radius:4px;">Clear ❌</button>
   </div>
   
   <div style="display:flex; gap:6px; margin-bottom:6px;">
-      <input id="searchName" list="searchCustomerList" placeholder="🔍 Type ya select karein (Name, Father)..." oninput="handleSearch()" style="margin:0; background:#fff; font-weight:bold; border:2px solid var(--primary); flex:1.2;">
+      <input id="searchName" list="searchCustomerList" placeholder="🔍 Search Customer Name..." oninput="handleSearch()" style="margin:0; background:#fff; font-weight:bold; border:2px solid var(--primary); flex:1.2;">
       <select id="mainVillageFilter" onchange="filterData()" style="margin:0; background:#fff; font-weight:bold; border:2px solid var(--primary); flex:1;">
           <option value="">🏡 सभी गाँव (All Villages)</option>
       </select>
@@ -569,19 +642,44 @@ background: #e2e8f0 !important;
 </div>  
 
 <div class="card">  
-<b>Total Bore:</b> <span id="totalBore" style="color:var(--danger); font-size: 18px;">0</span> |  
-<b>Total Qtl:</b> <span id="totalQtl" style="color:var(--success); font-size: 18px;">0</span> |  
-<b>Total Comm:</b> <span id="totalComm" style="color:var(--warning); font-size: 18px;">0</span>
+  <div class="summary-block-row">
+    
+    <div class="summary-box-pre">
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 4px;">
+        ⏳ Pehle Ka Kul Maal (Original Before Cut):
+      </div>
+      <div style="font-size: 15px; color: #1e293b; line-height: 1.5;">
+        <b>Total Bore:</b> <span id="totalBorePre" style="color:var(--danger); font-size: 17px; font-weight:bold;">0 Bore</span> |  
+        <b>Total Qtl:</b> <span id="totalQtlPre" style="color:#0369a1; font-size: 17px; font-weight:bold;">0 Qtl</span>
+      </div>
+    </div>
 
-<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #c084fc; font-size:14px; background:#f3e8ff; padding:8px; border-radius:6px; border:1px solid #d8b4fe; color:#581c87;">
-  ♨️ <b>Sukhai Applied Total Bags:</b> <span id="dashboardSukhaiBags" style="color:#7c3aed; font-size:17px; font-weight:bold;">0 Bags</span> | 
-  <b>Farmers Count:</b> <span id="dashboardSukhaiFarmers" style="color:#6b21a8; font-size:16px; font-weight:bold;">0 Kisan</span>
-</div>
+    <div class="summary-box-post">
+      <div style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <span>✅ Cut Ke Baad Ka Kul Maal (Final After Cut):</span>
+        <span id="totalFasalCutBadge" style="background:#fee2e2; color:#b91c1c; font-size:11px; padding:2px 6px; border-radius:4px; font-weight:bold; display:none;">Total Cut: 0 Qtl</span>
+      </div>
+      <div style="font-size: 15px; color: #1e293b; line-height: 1.5;">
+        <b>After Cut Bore:</b> <span id="totalBorePost" style="color:#15803d; font-size: 18px; font-weight:800;">0 Bore</span> |  
+        <b>After Cut Qtl:</b> <span id="totalQtlPost" style="color:#15803d; font-size: 18px; font-weight:800;">0 Qtl</span>
+      </div>
+    </div>
 
-<div class="tds-calculator">
-    <b>TDS %:</b> <input type="number" id="tdsPercentInput" value="0" oninput="saveTdsPercent()" step="0.01">
-    <b style="margin-left:5px;">TDS Amount:</b> <span id="tdsAmountDisplay" style="color:var(--danger); font-weight:bold;">0.00</span>
-</div>
+  </div>
+
+  <div style="margin-top: 10px; font-size: 14px; font-weight: 600; color: #475569;">
+    <b>Total Comm:</b> <span id="totalComm" style="color:var(--warning); font-size: 17px; font-weight: bold;">0.00</span>
+  </div>
+
+  <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #c084fc; font-size:14px; background:#f3e8ff; padding:8px; border-radius:6px; border:1px solid #d8b4fe; color:#581c87;">
+    ♨️ <b>Sukhai Applied Total Bags:</b> <span id="dashboardSukhaiBags" style="color:#7c3aed; font-size:17px; font-weight:bold;">0 Bags</span> | 
+    <b>Farmers Count:</b> <span id="dashboardSukhaiFarmers" style="color:#6b21a8; font-size:16px; font-weight:bold;">0 Kisan</span>
+  </div>
+
+  <div class="tds-calculator">
+      <b>TDS %:</b> <input type="number" id="tdsPercentInput" value="0" oninput="saveTdsPercent()" step="0.01">
+      <b style="margin-left:5px;">TDS Amount:</b> <span id="tdsAmountDisplay" style="color:var(--danger); font-weight:bold;">0.00</span>
+  </div>
 </div>  
 </div>
 
@@ -603,34 +701,43 @@ background: #e2e8f0 !important;
 </table>  
 </div>  
 
+<!-- Print Preview Modal - Fixed Centered 960px Sheet -->
 <div id="printPreviewModal">
     <div class="previewHeader no-print">
-        <button onclick="closePreview()" style="background:var(--danger); width:auto; padding:8px 16px;">Cancel ❌</button>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-weight:bold; font-size:13px;">Zoom:</span>
-            <input type="range" id="zoomRange" min="0.5" max="1.5" step="0.02" value="1.0" style="width:130px;" oninput="applyZoom()">
+        <button onclick="closePreview()" style="background:#ef4444; color:#fff; border-radius:12px; padding:6px 18px; font-weight:800; font-size:13px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; line-height:1.2; width:auto; margin:0;">Cancel<br><span style="font-size:16px; font-weight:bold;">✕</span></button>
+        
+        <div style="display:flex; align-items:center; gap:8px; font-weight:bold; font-size:14px; color:#0f172a;">
+            <span>Zoom:</span>
+            <input type="range" id="zoomRange" min="0.20" max="1.5" step="0.01" value="0.35" style="width:120px; margin:0;" oninput="applyZoom()">
+            <span id="zoomPercentBadge" style="font-size:13px; font-weight:bold; color:#0f172a; min-width:38px;">35%</span>
         </div>
-        <button onclick="window.print()" style="background:var(--success); width:auto; padding:8px 20px; font-weight:bold;">Print Now 🖨️</button>
+
+        <div style="display:flex; gap:6px;">
+            <button onclick="shareViewAsImageWhatsApp('previewContent')" style="background:#25D366; color:#fff; border-radius:12px; padding:6px 16px; font-weight:800; font-size:13px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; line-height:1.2; width:auto; margin:0;">WhatsApp<br><span style="font-size:16px;">📲</span></button>
+            <button onclick="window.print()" style="background:#16a34a; color:#fff; border-radius:12px; padding:6px 18px; font-weight:800; font-size:13px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; line-height:1.2; width:auto; margin:0;">Print Now<br><span style="font-size:16px;">🖨️</span></button>
+        </div>
     </div>
     <div class="previewBody">
-        <div id="previewContent"></div>
+        <div id="previewWrapper">
+            <div id="previewContent"></div>
+        </div>
     </div>
 </div>
 
 <div id="reportScreen">
     <div class="no-print">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="color:var(--primary);">📊 Sales Report</h2>
-            <button onclick="closeReport()" style="width:auto; background:var(--secondary);">Close</button>
+            <h2 style="color:var(--primary); margin:0;">📊 Sales Report</h2>
+            <button onclick="closeReport()" style="width:auto; background:var(--secondary); margin:0;">Close</button>
         </div>
-        <div class="searchBar">
+        <div class="searchBar" style="margin-top:10px;">
             <input id="reportSearch" placeholder="🔍 Search Name, Father or Village..." oninput="generateReport()">
-            <button onclick="clearReportSearch()" style="background:var(--danger); margin-top:6px;">❌ Clear Search</button>
+            <button onclick="clearReportSearch()" style="background:var(--danger); margin-top:4px;">❌ Clear Search</button>
             <div style="display:flex; gap:6px;">
                 <div style="flex:1;"><small>From:</small><input type="date" id="repFrom" oninput="generateReport()"></div>
                 <div style="flex:1;"><small>To:</small><input type="date" id="repTo" oninput="generateReport()"></div>
             </div>
-            <div style="display:flex; gap:6px; margin-top:10px; flex-wrap: wrap;">
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap: wrap;">
                 <select id="reportSort" onchange="generateReport()" style="margin:0; flex: 1; min-width: 110px;">
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -640,22 +747,23 @@ background: #e2e8f0 !important;
                     <option value="jform">📝 J-Form Entry Only</option>
                     <option value="all">🌐 Mixed (All Entries)</option>
                 </select>
+                <button onclick="shareViewAsImageWhatsApp('reportOutput')" style="margin:0; background:#25D366; width:auto; flex: 1.2; min-width: 110px; color:white; font-weight:bold;">📲 WhatsApp Image</button>
                 <button onclick="window.print()" style="margin:0; background: #000; width:auto; flex: 1; min-width: 90px;">🖨 Print</button>
             </div>
         </div>
     </div>
     <div id="reportOutput"></div>
 </div>
-
+<!-- ================= PART 1 ENDS HERE ================= -->
 <div id="cutReportScreen">
     <div class="no-print">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="color:var(--danger);">📉 Cut & Labour Report</h2>
-            <button onclick="closeCutReport()" style="width:auto; background:var(--secondary);">Close ❌</button>
+            <h2 style="color:var(--danger); margin:0;">📉 Cut & Labour Report</h2>
+            <button onclick="closeCutReport()" style="width:auto; background:var(--secondary); margin:0;">Close ❌</button>
         </div>
-        <div class="searchBar">
+        <div class="searchBar" style="margin-top:10px;">
             <input id="cutReportSearch" placeholder="🔍 Search Customer, Father or Village..." oninput="generateCutReport()">
-            <div style="display:flex; gap:6px; margin-top:10px; flex-wrap: wrap;">
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap: wrap;">
                 <select id="cutReportEntryTypeFilter" onchange="generateCutReport()" style="margin:0; border: 2px solid var(--danger); font-weight: bold; flex:1; min-width: 130px;">
                     <option value="regular">🌾 Normal / Regular Entry Only</option>
                     <option value="jform">📝 J-Form Entry Only</option>
@@ -722,7 +830,6 @@ background: #e2e8f0 !important;
   <input id="quintal" readonly style="background:#e5e7eb;">
 </div>
 
-<!-- FASAL CUT WITH MANUAL CUT OPTION - 100% BLANK DEFAULT -->
 <div style="background:#fff1f2; padding:10px; border-radius:8px; margin-top:10px; border:1px solid #fecdd3;">
   <div style="font-weight:bold; margin-bottom:5px; color:#be123c;">Fasal Cut (फसल कट / कट्टी)</div>
 
@@ -747,7 +854,6 @@ background: #e2e8f0 !important;
 
   <div style="font-size:13px; margin-top:5px; color:#be123c; font-weight:bold;">Total Fasal Cut: <span id="fasalCutDisplay">0 Qtl 0 Kg</span></div>
   
-  <!-- CUT KE BAAD BACHE BAGS KA LIVE DISPLAY -->
   <div style="font-size:13.5px; margin-top:6px; color:#15803d; font-weight:bold; background:#dcfce7; padding:6px 10px; border-radius:6px; border:1px solid #86efac;">
     ✅ Cut ke Baad Bache Bags: <span id="postCutBagsDisplay" style="color:#166534; font-size:15px;">0 Bore</span> (<span id="postCutQtlDisplay">0 Quintal</span>)
   </div>
@@ -761,7 +867,7 @@ background: #e2e8f0 !important;
   </div>
   <div style="display: flex; gap: 8px;">
     <div style="flex: 1;">
-      <small style="color:#7e22ce; font-weight:500;">Sukhai Bags Count (कितने बैग सुखाए)</small>
+      <small style="color:#7e22ce; font-weight:500;">Sukhai Bags Count</small>
       <input id="sukhaiBags" type="number" placeholder="Khali chhodne par poore bags count honge" oninput="calcAmount()">
     </div>
   </div>
@@ -850,7 +956,7 @@ background: #e2e8f0 !important;
 <button type="button" onclick="toggleLivePreviewWindow()" style="background:#334155; margin-top:15px; border:1px solid #cbd5e1; font-size:14px;">👁️ Show/Hide Live Preview</button>
 
 <div id="liveParchiToggleWrapper" style="display: none; margin-top: 10px; background: #334155; padding: 15px; border-radius: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
-  <h4 style="color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">🔍 Live Parchi Realtime Preview (Bina Save Kiye Dekho)</h4>
+  <h4 style="color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">🔍 Live Parchi Realtime Preview</h4>
   <div id="liveParchiContainer" style="background: #fff; padding: 15px; border-radius: 6px; overflow-x: auto;">
      <p style="color: #64748b; text-align: center; margin: 10px 0; font-size: 14px;">Maal details ya Customer name likhna shuru karein...</p>
   </div>
@@ -873,7 +979,7 @@ background: #e2e8f0 !important;
 <div id="seasonScreen">  
 <h3 id="seasonScreenTitle">Season Setup</h3>  
 <div id="workspaceYearSelectionContainer" style="margin-bottom: 8px; text-align: left;">
-    <small style="font-weight: bold; color: var(--secondary);">💼 Assign to Workspace Year (कौन्स साल में डालna hai):</small>
+    <small style="font-weight: bold; color: var(--secondary);">💼 Assign to Workspace Year:</small>
     <select id="seasonYearSelect" style="margin: 4px 0; font-weight: bold; border: 2px solid var(--secondary);">
         <option value="2027">🚀 Year 2027 Workspace (New)</option>
         <option value="2026">🌾 Year 2026 Workspace</option>
@@ -897,11 +1003,10 @@ background: #e2e8f0 !important;
         <div id="sukhaiMgrSeasonLabel" style="font-weight:800; font-size:16px; color:#581c87; margin-bottom:12px; background:#f3e8ff; display:inline-block; padding:4px 12px; border-radius:6px; border:1px solid #c084fc;">Season: -</div>
         
         <div style="background:#f3e8ff; padding:15px; border-radius:10px; margin-bottom:15px; border:1px solid #d8b4fe;">
-            <b style="color:#6b21a8; font-size:14px;">📝 Bulk Update Mode (All Bags Default):</b>
-            <p style="margin:5px 0; font-size:13px; color:#581c87;">Niche di gayi list me se un sabhi customers ko tick lagayein jinki sukhai add karni hai. Box ko khali chhodne par automatic unke poore (All) bags की sukhai save ho jayegi!</p>
+            <b style="color:#6b21a8; font-size:14px;">📝 Bulk Update Mode:</b>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
                 <div style="flex:1; min-width:150px;">
-                    <small style="font-weight:bold; color:#6b21a8;">Sukhai Bags Count (Khali = All Bags):</small>
+                    <small style="font-weight:bold; color:#6b21a8;">Sukhai Bags Count:</small>
                     <input type="number" id="bulkSukhaiBagsInput" placeholder="Khali chhodne par pure bags aa jayenge" style="margin:4px 0;">
                 </div>
                 <button onclick="applyBulkSukhaiUpdate()" style="background:#7c3aed; width:auto; padding:12px 25px; margin:0; align-self:flex-end;">Save Selected Rows ✅</button>
@@ -935,11 +1040,9 @@ background: #e2e8f0 !important;
 
 <div id="jformScreen">
     <h3 style="color: #db2777; margin-bottom:5px;">📝 New JForm Slip Entry</h3>
-    <div style="font-weight:bold; margin-bottom:12px; color:#475569;">Workspace Platform Engine</div>
-    
     <form id="jformElement" onsubmit="saveJForm(event)">
         <div style="background:#fce7f3; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #fbcfe8;">
-            <label style="font-weight: bold; color:#be185d; font-size:14px;">🌾 Crop Name (Auto Season Detection):</label>
+            <label style="font-weight: bold; color:#be185d; font-size:14px;">🌾 Crop Name:</label>
             <input type="text" id="jform_fsal_name" readonly style="background:#e2e8f0; font-weight:bold; color:#be185d;">
         </div>
 
@@ -989,14 +1092,11 @@ background: #e2e8f0 !important;
     </form>
 </div>
 
-<!-- ========================================== -->
-<!-- 2ND APP GATE PASS SYSTEM INTEGRATED SCREEN -->
-<!-- ========================================== -->
 <div id="gatePassScreen">
   <div class="no-print">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:#0f172a; color:white; padding:12px; border-radius:10px;">
         <div>
-          <h2 style="font-size:18px; margin:0;">🎫 Gate Pass Management (2nd App Live Data)</h2>
+          <h2 style="font-size:18px; margin:0;">🎫 Gate Pass Management</h2>
           <small id="gpStatusBadge" style="color:#93c5fd; font-weight:600;">डेटा कनेक्ट हो रहा है...</small>
         </div>
         <div style="display:flex; gap:8px;">
@@ -1014,7 +1114,7 @@ background: #e2e8f0 !important;
     </div>
 
     <div class="searchBar" style="background:#f8fafc; border:1px solid #cbd5e1;">
-        <input id="gpSearch" placeholder="🔍 खोजें: किसान नाम, गाँव, मोबाइल, या Gatepass No..." oninput="renderGatePassTable()" style="margin:0 0 8px 0; font-weight:bold; background:white;">
+        <input id="gpSearch" placeholder="🔍 खोजें: किसान नाम, गाँव, मोबाइल, या Gatepass No... (उदा. Balbir)" oninput="renderGatePassTable()" style="margin:0 0 8px 0; font-weight:bold; background:white;">
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:6px;">
             <select id="gpSeasonFilter" onchange="renderGatePassTable()" style="margin:0; font-weight:bold; border:2px solid var(--primary);"><option value="">सभी सीज़न (All)</option></select>
             <select id="gpCropFilter" onchange="onGpCropFilterChange()" style="margin:0; font-weight:bold; border:2px solid #16a34a;"><option value="">सभी फसलें (All)</option></select>
@@ -1035,9 +1135,10 @@ background: #e2e8f0 !important;
             <input type="date" id="gpToDate" oninput="renderGatePassTable()" style="margin:0;" placeholder="To">
             <button onclick="clearGpFilters()" style="margin:0; background:var(--secondary); padding:8px;">Clear Filter</button>
         </div>
-        <div style="display:flex; gap:8px; margin-top:8px;">
-            <button onclick="exportGatePassExcel()" style="background:#7c3aed; margin:0; flex:1;">⬇️ Export Gate Pass Excel</button>
-            <button onclick="openGatePassDirectPreview()" style="background:#000; margin:0; flex:1;">🖨️ Direct Print Preview</button>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <button onclick="exportGatePassExcel()" style="background:#7c3aed; margin:0; flex:1; min-width:140px;">⬇️ Export Excel</button>
+            <button onclick="shareGatePassDirectWhatsApp()" style="background:#25D366; margin:0; flex:1; min-width:140px; color:#fff; font-weight:bold;">📲 WhatsApp Share</button>
+            <button onclick="openGatePassDirectPreview()" style="background:#000; margin:0; flex:1; min-width:140px;">🖨️ Direct Print Preview</button>
         </div>
     </div>
   </div>
@@ -1068,9 +1169,6 @@ background: #e2e8f0 !important;
   </div>
 </div>
 
-<!-- ==================================================== -->
-<!-- 3RD SCREEN: किसान अनुसार GATEPASS SUMMARY (SCREENSHOT MODAL) -->
-<!-- ==================================================== -->
 <div id="kisanSummaryScreen">
   <div class="no-print">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #cbd5e1; padding-bottom:8px; margin-bottom:10px;">
@@ -1078,21 +1176,19 @@ background: #e2e8f0 !important;
       <button onclick="closeKisanSummaryScreen()" style="background:none; border:none; font-size:24px; color:#64748b; cursor:pointer; width:auto; padding:0; line-height:1;">&times;</button>
     </div>
 
-    <!-- Search and Village Filter -->
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
       <div>
-        <label style="font-size:11px; font-weight:bold; color:#475569; display:block; margin-bottom:2px;">🔍 MULTI-SEARCH (E.G. BALBIR, SUNIL)</label>
+        <label style="font-size:11px; font-weight:bold; color:#475569; display:block; margin-bottom:2px;">🔍 MULTI-SEARCH</label>
         <input id="ksMultiSearch" placeholder="Kisan Name search..." oninput="renderKisanSummary()" style="margin:0; padding:10px; font-weight:bold; border:2px solid var(--primary); background:#fff;">
       </div>
       <div>
-        <label style="font-size:11px; font-weight:bold; color:#475569; display:block; margin-bottom:2px;">🏡 FILTER VILLAGE (गाँव)</label>
+        <label style="font-size:11px; font-weight:bold; color:#475569; display:block; margin-bottom:2px;">🏡 FILTER VILLAGE</label>
         <select id="ksVillageFilter" onchange="renderKisanSummary()" style="margin:0; padding:10px; font-weight:bold; border:1px solid #cbd5e1; background:#fff;">
           <option value="">सभी गाँव (All Villages)</option>
         </select>
       </div>
     </div>
 
-    <!-- Metrics Bar with Live Balance Quintal Display -->
     <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:10px; margin-bottom:10px;">
       <div style="font-size:14px; font-weight:700; color:#1e293b; line-height:1.6;">
         चुने किसान: <span id="ksCountFarmers" style="color:#0f172a;">0/0</span> | 
@@ -1116,13 +1212,9 @@ background: #e2e8f0 !important;
   </div>
 
   <div id="kisanSummaryContainer">
-    <!-- Populated Dynamically -->
   </div>
 </div>
 
-<!-- ==================================================== -->
-<!-- 4TH MODAL: ENTRY LINKING MANAGER WITH SEARCH OPTION -->
-<!-- ==================================================== -->
 <div id="entryLinkModal">
   <div style="max-width:750px; margin:0 auto; background:#fff; padding:15px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:8px; margin-bottom:12px;">
@@ -1133,14 +1225,9 @@ background: #e2e8f0 !important;
       <button onclick="closeEntryLinkModal()" style="width:auto; padding:5px 12px; background:var(--danger); margin:0;">बंद करें ✕</button>
     </div>
 
-    <!-- Live Search Input inside Modal -->
     <div style="margin-bottom:10px;">
       <input type="text" id="modalEntrySearch" placeholder="🔍 खोजें: तारीख, नाम, गाँव, बोरे या क्विंटल..." oninput="filterModalEntriesTable()" style="margin:0; padding:10px; font-weight:bold; border:2px solid var(--primary); background:#fff;">
     </div>
-    
-    <p style="font-size:12px; color:#475569; margin:0 0 10px 0;">
-      अगर Mandi App में इस किसान के एक से ज़्यादा उपनाम (जैसे: Sunil Kumar Foji, Sunil Rinku) या कई एंट्रियां हैं, तो नीचे टिक लगाकर जोड़ें या हटाएं[span_2](start_span)[span_2](end_span):
-    </p>
 
     <div class="tableBox" style="max-height:360px;">
       <table>
@@ -1150,7 +1237,7 @@ background: #e2e8f0 !important;
             <th>दिनांक</th>
             <th>Customer Name</th>
             <th>गाँव</th>
-            <th>बोरे & वजन</th>
+            <th>बोरे (कट के बाद)</th>
             <th>क्विंटल</th>
             <th>राशि ₹</th>
           </tr>
@@ -1166,9 +1253,6 @@ background: #e2e8f0 !important;
   </div>
 </div>
 
-<!-- ==================================================== -->
-<!-- 5TH MODAL: ADVANCED CUSTOMER & VILLAGE EDIT MODAL -->
-<!-- ==================================================== -->
 <div id="customerUpdateModal">
   <div style="max-width:560px; margin:30px auto; background:#fff; padding:20px; border-radius:14px; box-shadow:0 15px 35px rgba(0,0,0,0.3); border:1px solid #cbd5e1;">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:10px; margin-bottom:15px;">
@@ -1176,32 +1260,29 @@ background: #e2e8f0 !important;
       <button onclick="closeCustomerUpdateModal()" style="width:auto; padding:5px 12px; background:var(--secondary); margin:0;">बंद करें ✕</button>
     </div>
 
-    <!-- TAB CONTROLLER -->
     <div style="display:flex; gap:6px; margin-bottom:12px;">
       <button type="button" id="tabBtnCustEdit" onclick="switchCustEditTab('customer')" style="background:#7c3aed; margin:0; padding:8px; font-size:13px; flex:1;">👤 Customer Detail Edit</button>
       <button type="button" id="tabBtnVillEdit" onclick="switchCustEditTab('village')" style="background:#64748b; margin:0; padding:8px; font-size:13px; flex:1;">🏡 Village Direct Rename</button>
     </div>
 
-    <!-- CUSTOMER EDIT TAB -->
     <div id="paneCustEditTab">
       <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:12px;">
-        <label style="font-weight:bold; font-size:13px; color:#1e293b; display:block; margin-bottom:4px;">1. ग्राहक चुनें (Current Customer):</label>
+        <label style="font-weight:bold; font-size:13px; color:#1e293b; display:block; margin-bottom:4px;">1. ग्राहक चुनें:</label>
         <input id="modalTargetCustomer" list="customerList" placeholder="🔍 टाइप या सेलेक्ट करें..." oninput="autoFillCustomerEditFields()" style="background:#fff; font-weight:bold; border:2px solid #7c3aed; margin:0;">
         <small id="modalCustomerMatchCount" style="color:#7c3aed; font-weight:bold; display:block; margin-top:4px;">0 Entries Match Found</small>
       </div>
 
       <div style="background:#f0fdf4; padding:12px; border-radius:8px; border:1px solid #bbf7d0; margin-bottom:12px;">
-        <label style="font-weight:bold; font-size:13px; color:#166534; display:block; margin-bottom:4px;">2. नया विवरण दर्ज करें (New Details to Replace):</label>
-        
+        <label style="font-weight:bold; font-size:13px; color:#166534; display:block; margin-bottom:4px;">2. नया विवरण दर्ज करें:</label>
         <input type="text" id="modalNewCustName" placeholder="नया Customer Name">
         <input type="text" id="modalNewCustFather" placeholder="नया Father Name">
         <input type="text" id="modalNewCustVillage" placeholder="नया Village">
         
         <div style="margin-top:8px;">
-          <label style="font-size:13px; font-weight:bold; color:#1e293b; display:block; margin-bottom:4px;">अपडेट का दायरा (Update Scope):</label>
+          <label style="font-size:13px; font-weight:bold; color:#1e293b; display:block; margin-bottom:4px;">अपडेट का दायरा:</label>
           <select id="modalCustomerUpdateScope" style="font-weight:bold; margin:0;">
-            <option value="current">🌾 केवल चालू सीज़न में अपडेट करें (Current Season)</option>
-            <option value="all">🌐 सभी सीज़न और इतिहास में अपडेट करें (All Seasons)</option>
+            <option value="current">🌾 केवल चालू सीज़न में अपडेट करें</option>
+            <option value="all">🌐 सभी सीज़न में अपडेट करें</option>
           </select>
         </div>
       </div>
@@ -1212,17 +1293,13 @@ background: #e2e8f0 !important;
       </div>
     </div>
 
-    <!-- VILLAGE RENAME TAB (DIRECT BULK REPLACE) -->
     <div id="paneVillEditTab" style="display:none;">
       <div style="background:#fff7ed; padding:12px; border-radius:8px; border:1px solid #ffedd5; margin-bottom:12px;">
-        <p style="font-size:12px; color:#9a3412; margin:0 0 8px 0;">
-          💡 अगर किसी गाँव का नाम गलत लिखा गया था (जैसे <b>Salola</b>) और अब <b>Saloula</b> करना है, तो यहाँ से बदलने पर चालू सीज़न की सभी एंट्रियों में पुराना नाम हमेशा के लिए हट जाएगा और फ़िल्टर में दोबारा डबल नहीं दिखेगा!
-        </p>
-        <label style="font-weight:bold; font-size:13px; color:#1e293b; display:block; margin-bottom:4px;">पुराना गाँव चुनें (Old Village Name):</label>
+        <label style="font-weight:bold; font-size:13px; color:#1e293b; display:block; margin-bottom:4px;">पुराना गाँव चुनें:</label>
         <input id="modalTargetOldVillage" list="villageList" placeholder="🔍 टाइप या सेलेक्ट करें..." oninput="checkVillageMatchCount()" style="background:#fff; font-weight:bold; border:2px solid #ea580c; margin:0;">
         <small id="modalVillageMatchCount" style="color:#ea580c; font-weight:bold; display:block; margin-top:4px;">0 Entries Match Found</small>
 
-        <label style="font-weight:bold; font-size:13px; color:#166534; display:block; margin:10px 0 4px 0;">नया सही गाँव का नाम दर्ज करें (New Correct Name):</label>
+        <label style="font-weight:bold; font-size:13px; color:#166534; display:block; margin-top:10px; margin-bottom:4px;">नया सही गाँव का नाम दर्ज करें:</label>
         <input type="text" id="modalTargetNewVillage" placeholder="e.g. Saloula ya Dhanani" style="background:#fff; font-weight:bold; border:2px solid #16a34a; margin:0;">
       </div>
 
@@ -1236,14 +1313,12 @@ background: #e2e8f0 !important;
 </div>
 
 </div> 
-<!-- ================= PART 1 ENDS HERE ================= -->
 <script>  
 const MASTER_PASSWORD = "786786";
 let isCreatingNewSeason = false; 
 let globalSeasonsObject = {}; 
 let isEditingFromCutReport = false; 
 
-/* --- HELPER: CASE-INSENSITIVE & CLEAN DEDUPLICATION --- */
 function cleanAndDedupeList(arr) {
     let map = new Map();
     arr.forEach(item => {
@@ -1259,7 +1334,6 @@ function cleanAndDedupeList(arr) {
     return Array.from(map.values()).sort((a,b) => a.localeCompare(b));
 }
 
-/* --- POPUP MENU LOGIC --- */
 function toggleTopMenu() {
     const m = document.getElementById("topDropdownMenu");
     m.style.display = (m.style.display === "block") ? "none" : "block";
@@ -1290,9 +1364,6 @@ function menuAction(action) {
     }
 }
 
-/* ============================================================= */
-/* --- ADVANCED CUSTOMER & VILLAGE EDIT CONTROLLER --- */
-/* ============================================================= */
 function switchCustEditTab(tab) {
     const cTab = document.getElementById("paneCustEditTab");
     const vTab = document.getElementById("paneVillEditTab");
@@ -1671,14 +1742,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function getCalculatedSeasonMetrics(entries) {
-  let totalKgRaw = 0, totalNet = 0, totalCutQtl = 0, totalCommVal = 0;
+  let totalKgRaw = 0, totalNet = 0, totalCutQtl = 0, totalCommVal = 0, totalRemainingKg = 0;
   let uniqueCust = new Set(), uniqueVill = new Set();
   
   entries.forEach(e => {
     let bw = Number(e.customBW || currentDefaultBW || 37.5);
     let bore = Number(e.bore || 0);
     let extra = Number(e.extra || 0);
-    totalKgRaw += (bore * bw) + extra;
+    let origKg = (bore * bw) + extra;
+    totalKgRaw += origKg;
+
+    let cutKg = Number(e.cutQtl || 0) * 100;
+    totalRemainingKg += Math.max(0, origKg - cutKg);
+
     totalNet += Number(e.amount || 0);
     totalCutQtl += Number(e.cutQtl || 0);
     totalCommVal += Number(e.commission || 0);
@@ -1687,8 +1763,8 @@ function getCalculatedSeasonMetrics(entries) {
   });
 
   let bw = currentDefaultBW || 37.5;
-  let finalBoreCount = Math.floor(totalKgRaw / bw);
-  let extraKgPart = Math.round((totalKgRaw % bw) * 10) / 10;
+  let finalBoreCount = Math.floor(totalRemainingKg / bw);
+  let extraKgPart = Math.round((totalRemainingKg % bw) * 10) / 10;
 
   return {
     entriesCount: entries.length,
@@ -1827,7 +1903,6 @@ const sainiFirebaseConfig = {
 const sainiAppInstance = firebase.initializeApp(sainiFirebaseConfig, "sainiApp");
 const sainiDb = sainiAppInstance.database();
 
-/* --- 2ND APP (GATE PASS) FIREBASE CONNECTION ENGINE --- */
 const gatePassFirebaseConfig = {
   apiKey: "AIzaSyDZcOc-H9DUGPj_5euImVr8QGMBvyhv8LA",
   authDomain: "jform-5b6fa.firebaseapp.com",
@@ -2001,8 +2076,25 @@ function updateGpSelectedCount() {
     if(selBadge) selBadge.innerText = cnt;
 }
 
+function clearGpFilters() {
+    document.getElementById("gpSearch").value = "";
+    document.getElementById("gpSeasonFilter").value = "";
+    document.getElementById("gpCropFilter").value = "";
+    document.getElementById("gpVillageFilter").value = "";
+    document.getElementById("gpBioFilter").value = "all";
+    document.getElementById("gpAuctionFilter").value = "all";
+    document.getElementById("gpFromDate").value = "";
+    document.getElementById("gpToDate").value = "";
+    renderGatePassTable();
+}
+
+/* ========================================================================= */
+/* --- EXACT SEARCH FILTER FIX: BALBIR YA KOI BHI DATA EXACT SEARCH HO --- */
+/* ========================================================================= */
 function getFilteredGatePassList() {
-    const q = normText(document.getElementById("gpSearch").value);
+    const rawSearch = (document.getElementById("gpSearch").value || "").trim().toLowerCase();
+    const qNorm = normText(rawSearch);
+    
     const sFilter = normText(document.getElementById("gpSeasonFilter").value);
     const cFilter = normText(document.getElementById("gpCropFilter").value);
     const vFilter = document.getElementById("gpVillageFilter").value.trim().toLowerCase();
@@ -2033,9 +2125,11 @@ function getFilteredGatePassList() {
         if(fDate && dVal < fDate) return false;
         if(tDate && dVal > tDate) return false;
         
-        if(q) {
-            let combined = cust + " " + village + " " + mobile + " " + gpNo;
-            if(!normText(combined).includes(q)) return false;
+        if(rawSearch || qNorm) {
+            let combinedRaw = (cust + " " + village + " " + mobile + " " + gpNo).toLowerCase();
+            let matchRaw = combinedRaw.includes(rawSearch);
+            let matchNorm = normText(combinedRaw).includes(qNorm);
+            if(!matchRaw && !matchNorm) return false;
         }
         return true;
     });
@@ -2078,12 +2172,12 @@ function renderGatePassTable() {
         totQtl += qtyVal;
 
         let bioBadge = isBio 
-          ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">✅ Yes</span>` 
-          : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">❌ No</span>`;
+          ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Yes</span>` 
+          : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">No</span>`;
         
         let aucBadge = isAuction 
-          ? `<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">✅ Done</span>` 
-          : `<span style="background:#f1f5f9; color:#64748b; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">⏳ Pending</span>`;
+          ? `<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Done</span>` 
+          : `<span style="background:#f1f5f9; color:#64748b; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Pending</span>`;
 
         tbody.innerHTML += `
           <tr style="border-bottom:1px solid #e2e8f0;" data-id="${r.id}">
@@ -2112,19 +2206,6 @@ function renderGatePassTable() {
          <td colspan="4"></td>
       </tr>
     `;
-}
-
-function clearGpFilters() {
-    document.getElementById("gpSearch").value = "";
-    document.getElementById("gpSeasonFilter").value = "";
-    document.getElementById("gpCropFilter").value = "";
-    localStorage.removeItem("gpSelectedCropLock");
-    document.getElementById("gpVillageFilter").value = "";
-    document.getElementById("gpBioFilter").value = "all";
-    document.getElementById("gpAuctionFilter").value = "all";
-    document.getElementById("gpFromDate").value = "";
-    document.getElementById("gpToDate").value = "";
-    renderGatePassTable();
 }
 
 function exportGatePassExcel() {
@@ -2158,110 +2239,219 @@ function exportGatePassExcel() {
     XLSX.writeFile(wb, "GatePass_Data.xlsx");
 }
 
-/* --- DIRECT PRINT PREVIEW FOR GATE PASS --- */
-function openGatePassDirectPreview() {
+/* ========================================================================= */
+/* --- DIRECT PRINT PREVIEW FOR GATE PASS (SINGLE 960px SHEET FORMAT) --- */
+/* ========================================================================= */
+function buildGatePassReportHTML() {
     let list = getFilteredGatePassList();
     const selectedChecks = document.querySelectorAll('.gp-row-checkbox:checked');
-    let isSelectedMode = false;
     
     if (selectedChecks.length > 0) {
         let selIds = new Set(Array.from(selectedChecks).map(c => c.value));
         list = list.filter(r => selIds.has(r.id));
-        isSelectedMode = true;
     }
 
-    if(list.length === 0) { alert("प्रिंट के लिए कोई डेटा नहीं है!"); return; }
+    if(list.length === 0) return null;
     
-    let curSeason = document.getElementById("gpSeasonFilter").value || "All Seasons";
-    let curCrop = document.getElementById("gpCropFilter").value || "All Crops";
-    let modeText = isSelectedMode ? `<span style="color:#dc2626; font-weight:bold;">(Selected Entries Only: ${list.length})</span>` : `Total Entries: <b>${list.length}</b>`;
-    
-    let content = `<h2 style="text-align:center; color:#0f172a; margin: 0 0 4px 0; font-size:18px;">🎫 Gate Pass Records Report</h2>`;
-    content += `<p style="text-align:center; margin: 0 0 12px 0; font-size:12px; color:#475569;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | ${modeText}</p>`;
-    
-    let tableHTML = `
-      <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap;">
-        <thead>
-          <tr style="background:#0f172a; color:white;">
-            <th style="padding:6px 4px; width:28px; text-align:center;">#</th>
-            <th style="padding:6px 8px;">Farmer Name</th>
-            <th style="padding:6px 6px; text-align:center;">Date</th>
-            <th style="padding:6px 8px; text-align:center;">Gatepass No</th>
-            <th style="padding:6px 6px; text-align:center;">Mobile</th>
-            <th style="padding:6px 8px;">Village</th>
-            <th style="padding:6px 8px; text-align:right;">Qty (Qtl)</th>
-            <th style="padding:6px 6px; text-align:center;">Biometric</th>
-            <th style="padding:6px 6px; text-align:center;">Auction</th>
-            <th style="padding:6px 6px; text-align:center;">Season</th>
-            <th style="padding:6px 6px; text-align:center;">Crop</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
+    let curSeason = document.getElementById("gpSeasonFilter").value || "2026";
+    let curCrop = document.getElementById("gpCropFilter").value || "Paddy";
+    let activeBw = currentDefaultBW || 37.5;
 
     let totQ = 0;
+    let totBags = 0;
+
+    let tableHTML = `
+      <div style="width:100%; box-sizing:border-box;">
+        <div style="text-align:center; margin-bottom:10px;">
+          <h2 style="color:#0f172a; margin: 0 0 4px 0; font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <span>📁</span> Gate Pass Records Report
+          </h2>
+          <p style="margin: 0; font-size:12px; color:#475569;" id="gpReportSubHeader">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | Total Entries: <b>${list.length}</b></p>
+        </div>
+        
+        <table border="1" style="width:100%; border-collapse:collapse; font-size:11.5px; border-color:#cbd5e1; text-align:center; table-layout:fixed; word-wrap:break-word;">
+          <thead>
+            <tr style="background:#0265d2; color:white; font-size:11.5px;">
+              <th style="padding:7px 2px; width:4%;">#</th>
+              <th style="padding:7px 4px; width:16%; text-align:left;">Farmer Name</th>
+              <th style="padding:7px 3px; width:10%; text-align:center;">Date</th>
+              <th style="padding:7px 4px; width:15%; text-align:center;">Gatepass No</th>
+              <th style="padding:7px 3px; width:11%; text-align:center;">Mobile</th>
+              <th style="padding:7px 5px; width:22%; text-align:left;">Village</th>
+              <th style="padding:7px 4px; width:9%; text-align:right;">Qty (Qtl)</th>
+              <th style="padding:7px 3px; width:6%; text-align:center;">Bore</th>
+              <th style="padding:7px 3px; width:7%; text-align:center;">Biometric</th>
+              <th style="padding:7px 3px; width:7%; text-align:center;">Auction</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
     list.forEach((r, idx) => {
         let cust = getGpField(r, ["Customer Name", "Customer", "Farmer Name", "Name", "किसान नाम"]) || "-";
         let dVal = getGpField(r, ["Date", "Gatepass Date", "Gate Pass Date", "दिनांक"]) || "-";
         let gpNo = getGpField(r, ["Gatepass Number", "Gate Pass Number", "Gatepass No.", "GP No"]) || "-";
         let mobile = getGpField(r, ["Mobile No.", "Mobile No", "Mobile", "Phone", "Mobile Number", "Contact"]) || "-";
         let village = getGpField(r, ["Village", "Village Name", "गाँव", "गांव", "Address"]) || "-";
-        let sVal = getGpField(r, ["Season Year", "Season", "सीज़न"]) || "-";
-        let cropVal = getGpField(r, ["Crop", "Crop Name", "फसल"]) || "-";
         let qtyVal = Number(getGpField(r, ["Gatepass Qty", "Gate Pass Qty", "Qty", "Quantity", "Qtl", "क्विंटल"]) || 0);
-        
+
+        let rowBags = parseFloat(getGpField(r, ["Bags", "Bore", "Bori", "Bag", "बोरे", "Total Bags"]) || 0);
+        if (rowBags <= 0) {
+            rowBags = Math.floor(((qtyVal * 100) + 0.0001) / activeBw);
+        }
+
         let isBio = checkGpBooleanField(r, ["Biometric", "Bio", "Thumb"]);
-        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status", "Auction Checked", "Auction Rate", "Rate"]);
+        let isAuction = checkGpBooleanField(r, ["Auction", "Boli", "Auction Status"]);
 
         totQ += qtyVal;
+        totBags += rowBags;
+
+        let bioText = isBio ? `<span style="color:#16a34a; font-weight:bold;">Yes</span>` : `<span style="color:#dc2626; font-weight:bold;">No</span>`;
+        let aucText = isAuction ? `<span style="color:#16a34a; font-weight:bold;">Done</span>` : `<span style="color:#64748b;">Pending</span>`;
 
         tableHTML += `
-          <tr>
-            <td style="padding:5px 4px; text-align:center;">${idx+1}</td>
-            <td style="padding:5px 8px; font-weight:bold; color:#1e40af;">${cust}</td>
-            <td style="padding:5px 6px; text-align:center; font-size:11px;">${dVal}</td>
-            <td style="padding:5px 8px; text-align:center; font-weight:bold;">${gpNo}</td>
-            <td style="padding:5px 6px; text-align:center;">${mobile}</td>
-            <td style="padding:5px 8px;">${village}</td>
-            <td style="padding:5px 8px; text-align:right; font-weight:bold; color:#15803d;">${qtyVal.toFixed(2)}</td>
-            <td style="padding:5px 6px; text-align:center; font-weight:bold; color:${isBio ? '#15803d' : '#b91c1c'};">${isBio ? 'Yes' : 'No'}</td>
-            <td style="padding:5px 6px; text-align:center; font-weight:bold; color:${isAuction ? '#b45309' : '#64748b'};">${isAuction ? 'Done' : 'Pending'}</td>
-            <td style="padding:5px 6px; text-align:center;">${sVal}</td>
-            <td style="padding:5px 6px; text-align:center;">${cropVal}</td>
+          <tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
+            <td style="padding:6px 2px; text-align:center; color:#64748b;">${idx + 1}</td>
+            <td style="padding:6px 4px; text-align:left; font-weight:600; color:#1e293b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cust}</td>
+            <td style="padding:6px 3px; text-align:center; color:#0265d2; font-weight:500;">${dVal}</td>
+            <td style="padding:6px 4px; text-align:center; font-weight:600; color:#1e293b; font-size:11px;">${gpNo}</td>
+            <td style="padding:6px 3px; text-align:center; color:#334155; font-size:11px;">${mobile}</td>
+            <td style="padding:6px 5px; text-align:left; color:#475569; font-size:11px;">${village}</td>
+            <td style="padding:6px 4px; text-align:right; font-weight:bold; color:#16a34a;">${qtyVal.toFixed(2)}</td>
+            <td style="padding:6px 3px; text-align:center; font-weight:bold; color:#7c3aed;">${rowBags}</td>
+            <td style="padding:6px 3px; text-align:center;">${bioText}</td>
+            <td style="padding:6px 3px; text-align:center;">${aucText}</td>
           </tr>
         `;
     });
 
     tableHTML += `
-        </tbody>
-        <tfoot>
-          <tr style="background:#e2e8f0; font-weight:bold;">
-            <td colspan="6" style="text-align:right; padding:8px;">कुल Total:</td>
-            <td style="padding:8px; text-align:right; color:#15803d; font-size:13px;">${totQ.toFixed(2)} Qtl</td>
-            <td colspan="4"></td>
-          </tr>
-        </tfoot>
-      </table>
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc; font-weight:bold; border-top:2px solid #cbd5e1;">
+              <td colspan="6" style="text-align:right; padding:7px 8px; color:#1e293b;">कुल Total:</td>
+              <td style="padding:7px 4px; text-align:right; color:#16a34a; font-size:12.5px;">${totQ.toFixed(2)} Qtl</td>
+              <td style="padding:7px 3px; text-align:center; color:#7c3aed; font-size:12.5px;">${totBags}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     `;
 
+    return tableHTML;
+}
+
+function openGatePassDirectPreview() {
+    let tableHTML = buildGatePassReportHTML();
+    if(!tableHTML) { alert("प्रिंट के लिए कोई डेटा नहीं है!"); return; }
+
     const prevContent = document.getElementById('previewContent');
-    prevContent.innerHTML = content + tableHTML;
+    prevContent.innerHTML = tableHTML;
 
-    const screenWidth = window.innerWidth;
-    let autoScale = 1.0;
-    if (screenWidth < 1100) {
-        autoScale = Math.max(0.30, Math.min(0.85, (screenWidth - 25) / 1060));
-    }
-
-    prevContent.style.transform = `scale(${autoScale.toFixed(2)})`;
-    prevContent.style.transformOrigin = "top left";
-    document.documentElement.style.setProperty('--p-zoom', autoScale.toFixed(2));
-    document.getElementById('zoomRange').value = autoScale.toFixed(2);
+    // Default Zoom 35% to fit screen perfectly
+    prevContent.style.transform = 'scale(0.35)';
+    prevContent.style.transformOrigin = 'top center';
+    document.getElementById('zoomRange').value = '0.35';
+    document.getElementById('zoomPercentBadge').innerText = '35%';
     document.getElementById('printPreviewModal').style.display = 'flex';
 }
 
+function shareGatePassDirectWhatsApp() {
+    openGatePassDirectPreview();
+    setTimeout(() => {
+        shareViewAsImageWhatsApp('previewContent');
+    }, 400);
+}
+
 /* ========================================================================= */
-/* --- 3. KISAN ANUSAAR GATEPASS SUMMARY (FORMULA & BORE EXACT MATCH) --- */
+/* --- 100% FULL-WIDTH HD IMAGE CAPTURE FOR WHATSAPP (NO HALF CUT) --- */
+/* ========================================================================= */
+async function shareViewAsImageWhatsApp(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el || !el.innerText.trim()) {
+        alert("Share karne ke liye koi content nahi mila!");
+        return;
+    }
+
+    try {
+        const btn = event?.target;
+        const origText = btn ? btn.innerText : "";
+        if (btn) btn.innerText = "Generating Full Image... ⏳";
+
+        // Save original zoom transform, reset to full scale for 100% full capture
+        const savedTransform = el.style.transform;
+        const savedTransformOrigin = el.style.transformOrigin;
+        el.style.transform = 'none';
+
+        // Wait one frame to ensure DOM layout settles at full 960px width
+        await new Promise(r => setTimeout(r, 60));
+
+        const canvas = await html2canvas(el, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false,
+            width: el.scrollWidth || 960,
+            windowWidth: 1200
+        });
+
+        // Restore original zoom preview
+        el.style.transform = savedTransform;
+        el.style.transformOrigin = savedTransformOrigin;
+
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                alert("Image generate nahi ho saki!");
+                if (btn) btn.innerText = origText;
+                return;
+            }
+
+            const file = new File([blob], "mandi_report.png", { type: "image/png" });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: "Mandi Report",
+                        text: "Mandi App Pro Report Sheet"
+                    });
+                    if (btn) btn.innerText = origText;
+                    return;
+                } catch (err) {
+                    if (err.name !== "AbortError") {
+                        console.log("Web Share fallback:", err);
+                    } else {
+                        if (btn) btn.innerText = origText;
+                        return;
+                    }
+                }
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "mandi_report.png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert("Report image save ho gayi hai! WhatsApp par attach karke bhej sakte hain. ✅");
+            window.open("https://api.whatsapp.com/", "_blank");
+
+            if (btn) btn.innerText = origText;
+        }, "image/png");
+
+    } catch (err) {
+        console.error("Image capture error:", err);
+        alert("Image share error: " + err.message);
+    }
+}
+<!-- ================= PART 2 ENDS HERE ================= -->
+
+/* ========================================================================= */
+/* --- 3. KISAN ANUSAAR GATEPASS SUMMARY (EXACT QUINTAL & BORE SYNC FIX) --- */
 /* ========================================================================= */
 let kisanSelectedIds = new Set();
 let ksShowOnlyCheckedMode = false;
@@ -2336,7 +2526,6 @@ function toggleFarmerCardCheck(farmerKey) {
     renderKisanSummary();
 }
 
-/* --- EXACT BORE & AMOUNT CALCULATION (160 & 106 MATCH FIX) --- */
 function getGroupedKisanData(recordsList) {
     let grouped = {};
     let activeBw = currentDefaultBW || 37.5;
@@ -2398,7 +2587,6 @@ function getGroupedKisanData(recordsList) {
     return grouped;
 }
 
-// SMART MATCHING ENGINE (SUPPORTS OVERRIDE LINKING)
 function getMandiEntriesForFarmer(farmerName, farmerVillage, farmerKey) {
     if(!globalMandiEntriesCache || globalMandiEntriesCache.length === 0) return [];
     
@@ -2421,9 +2609,6 @@ function getMandiEntriesForFarmer(farmerName, farmerVillage, farmerKey) {
     });
 }
 
-/* ========================================================================================= */
-/* --- MANUAL ENTRY LINKING: FATHER NAME IN SMALL & BORE + EXTRA KG DISPLAY (10 BAG 5 KG) --- */
-/* ========================================================================================= */
 let activeLinkingFarmerKey = null;
 
 function openEntryLinkModal(farmerKey, farmerName, farmerVillage) {
@@ -2475,9 +2660,24 @@ function renderModalEntriesTable() {
         let shortFather = (e.father || "").trim();
         let fatherTxt = shortFather ? `<div style="font-size:11px; color:#64748b; font-weight:normal; margin-top:2px;">(S/O: ${shortFather})</div>` : '';
         
-        let b = Number(e.bore || 0);
-        let extraKg = Number(e.extra || 0);
-        let boreWeightDisplay = (extraKg > 0) ? `<b>${b} Bag</b> <span style="color:#d97706; font-weight:bold;">${extraKg} Kg</span>` : `<b>${b} Bag</b>`;
+        let rowBw = Number(e.customBW || currentDefaultBW || 37.5);
+        let origBore = Number(e.bore || 0);
+        let origExtra = Number(e.extra || 0);
+        let origKg = (origBore * rowBw) + origExtra;
+        let cutKg = Number(e.cutQtl || 0) * 100;
+        
+        let remKg = Math.max(0, origKg - cutKg);
+        let remBags = Math.floor(remKg / rowBw);
+        let remExtraKg = Math.round((remKg % rowBw) * 10) / 10;
+        let rowActualQtl = remKg / 100;
+        
+        let boreWeightDisplay = (remExtraKg > 0) 
+            ? `<b style="color:#15803d;">${remBags} Bag</b> <span style="color:#15803d; font-weight:bold;">${remExtraKg} Kg</span>` 
+            : `<b style="color:#15803d;">${remBags} Bag</b>`;
+
+        if (cutKg > 0) {
+            boreWeightDisplay += `<div style="font-size:10px; color:#64748b; margin-top:2px;">(Pehle: ${origBore}B ${origExtra > 0 ? origExtra + 'K' : ''})</div>`;
+        }
 
         tbody.innerHTML += `
           <tr style="border-bottom:1px solid #e2e8f0; ${isChk ? 'background:#eff6ff;' : ''}">
@@ -2489,7 +2689,7 @@ function renderModalEntriesTable() {
             </td>
             <td>${e.village || '-'}</td>
             <td>${boreWeightDisplay}</td>
-            <td style="font-weight:bold; color:#16a34a;">${Number(e.finalQtl || e.qtlValue || 0).toFixed(2)}</td>
+            <td style="font-weight:bold; color:#16a34a;">${rowActualQtl.toFixed(2)}</td>
             <td style="font-weight:bold;">₹${Number(e.amount || 0).toFixed(2)}</td>
           </tr>
         `;
@@ -2529,6 +2729,9 @@ function saveManualLinkedEntries() {
     renderKisanSummary();
 }
 
+/* ========================================================================= */
+/* --- RENDER KISAN SUMMARY (100% FORMULA & WEIGHT ACCURACY SYNC) --- */
+/* ========================================================================= */
 function renderKisanSummary() {
     const multiSearchVal = (document.getElementById("ksMultiSearch") ? document.getElementById("ksMultiSearch").value : "").toLowerCase().trim();
     const villFilterVal = (document.getElementById("ksVillageFilter") ? document.getElementById("ksVillageFilter").value : "").toLowerCase().trim();
@@ -2564,9 +2767,7 @@ function renderKisanSummary() {
     let totalSelectedQtl = 0;
     let totalSelectedAmt = 0;
 
-    let totalSelectedMandiKgRaw = 0;
     let totalSelectedMandiRemainingKgRaw = 0;
-    let totalSelectedMandiQtl = 0;
     let bw = currentDefaultBW || 37.5;
 
     filteredKeys.forEach(k => {
@@ -2584,24 +2785,21 @@ function renderKisanSummary() {
                 let b = Number(m.bore || 0);
                 let e = Number(m.extra || 0);
                 let origKg = (b * rowBw) + e;
-                totalSelectedMandiKgRaw += origKg;
-
                 let cutKg = Number(m.cutQtl || 0) * 100;
                 let remKg = Math.max(0, origKg - cutKg);
                 totalSelectedMandiRemainingKgRaw += remKg;
-
-                totalSelectedMandiQtl += Number(m.finalQtl || m.qtlValue || 0);
             });
         }
     });
 
-    /* --- TOP HEADER TOTAL BORE + EXTRA KG DISPLAY (MULTI-CUSTOMER INCLUDED) --- */
-    let topMandiBags = Math.floor(totalSelectedMandiKgRaw / bw);
-    let topMandiExtraKg = Math.round((totalSelectedMandiKgRaw % bw) * 10) / 10;
+    let topMandiBags = Math.floor(totalSelectedMandiRemainingKgRaw / bw);
+    let topMandiExtraKg = Math.round((totalSelectedMandiRemainingKgRaw % bw) * 10) / 10;
     let topMandiBoreTxt = (topMandiExtraKg > 0) ? `${topMandiBags} Bore ${topMandiExtraKg} Kg` : `${topMandiBags} Bore`;
 
+    let totalSelectedMandiQtl = totalSelectedMandiRemainingKgRaw / 100;
+
     let totalBalanceQtl = totalSelectedQtl - totalSelectedMandiQtl;
-    let totalBalanceKg = (totalSelectedQtl * 100) - totalSelectedMandiKgRaw;
+    let totalBalanceKg = (totalSelectedQtl * 100) - totalSelectedMandiRemainingKgRaw;
     let balSign = totalBalanceKg > 0 ? "+" : (totalBalanceKg < 0 ? "-" : "");
     let absBalKg = Math.abs(totalBalanceKg);
     let balBore = Math.floor(absBalKg / bw);
@@ -2614,7 +2812,6 @@ function renderKisanSummary() {
     document.getElementById("ksCountQtl").innerText = totalSelectedQtl.toFixed(2);
     document.getElementById("ksTotalAmount").innerText = `₹${totalSelectedAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
     
-    // UPAR WALE BADGE MEIN BORE + KG SATH MEIN DISPLAY
     if(document.getElementById("ksCountMandiQtl")) {
         document.getElementById("ksCountMandiQtl").innerText = `${topMandiBoreTxt} (${totalSelectedMandiQtl.toFixed(2)} Qtl)`;
     }
@@ -2649,7 +2846,6 @@ function renderKisanSummary() {
 
         let mandiTotKgRaw = 0;
         let mandiRemainingKgRaw = 0;
-        let mandiTotQtl = 0;
         let mandiTotAmt = 0;
 
         mandiMatches.forEach(m => {
@@ -2663,7 +2859,6 @@ function renderKisanSummary() {
             let remKg = Math.max(0, origKg - cutKg);
             mandiRemainingKgRaw += remKg;
 
-            mandiTotQtl += Number(m.finalQtl || m.qtlValue || 0);
             mandiTotAmt += Number(m.amount || 0);
         });
 
@@ -2674,6 +2869,8 @@ function renderKisanSummary() {
         let mandiPostCutBags = Math.floor(mandiRemainingKgRaw / bw);
         let mandiPostCutExtraKg = Math.round((mandiRemainingKgRaw % bw) * 10) / 10;
         let mandiBaadTxt = (mandiPostCutExtraKg > 0) ? `${mandiPostCutBags} Bags ${mandiPostCutExtraKg} Kg` : `${mandiPostCutBags} Bags`;
+
+        let mandiTotQtl = mandiRemainingKgRaw / 100;
 
         let farmerBalanceQtl = f.totalQtl - mandiTotQtl;
         let isMatched = Math.abs(farmerBalanceQtl) < 0.05;
@@ -2787,91 +2984,98 @@ function printKisanSummaryDirect() {
     let curSeason = document.getElementById("gpSeasonFilter").value || "2026";
 
     let content = `
-      <h2 style="text-align:center; margin:0 0 4px 0; color:#0f172a;">📑 किसान अनुसार Gate Pass Summary Report</h2>
-      <p style="text-align:center; font-size:12px; color:#475569; margin:0 0 15px 0;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | कुल किसान: <b>${selectedFarmers.length}</b></p>
+      <div style="width:100%; box-sizing:border-box;">
+        <div style="text-align:center; margin-bottom:12px;">
+          <h2 style="margin:0 0 4px 0; color:#0f172a; font-size:18px;">📑 किसान अनुसार Gate Pass Summary Report</h2>
+          <p style="font-size:12px; color:#475569; margin:0;">Season: <b>${curSeason}</b> | Crop: <b>${curCrop}</b> | कुल किसान: <b>${selectedFarmers.length}</b></p>
+        </div>
     `;
 
     selectedFarmers.forEach((f, idx) => {
         let mandiMatches = getMandiEntriesForFarmer(f.name, f.village, f.key);
-        let mQtl = mandiMatches.reduce((acc, m) => acc + Number(m.finalQtl || m.qtlValue || 0), 0);
         let mTotKg = 0;
+        let mRemainingKg = 0;
         let bw = currentDefaultBW || 37.5;
         mandiMatches.forEach(m => {
             let rowBw = Number(m.customBW || bw);
-            mTotKg += (Number(m.bore || 0) * rowBw) + Number(m.extra || 0);
+            let orig = (Number(m.bore || 0) * rowBw) + Number(m.extra || 0);
+            mTotKg += orig;
+            let cutKg = Number(m.cutQtl || 0) * 100;
+            mRemainingKg += Math.max(0, orig - cutKg);
         });
-        let mBags = Math.floor(mTotKg / bw);
-        let mExtra = Math.round((mTotKg % bw) * 10) / 10;
+        let mBags = Math.floor(mRemainingKg / bw);
+        let mExtra = Math.round((mRemainingKg % bw) * 10) / 10;
+        let mQtl = mRemainingKg / 100;
         let balQtl = f.totalQtl - mQtl;
         
         let mandiTxt = "";
         if(mandiMatches.length > 0) {
             let bagLabel = (mExtra > 0) ? `${mBags} Bags ${mExtra} Kg` : `${mBags} Bags`;
-            mandiTxt = ` | <span style="color:#16a34a; font-weight:bold;">Mandi Saved: ${bagLabel} (${mQtl.toFixed(2)} Qtl) | Balance: ${balQtl.toFixed(2)} Qtl</span>`;
+            mandiTxt = ` | <span style="color:#16a34a; font-weight:bold;">Mandi Saved (Cut Baad): ${bagLabel} (${mQtl.toFixed(2)} Qtl) | Balance: ${balQtl.toFixed(2)} Qtl</span>`;
         }
 
         content += `
-          <div style="border:1px solid #333; margin-bottom:12px; padding:8px; page-break-inside:avoid;">
+          <div style="border:1px solid #333; margin-bottom:12px; padding:8px; page-break-inside:avoid; width:100%; box-sizing:border-box;">
             <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px;">
               <div><b>${idx + 1}. किसान:</b> ${f.name} | <b>गाँव:</b> ${f.village} ${f.mobile ? '| ' + f.mobile : ''}${mandiTxt}</div>
               <div style="color:#16a34a; font-weight:bold;">कुल राशि: ₹${f.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
             </div>
-            <table border="1" style="width:100%; border-collapse:collapse; font-size:11px; text-align:center;">
-              <thead style="background:#e2e8f0;">
-                <tr>
-                  <th style="padding:4px;">#</th>
-                  <th style="padding:4px;">Gatepass No.</th>
-                  <th style="padding:4px;">दिनांक</th>
-                  <th style="padding:4px;">बोरे</th>
-                  <th style="padding:4px;">क्विंटल</th>
-                </tr>
-              </thead>
-              <tbody>
+            <div style="width:100%; overflow-x:auto;">
+              <table border="1" style="width:100%; border-collapse:collapse; font-size:11px; text-align:center; white-space:nowrap;">
+                <thead style="background:#e2e8f0;">
+                  <tr>
+                    <th style="padding:4px;">#</th>
+                    <th style="padding:4px;">Gatepass No.</th>
+                    <th style="padding:4px;">दिनांक</th>
+                    <th style="padding:4px;">बोरे</th>
+                    <th style="padding:4px;">क्विंटल</th>
+                  </tr>
+                </thead>
+                <tbody>
         `;
 
         f.records.forEach((r, rIdx) => {
             content += `
               <tr>
-                <td style="padding:3px;">${rIdx + 1}</td>
-                <td style="padding:3px; font-weight:bold;">${r.gpNo}</td>
-                <td style="padding:3px;">${r.date}</td>
-                <td style="padding:3px;">${r.bags}</td>
-                <td style="padding:3px;">${r.qtl.toFixed(2)}</td>
+                <td style="padding:4px;">${rIdx + 1}</td>
+                <td style="padding:4px; font-weight:bold;">${r.gpNo}</td>
+                <td style="padding:4px;">${r.date}</td>
+                <td style="padding:4px;">${r.bags}</td>
+                <td style="padding:4px;">${r.qtl.toFixed(2)}</td>
               </tr>
             `;
         });
 
         content += `
-              <tr style="background:#f8fafc; font-weight:bold;">
-                <td colspan="3" style="text-align:right; padding:4px;">कुल Gatepass:</td>
-                <td style="padding:4px;">${f.totalBags} बोरे (Cut Baad: ${f.totalPostCutBags})</td>
-                <td style="padding:4px; color:#16a34a;">${f.totalQtl.toFixed(2)} Qtl</td>
-              </tr>
-              <tr style="background:#f1f5f9; font-weight:bold;">
-                <td colspan="3" style="text-align:right; padding:4px;">Mandi Saved: ${mQtl.toFixed(2)} Qtl |</td>
-                <td colspan="2" style="padding:4px; text-align:right; color:${Math.abs(balQtl) < 0.05 ? '#16a34a' : '#dc2626'};">
-                  Balance Qtl: <b>${balQtl.toFixed(2)} Qtl</b>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                <tr style="background:#f8fafc; font-weight:bold;">
+                  <td colspan="3" style="text-align:right; padding:5px;">कुल Gatepass:</td>
+                  <td style="padding:5px;">${f.totalBags} बोरे (Cut Baad: ${f.totalPostCutBags})</td>
+                  <td style="padding:5px; color:#16a34a;">${f.totalQtl.toFixed(2)} Qtl</td>
+                </tr>
+                <tr style="background:#f1f5f9; font-weight:bold;">
+                  <td colspan="3" style="text-align:right; padding:5px;">Mandi Saved (Cut Baad): ${mQtl.toFixed(2)} Qtl |</td>
+                  <td colspan="2" style="padding:5px; text-align:right; color:${Math.abs(balQtl) < 0.05 ? '#16a34a' : '#dc2626'};">
+                    Balance Qtl: <b>${balQtl.toFixed(2)} Qtl</b>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         `;
     });
 
+    content += `</div>`;
+
     const prevContent = document.getElementById('previewContent');
+    prevContent.style.width = '960px';
+    prevContent.style.minWidth = '960px';
+    prevContent.style.maxWidth = '960px';
     prevContent.innerHTML = content;
-
-    const screenWidth = window.innerWidth;
-    let autoScale = 1.0;
-    if (screenWidth < 1100) {
-        autoScale = Math.max(0.30, Math.min(0.85, (screenWidth - 25) / 1060));
-    }
-
-    prevContent.style.transform = `scale(${autoScale.toFixed(2)})`;
-    prevContent.style.transformOrigin = "top left";
-    document.documentElement.style.setProperty('--p-zoom', autoScale.toFixed(2));
-    document.getElementById('zoomRange').value = autoScale.toFixed(2);
+    prevContent.style.transform = 'scale(0.35)';
+    prevContent.style.transformOrigin = 'top center';
+    document.getElementById('zoomRange').value = '0.35';
+    document.getElementById('zoomPercentBadge').innerText = '35%';
     document.getElementById('printPreviewModal').style.display = 'flex';
 }
 
@@ -2887,67 +3091,164 @@ function clearLiveSearch() {
   filterData();
 }
 
+/* ========================================================================= */
+/* --- 2. JIIRI PRINT LIST (SINGLE 960px SHEET - NO OVERFLOW - FULL DATA) --- */
+/* ========================================================================= */
 function openCustomPreview() {
     const s = document.getElementById("season").value;
     const selectedChecks = document.querySelectorAll('.print-row-check:checked');
-    let content = `<h2 style="text-align:center;">${s}</h2>`;
-    let tableHTML = `
-<div style="max-height:90vh; overflow-y:auto;">
-<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
-<thead>
-<tr>
-<th>Date</th>
-<th>Customer</th>
-<th>Father</th>
-<th>Village</th>
-<th>Bore</th>
-<th>Extra</th>
-<th>Note</th>
-<th>Qtl</th>
-<th>Amount ₹</th>
-</tr>
-</thead>
-<tbody>
-`;
-       
     let rowsToPrint = selectedChecks.length > 0 ? Array.from(selectedChecks).map(chk => chk.closest('tr')) : Array.from(document.querySelectorAll('#output tr'));
+    
+    if(rowsToPrint.length === 0) {
+        alert("प्रिंट करने के लिए कोई एंट्री नहीं है!");
+        return;
+    }
+
     let totalKgRaw = 0;
-    rowsToPrint.forEach(tr => {
+    let totalRemainingKg = 0;
+    let totalAmt = 0;
+    let totalCutKgSum = 0;
+    let bw = currentDefaultBW || 37.5;
+
+    let tableRowsHTML = "";
+
+    rowsToPrint.forEach((tr, idx) => {
         let cells = tr.querySelectorAll('td');
         let cName = tr.getAttribute('data-customer') || "";
-        let fName = tr.getAttribute('data-father') || "";
-        let vName = tr.getAttribute('data-village') || "";
+        let fName = (tr.getAttribute('data-father') || "").trim();
+        let vName = (tr.getAttribute('data-village') || "").trim();
         let b = Number(tr.getAttribute('data-bore') || 0);
         let e = Number(tr.getAttribute('data-extra') || 0);
-        let noteTxt = tr.getAttribute('data-note') || "";
-        let qtlTxt = tr.getAttribute('data-qtl') || "";
-        let amtTxt = tr.getAttribute('data-amt') || "";
-        
-        tableHTML += `<tr><td>${cells[1].innerText}</td><td style="font-weight:bold;">${cName}</td><td>${fName}</td><td>${vName}</td><td>${b}</td><td>${e}</td><td>${noteTxt}</td><td>${qtlTxt}</td><td>${amtTxt}</td></tr>`;
-        
-        let w = Number(tr.getAttribute('data-bw') || currentDefaultBW || 37.5);
-        totalKgRaw += (b * w) + e;
+        let noteTxt = tr.getAttribute('data-note') || "-";
+        let amtTxt = Number(tr.getAttribute('data-amt') || 0);
+        let rowBw = Number(tr.getAttribute('data-bw') || bw);
+        let cutQtl = Number(tr.getAttribute('data-cutqtl') || 0);
+
+        let origKg = (b * rowBw) + e;
+        totalKgRaw += origKg;
+        totalAmt += amtTxt;
+
+        let cutKg = cutQtl * 100;
+        totalCutKgSum += cutKg;
+
+        let remKg = Math.max(0, origKg - cutKg);
+        totalRemainingKg += remKg;
+
+        let remBags = Math.floor(remKg / rowBw);
+        let remExtra = Math.round((remKg % rowBw) * 10) / 10;
+        let baadText = remExtra > 0 ? `${remBags}B<br><span style="font-size:10px;">${remExtra}K</span>` : `${remBags}B`;
+        let actualRowQtl = remKg / 100;
+
+        let dVal = cells[1] ? cells[1].innerText.trim() : "";
+
+        tableRowsHTML += `
+          <tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
+            <td style="padding:6px 2px; text-align:center; color:#64748b;">${idx + 1}</td>
+            <td style="padding:6px 2px; text-align:center; font-size:11px; color:#0265d2; font-weight:500;">${dVal}</td>
+            <td style="padding:6px 4px; font-weight:600; color:#1e293b; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cName}</td>
+            <td style="padding:6px 4px; text-align:left; color:#475569; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fName || "-"}</td>
+            <td style="padding:6px 4px; text-align:left; color:#475569; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${vName || "-"}</td>
+            <td style="padding:6px 2px; text-align:center; font-weight:bold; color:#dc2626;">${b}</td>
+            <td style="padding:6px 2px; text-align:center; font-weight:500;">${e}</td>
+            <td style="padding:6px 2px; text-align:center; font-weight:bold; color:#0369a1;">${(origKg / 100).toFixed(2)} Q</td>
+            <td style="padding:6px 2px; text-align:center; color:#dc2626; font-weight:bold;">${cutQtl > 0 ? cutQtl.toFixed(2) + ' Q' : '-'}</td>
+            <td style="padding:6px 2px; text-align:center; color:#15803d; font-weight:800; background:#f0fdf4;">${baadText}</td>
+            <td style="padding:6px 2px; text-align:center; font-weight:bold; color:#16a34a;">${actualRowQtl.toFixed(2)} Q</td>
+            <td style="padding:6px 4px; text-align:right; font-weight:bold; color:#1e293b;">₹${amtTxt.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</td>
+            <td style="padding:6px 3px; text-align:left; font-size:10px; color:#475569;">${noteTxt}</td>
+          </tr>
+        `;
     });
-    tableHTML += `</tbody></table></div>`;
-    
-    let bw = currentDefaultBW || 37.5;
-    let finalBoreCount = Math.floor(totalKgRaw / bw);
-    let finalExtraKg = Math.round((totalKgRaw % bw) * 10) / 10;
 
-    content += `<p style="text-align:center;"><b>Entries:</b> ${rowsToPrint.length} | <b>Total Bore:</b> ${finalBoreCount} Bore | <b>Extra:</b> ${finalExtraKg} Kg</p>` + tableHTML;
-    document.getElementById('previewContent').innerHTML = content;
+    let preBore = Math.floor(totalKgRaw / bw);
+    let preExtra = Math.round((totalKgRaw % bw) * 10) / 10;
+
+    let postBore = Math.floor(totalRemainingKg / bw);
+    let postExtra = Math.round((totalRemainingKg % bw) * 10) / 10;
+
+    let content = `
+      <div style="width:100%; box-sizing:border-box;">
+        <div style="text-align:center; margin-bottom:10px;">
+          <h2 style="margin:0 0 4px 0; color:#0f172a; font-size:17px; font-weight:800;">📋 ${s} - Print List Report</h2>
+          <div style="font-size:12px; color:#475569; margin-bottom:4px; line-height:1.6;">
+            Entries: <b>${rowsToPrint.length}</b> | 
+            <b>⏳ Pehle Ka Kul:</b> ${preBore} Bore ${preExtra > 0 ? preExtra + ' Kg' : ''} (${(totalKgRaw/100).toFixed(2)} Qtl) | 
+            <b>✂️ Cut:</b> ${(totalCutKgSum/100).toFixed(2)} Qtl | 
+            कुल राशि: <b>₹${totalAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</b>
+          </div>
+          <div style="font-size:13px; color:#15803d; font-weight:800; background:#dcfce7; padding:4px 12px; border-radius:6px; display:inline-block; border:1px solid #86efac;">
+            ✅ Cut Ke Baad Kul Maal: ${postBore} Bore ${postExtra > 0 ? postExtra + ' Kg' : ''} (${(totalRemainingKg/100).toFixed(2)} Qtl)
+          </div>
+        </div>
+
+        <table border="1" style="width:100%; border-collapse:collapse; font-size:11.5px; border-color:#cbd5e1; text-align:center; table-layout:fixed; word-wrap:break-word;">
+          <thead>
+            <tr style="background:#0265d2; color:white; font-size:11px;">
+              <th style="padding:7px 2px; width:3.5%;">#</th>
+              <th style="padding:7px 2px; width:8.5%;">Date</th>
+              <th style="padding:7px 4px; width:14%; text-align:left;">Customer</th>
+              <th style="padding:7px 4px; width:11%; text-align:left;">Father</th>
+              <th style="padding:7px 4px; width:11%; text-align:left;">Village</th>
+              <th style="padding:7px 2px; width:6%;">Bore<br>(Pehle)</th>
+              <th style="padding:7px 2px; width:5%;">Extra<br>Kg</th>
+              <th style="padding:7px 2px; width:7.5%;">Qtl<br>(Pehle)</th>
+              <th style="padding:7px 2px; width:6.5%; background:#dc2626;">Cut<br>(Qtl)</th>
+              <th style="padding:7px 2px; width:7%; background:#16a34a;">Bore<br>(Baad)</th>
+              <th style="padding:7px 2px; width:7.5%; background:#16a34a;">Qtl<br>(Baad)</th>
+              <th style="padding:7px 3px; width:11.5%; text-align:right;">Amount (₹)</th>
+              <th style="padding:7px 3px; width:6%; text-align:left;">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRowsHTML}
+          </tbody>
+          <tfoot>
+            <tr style="background:#f8fafc; font-weight:bold; border-top:2px solid #cbd5e1;">
+              <td colspan="5" style="text-align:right; padding:6px 8px; color:#1e293b;">कुल Total:</td>
+              <td style="text-align:center; padding:6px 2px; color:#dc2626;">${preBore}</td>
+              <td style="text-align:center; padding:6px 2px;">${preExtra}</td>
+              <td style="text-align:center; padding:6px 2px; color:#0369a1;">${(totalKgRaw/100).toFixed(2)} Q</td>
+              <td style="text-align:center; padding:6px 2px; color:#dc2626;">${(totalCutKgSum/100).toFixed(2)} Q</td>
+              <td style="text-align:center; padding:6px 2px; color:#16a34a; font-size:12px;">${postBore}</td>
+              <td style="text-align:center; padding:6px 2px; color:#16a34a; font-size:12px;">${(totalRemainingKg/100).toFixed(2)} Q</td>
+              <td style="text-align:right; padding:6px 4px;">₹${totalAmt.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    `;
+
+    const prevContent = document.getElementById('previewContent');
+    prevContent.style.width = '960px';
+    prevContent.style.minWidth = '960px';
+    prevContent.style.maxWidth = '960px';
+    prevContent.innerHTML = content;
+
+    // Screenshot match zoom 35%
+    prevContent.style.transform = 'scale(0.35)';
+    prevContent.style.transformOrigin = 'top center';
+    document.getElementById('zoomRange').value = '0.35';
+    document.getElementById('zoomPercentBadge').innerText = '35%';
     document.getElementById('printPreviewModal').style.display = 'flex';
-    document.getElementById('zoomRange').value = 1.0;
-    applyZoom();
 }
 
-function toggleAll(master) { document.querySelectorAll('.print-row-check').forEach(chk => chk.checked = master.checked); }
 function applyZoom() {
-    let z = document.getElementById('zoomRange').value;
-    document.getElementById('previewContent').style.transform = `scale(${z})`;
-    document.documentElement.style.setProperty('--p-zoom', z);
+    let z = parseFloat(document.getElementById('zoomRange').value) || 0.35;
+    const prevContent = document.getElementById('previewContent');
+    const badge = document.getElementById('zoomPercentBadge');
+    if (badge) badge.innerText = Math.round(z * 100) + "%";
+    if (prevContent) {
+        prevContent.style.transform = `scale(${z})`;
+        prevContent.style.transformOrigin = "top center";
+    }
 }
-function closePreview() { document.getElementById('printPreviewModal').style.display='none'; }
+
+function closePreview() { 
+    document.getElementById('printPreviewModal').style.display = 'none'; 
+    const prevContent = document.getElementById('previewContent');
+    if (prevContent) prevContent.style.transform = 'none';
+}
 
 function onFasalCutTypeChange() {
     let type = document.getElementById("fasalCutType").value;
@@ -2967,9 +3268,6 @@ function onFasalCutTypeChange() {
     calcAmount();
 }
 
-/* ========================================================================= */
-/* --- OPEN ENTRY SCREEN: RATE PRESERVED, FASAL CUT 100% BLANK --- */
-/* ========================================================================= */
 function openEntryScreen(){
   const s = document.getElementById("season").value;
   if(!s){ alert("Season select karo"); return; }
@@ -3169,7 +3467,6 @@ function calcAmount(){
 
   document.getElementById("quintal").value = qtlPart + " Quintal " + kgPart + " Kg";
 
-  /* --- LIVE CUT KE BAAD BACHE BAGS KA CALCULATION --- */
   let remainingTotalKg = Math.max(0, rawTotalKg - fasalCutKg);
   let postCutBags = Math.floor(remainingTotalKg / bwUsed);
   let postCutExtraKg = Math.round((remainingTotalKg % bwUsed) * 10) / 10;
@@ -3261,14 +3558,14 @@ function renderLiveParchiView(grossVal, commVal, labVal, dedVal, baseGst, sgstP,
         </table>
       </div>
       <div style="flex: 1; min-width: 280px; font-family:sans-serif; padding:10px; background:#fff; border: 1px solid #cbd5e1; border-radius: 6px;">
-        <h5 style="text-align:center; margin:0 0 5px 0; color:#2563eb;">🏛️ Pakki View Preview</h5>
+        <h5 style="text-align:center; margin:0 0 5px 0; color:#0265d2;">🏛️ Pakki View Preview</h5>
         <table border="1" style="width:100%; border-collapse:collapse; font-size:12px; border-color:#e2e8f0;">
-          <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b; width:45%;">Customer</th><td style="padding:5px; font-weight:bold; color:#2563eb;">${cust}</td></tr>
+          <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b; width:45%;">Customer</th><td style="padding:5px; font-weight:bold; color:#0265d2;">${cust}</td></tr>
           <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Base Gross</th><td style="padding:5px; color:#1e293b;">₹${grossVal.toFixed(2)}</td></tr>
           <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b;">Commission</th><td style="padding:5px; color:green; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
           <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b;">Tax (${taxPercent}%)</th><td style="padding:5px; color:#d97706; font-weight:bold;">₹${taxAmt.toFixed(2)}</td></tr>
           <tr><th style="background:#f8fafc; padding:5px; text-align:left; color:#1e293b;">Total GST</th><td style="padding:5px; color:#1e293b;">₹${gstAmount.toFixed(2)}</td></tr>
-          <tr style="background:#eff6ff; font-weight:bold; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b;">Final Govt Amt</th><td style="padding:10px; color:#2563eb;">₹${(finalAfter + taxAmt).toFixed(2)}</td></tr>
+          <tr style="background:#eff6ff; font-weight:bold; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b;">Final Govt Amt</th><td style="padding:10px; color:#0265d2;">₹${(finalAfter + taxAmt).toFixed(2)}</td></tr>
         </table>
       </div>
     </div>
@@ -3433,6 +3730,7 @@ function updateTable(arr){
   let totalB = 0, totalC = 0;  
   let totalKgRaw = 0;
   let totalFinalKgRaw = 0; 
+  let totalCutKgSum = 0;
 
   let totalSukhaiBagsApplied = 0;
   let sukhaiFarmersSet = new Set();
@@ -3447,11 +3745,11 @@ function updateTable(arr){
     totalB += bore;
     
     let cutKgThisRow = Number(r.cutQtl || 0) * 100;
+    totalCutKgSum += cutKgThisRow;
     let actualRemainingRowKg = origEntryKg - cutKgThisRow;
     if (actualRemainingRowKg < 0) actualRemainingRowKg = 0;
     
     totalFinalKgRaw += actualRemainingRowKg;
-    
     totalC += Number(r.commission || 0);
 
     if(r.applySukhaiChecked) {
@@ -3495,7 +3793,7 @@ function updateTable(arr){
     let bagsWeightTxt = extra > 0 ? `<b>${bore} Bag</b> ${extra} Kg` : `<b>${bore} Bag</b>`;
 
     output.innerHTML += `
-    <tr data-id="${r.id}" data-customer="${r.customer || ''}" data-father="${r.father || ''}" data-village="${r.village || ''}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" data-note="${r.note || ''}" data-qtl="${r.quintal || ''}" data-amt="${r.amount || 0}" ${rowBgStyle}>
+    <tr data-id="${r.id}" data-customer="${r.customer || ''}" data-father="${r.father || ''}" data-village="${r.village || ''}" data-bore="${bore}" data-extra="${extra}" data-bw="${bw}" data-cutqtl="${r.cutQtl || 0}" data-note="${r.note || ''}" data-qtl="${r.quintal || ''}" data-amt="${r.amount || 0}" ${rowBgStyle}>
       <td><input type="checkbox" class="print-row-check"></td>
       <td>${r.date || ""}</td>
       <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="singleClickPrint('${r.id}')" ondblclick="doubleClickEdit('${r.id}')">
@@ -3522,7 +3820,7 @@ function updateTable(arr){
       <td><small>${r.note || ""}</small></td>
       <td>
         <button class="actionBtn" style="background:#b7791f; font-size:11px;" onclick="openForcedPreview('${r.id}', 'khachi')">📄 Kachhi</button>
-        <button class="actionBtn" style="background:#2563eb; font-size:11px;" onclick="openForcedPreview('${r.id}', 'pakki')">🏛️ Pakki</button>
+        <button class="actionBtn" style="background:#0265d2; font-size:11px;" onclick="openForcedPreview('${r.id}', 'pakki')">🏛️ Pakki</button>
         <button class="actionBtn" onclick="editEntry('${r.id}')">✏</button>
         <button class="actionBtn" style="background:var(--danger)" onclick="deleteEntry('${r.id}')">🗑</button>
       </td>
@@ -3530,24 +3828,47 @@ function updateTable(arr){
   });  
 
   const bw = currentDefaultBW || 37.5;
+
   const finalBoreCount = Math.floor(totalKgRaw / bw);
   const finalExtraKg = Math.round((totalKgRaw % bw) * 10) / 10;
+  const preCutBoreTxt = (finalExtraKg > 0) ? `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg` : `${finalBoreCount} Bore`;
+  const preCutQtlTxt = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
 
   const finalBoreAfterCut = Math.floor(totalFinalKgRaw / bw);
   const finalExtraAfterCut = Math.round((totalFinalKgRaw % bw) * 10) / 10;
+  const postCutBoreTxt = (finalExtraAfterCut > 0) ? `${finalBoreAfterCut} Bore | Extra: ${finalExtraAfterCut} Kg` : `${finalBoreAfterCut} Bore`;
+  const postCutQtlTxt = Math.floor(totalFinalKgRaw / 100) + " Quintal " + Math.round((totalFinalKgRaw % 100) * 10) / 10 + " Kg";
 
-  const searchInputVal = document.getElementById("searchName").value.trim();
-  const villFilterVal = document.getElementById("mainVillageFilter") ? document.getElementById("mainVillageFilter").value : "";
+  if(document.getElementById("totalBorePre")) {
+    document.getElementById("totalBorePre").innerText = preCutBoreTxt;
+  }
+  if(document.getElementById("totalQtlPre")) {
+    document.getElementById("totalQtlPre").innerText = preCutQtlTxt;
+  }
 
-  if(searchInputVal !== "" || villFilterVal !== "") {
-    document.getElementById("totalBore").innerHTML = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${finalBoreAfterCut} Bore ${finalExtraAfterCut} Kg</b></span>`;
-    
-    const totalQtlBeforeCut = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
-    const totalQtlAfterCut = Math.floor(totalFinalKgRaw / 100) + " Qtl " + Math.round((totalFinalKgRaw % 100) * 10) / 10 + " Kg";
-    document.getElementById("totalQtl").innerHTML = `${totalQtlBeforeCut}<br><span style="color:#16a34a; font-size:13px;">✅ Cut ke Baad: <b>${totalQtlAfterCut}</b></span>`;
-  } else {
-    document.getElementById("totalBore").innerText = `${finalBoreCount} Bore | Extra: ${finalExtraKg} Kg`;
-    document.getElementById("totalQtl").innerText = Math.floor(totalKgRaw / 100) + " Quintal " + Math.round((totalKgRaw % 100) * 10) / 10 + " Kg";
+  if(document.getElementById("totalBorePost")) {
+    document.getElementById("totalBorePost").innerText = postCutBoreTxt;
+  }
+  if(document.getElementById("totalQtlPost")) {
+    document.getElementById("totalQtlPost").innerText = postCutQtlTxt;
+  }
+
+  const cutBadgeEl = document.getElementById("totalFasalCutBadge");
+  if(cutBadgeEl) {
+    if(totalCutKgSum > 0) {
+      let cutQtlVal = totalCutKgSum / 100;
+      cutBadgeEl.style.display = "inline-block";
+      cutBadgeEl.innerText = `Total Cut: ${cutQtlVal.toFixed(2)} Qtl (${Math.round(totalCutKgSum * 10) / 10} Kg)`;
+    } else {
+      cutBadgeEl.style.display = "none";
+    }
+  }
+
+  if(document.getElementById("totalBore")) {
+    document.getElementById("totalBore").innerText = postCutBoreTxt;
+  }
+  if(document.getElementById("totalQtl")) {
+    document.getElementById("totalQtl").innerText = postCutQtlTxt;
   }
 
   document.getElementById("totalComm").innerText = totalC.toFixed(2);
@@ -3555,7 +3876,6 @@ function updateTable(arr){
   const sukhaiBagsEl = document.getElementById("dashboardSukhaiBags");
   const sukhaiFarmersEl = document.getElementById("dashboardSukhaiFarmers");
   if(sukhaiBagsEl) sukhaiBagsEl.innerText = totalSukhaiBagsApplied + " Bags";
-  if(sukhaiFarmersEl) sukhaiFarmersEl.innerText = totalSukhaiBagsApplied + " Bags";
   if(sukhaiFarmersEl) sukhaiFarmersEl.innerText = sukhaiFarmersSet.size + " Kisan";
 
   calculateTdsAmount();
@@ -3569,7 +3889,7 @@ function updateTable(arr){
   const mainBadge = document.getElementById("mainDashboardRateBadge");
   if(mainBadge) { mainBadge.innerText = rateTxt; }
 
-  updateAppIconBadge(finalBoreCount);
+  updateAppIconBadge(finalBoreAfterCut);
 }
 
 function generateReport() {
@@ -3603,9 +3923,9 @@ if(repType === "regular") {
 }
 
 if(repSort === "oldest")
-arr.sort((a,b)=> a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
+arr.sort((a,b)=> (a.date || "").localeCompare(b.date || "") || (a.order ?? a.timestamp ?? 0) - (b.order ?? b.timestamp ?? 0));
 else
-arr.sort((a,b)=> b.date.localeCompare(a.date) || (b.order ?? b.timestamp) - (a.order ?? a.timestamp));
+arr.sort((a,b)=> (b.date || "").localeCompare(a.date || "") || (b.order ?? b.timestamp ?? 0) - (a.order ?? a.timestamp ?? 0));
 
 let grouped = {};
 arr.forEach(r=>{
@@ -3650,29 +3970,29 @@ let grandFinalRemainingBore = Math.floor(grandTotalRemainingKg / bw);
 let grandFinalRemainingExtra = Math.round((grandTotalRemainingKg % bw) * 10) / 10;
 
 let html = `
-<div style="background:#2563eb; color:white; padding:12px; margin-bottom:15px; border-radius:10px; text-align:center; font-size:14px; line-height:1.6;">
-  <b>📊 All Dates Combined Grand Total:</b><br>
-  Total Entries: <b>${arr.length}</b> | All Bore (Pehle): <b>${grandFinalBore} Bags</b> | Extra: <b>${grandFinalExtra} Kg</b><br>
-  <span style="color:#86efac; font-size:15px; font-weight:800;">✅ Grand Total (Cut Ke Baad): ${grandFinalRemainingBore} Bags | Extra: ${grandFinalRemainingExtra} Kg (${Math.floor(grandTotalRemainingKg / 100)} Qtl ${Math.round((grandTotalRemainingKg % 100) * 10) / 10} Kg)</span><br>
-  <span style="color:#fde047; font-weight:bold; font-size:14px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span>
+<div style="background:#0265d2; color:white; padding:15px 12px; margin-bottom:12px; border-radius:14px; text-align:center; font-size:14.5px; line-height:1.6; box-shadow:0 4px 12px rgba(2,101,210,0.25);">
+  <div style="font-weight:bold; font-size:16px; margin-bottom:4px;">📊 All Dates Combined Grand Total:</div>
+  <div>Total Entries: <b>${arr.length}</b> | All Bore (Pehle): <b>${grandFinalBore} Bags</b> | Extra: <b>${grandFinalExtra} Kg</b></div>
+  <div style="margin-top:4px;"><span style="color:#86efac; font-weight:800; font-size:15px;">✅ Grand Total (Cut Ke Baad): ${grandFinalRemainingBore} Bags | Extra: ${grandFinalRemainingExtra} Kg (${Math.floor(grandTotalRemainingKg / 100)} Qtl ${Math.round((grandTotalRemainingKg % 100) * 10) / 10} Kg)</span></div>
+  <div style="margin-top:4px;"><span style="color:#fde047; font-weight:bold; font-size:14px;">♨️ Total Sukhai Bags: ${grandTotalSukhaiBags} Bags | Sukhai Wale Total Kisan: ${sukhaiCustomersSet.size}</span></div>
 </div>
-<table>
+<table style="width:100%; border-collapse:collapse; background:#fff; border:1px solid #cbd5e1; text-align:center; table-layout:auto;">
 <thead>
-<tr style="background:#2563eb;color:white">
-<th>No</th>
-<th>Name</th>
-<th>Father</th>
-<th>Village</th>
-<th>Bore</th>
-<th>Extra</th>
-<th>Quintal</th>
-<th>Kg</th>
+<tr style="background:#0265d2; color:white; font-size:12.5px;">
+  <th style="padding:8px 3px; width:35px; border:1px solid #0252a8;">No</th>
+  <th style="padding:8px 6px; border:1px solid #0252a8;">Name</th>
+  <th style="padding:8px 6px; border:1px solid #0252a8;">Father</th>
+  <th style="padding:8px 6px; border:1px solid #0252a8;">Village</th>
+  <th style="padding:8px 4px; width:45px; border:1px solid #0252a8;">Bore</th>
+  <th style="padding:8px 4px; width:45px; border:1px solid #0252a8;">Extra</th>
+  <th style="padding:8px 5px; width:65px; border:1px solid #0252a8;">Quintal</th>
+  <th style="padding:8px 5px; width:65px; border:1px solid #0252a8;">Kg</th>
 </tr>
 </thead>
 <tbody>
 `;
 
-let chronologicalArr = [...arr].sort((a,b) => a.date.localeCompare(b.date) || (a.order ?? a.timestamp) - (b.order ?? b.timestamp));
+let chronologicalArr = [...arr].sort((a,b) => (a.date || "").localeCompare(b.date || "") || (a.order ?? a.timestamp ?? 0) - (b.order ?? b.timestamp ?? 0));
 let runningTotalKgRaw = 0;
 let runningTotalKgSum = 0;
 let runningTotalRemainingKg = 0;
@@ -3727,20 +4047,20 @@ sortedDates.forEach(date=>{
   let dayRemainingQtlPart = Math.floor(dayTotalRemainingKg / 100);
   let dayRemainingKgPart = Math.round((dayTotalRemainingKg % 100) * 10) / 10;
 
-  const cum = cumulativeTotalsByDate[date];
-  let cumFinalBore = Math.floor(cum.kgRaw / bw);
-  let cumFinalExtra = Math.round((cum.kgRaw % bw) * 10) / 10;
+  const cum = cumulativeTotalsByDate[date] || { kgRaw: dayTotalKgRaw, remainingKg: dayTotalRemainingKg };
   let cumRemainingBore = Math.floor(cum.remainingKg / bw);
   let cumRemainingExtra = Math.round((cum.remainingKg % bw) * 10) / 10;
 
   html += `<tr class="report-date-row">
-    <td colspan="8" style="text-align:left; padding:10px; line-height:1.7;">
-      <b>📅 ${date} | कुल Entries: ${grouped[date].length}</b><br>
-      <span style="color:#1e40af;">● Pehle Ka Total:</span> Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b><br>
-      <span style="color:#15803d; font-size:14px; font-weight:800; background:#dcfce7; padding:2px 8px; border-radius:4px; display:inline-block; margin:3px 0;">
-        ✅ Aaj Cut Ke Baad Total Bags: <b>${dayRemainingBore} Bore ${dayRemainingExtra > 0 ? (dayRemainingExtra + ' Kg') : ''}</b> (${dayRemainingQtlPart} Qtl ${dayRemainingKgPart} Kg)
-      </span><br>
-      <span style="color:#475569; font-size:12px;">● Is Tareekh Tak Kul (Cum. After Cut): <b>${cumRemainingBore} Bore ${cumRemainingExtra > 0 ? (cumRemainingExtra + ' Kg') : ''}</b></span>
+    <td colspan="8" style="text-align:left; padding:8px 8px; line-height:1.7; background:#eef4ff; border-top:2px solid #bfdbfe; border-bottom:1px solid #bfdbfe;">
+      <div style="font-size:13.5px; font-weight:bold; color:#0f172a;">📅 ${date} | कुल Entries: ${grouped[date].length}</div>
+      <div style="color:#1e40af; font-size:12px; font-weight:600;">● Pehle Ka Total: Bore: <b>${dayFinalBore}</b> | Extra: <b>${dayFinalExtra} Kg</b> | Sukhai: <b style="color:#7c3aed;">${dayTotalSukhai} Bags</b></div>
+      <div style="margin:3px 0;">
+        <span style="color:#15803d; font-size:13px; font-weight:800; background:#dcfce7; padding:3px 8px; border-radius:6px; display:inline-block; border:1px solid #86efac;">
+          ✅ Aaj Cut Ke Baad Total Bags: <b>${dayRemainingBore} Bore ${dayRemainingExtra > 0 ? (dayRemainingExtra + ' Kg') : ''}</b> (${dayRemainingQtlPart} Qtl ${dayRemainingKgPart} Kg)
+        </span>
+      </div>
+      <div style="color:#475569; font-size:12px; font-weight:600;">● Is Tareekh Tak Kul (Cum. After Cut): <b>${cumRemainingBore} Bore ${cumRemainingExtra > 0 ? (cumRemainingExtra + ' Kg') : ''}</b></div>
     </td>
   </tr>`;
 
@@ -3749,8 +4069,19 @@ sortedDates.forEach(date=>{
     const qtlPart = Math.floor(qKg / 100);
     const kgPart = Math.round((qKg % 100) * 10) / 10;
     let actualDisplayBags = (Number(r.sukhaiBags) > 0) ? Number(r.sukhaiBags) : Number(r.bore || 0);
-    let sukhaiLabel = r.applySukhaiChecked ? ` <span style="color:#7c3aed; font-size:11px; font-weight:bold;">(♨️ Sukhai: ${actualDisplayBags} Bags)</span>` : '';
-    html += `<tr><td>${i+1}</td><td>${r.customer || ""}${sukhaiLabel}</td><td>${r.father || ""}</td><td>${r.village || ""}</td><td>${r.bore || 0}</td><td>${r.extra || 0}</td><td>${qtlPart} Qtl</td><td>${kgPart} Kg</td></tr>`;
+    let sukhaiLabel = r.applySukhaiChecked ? `<br><span style="color:#7c3aed; font-size:11px; font-weight:bold;">(♨️ Sukhai: ${actualDisplayBags} Bags)</span>` : '';
+    
+    html += `
+    <tr style="border-bottom:1px solid #e2e8f0; background:#fff;">
+      <td style="padding:6px 3px; text-align:center; color:#64748b;">${i+1}</td>
+      <td style="padding:6px 5px; font-weight:600; text-align:left; color:#1e293b;">${r.customer || ""}${sukhaiLabel}</td>
+      <td style="padding:6px 5px; color:#0265d2; font-weight:bold; text-align:left;">${r.father || ""}</td>
+      <td style="padding:6px 5px; text-align:left; color:#1e293b;">${r.village || ""}</td>
+      <td style="padding:6px 3px; text-align:center; font-weight:bold;">${r.bore || 0}</td>
+      <td style="padding:6px 3px; text-align:center;">${r.extra || 0}</td>
+      <td style="padding:6px 3px; text-align:center; font-weight:bold; color:#1e293b;">${qtlPart} Qtl</td>
+      <td style="padding:6px 3px; text-align:center; color:#475569;">${kgPart} Kg</td>
+    </tr>`;
   });
 });
 
@@ -4100,9 +4431,7 @@ function filterData(){
 
     if(nameInput){
       arr = arr.filter(r =>
-        (r.customer || "").toLowerCase().includes(nameInput) ||
-        (r.father || "").toLowerCase().includes(nameInput) ||
-        (r.village || "").toLowerCase().includes(nameInput)
+        (r.customer || "").toLowerCase().includes(nameInput)
       );
     }
 
@@ -4152,9 +4481,6 @@ function closeCutReport() {
     document.getElementById("cutReportScreen").style.display = "none";
 }
 
-/* ========================================================================= */
-/* --- CUT REPORT WITH DIRECT ✏ EDIT OPTION & AUTO RETURN --- */
-/* ========================================================================= */
 function generateCutReport() {
     const query = document.getElementById("cutReportSearch") ? document.getElementById("cutReportSearch").value.toLowerCase().trim() : "";
     const s = document.getElementById("season").value;
@@ -4259,7 +4585,7 @@ function generateCutReport() {
                     <td style="color:#d97706;">₹${Number(r.extraDeduction || 0).toFixed(0)}</td>
                     <td><small>${r.note || ""}</small></td>
                     <td style="text-align:center;">
-                        <button class="actionBtn" style="background:#2563eb; font-size:12px; padding:4px 8px;" onclick="editEntry('${r.id}', true)">✏</button>
+                        <button class="actionBtn" style="background:#0265d2; font-size:12px; padding:4px 8px;" onclick="editEntry('${r.id}', true)">✏</button>
                     </td>
                 </tr>
                 `;
@@ -4325,7 +4651,6 @@ function loadSuggestions(){
     document.getElementById("fatherList").innerHTML = allFathers.map(n=>`<option value="${n}">`).join("");
     document.getElementById("jformFatherList").innerHTML = allFathers.map(n=>`<option value="${n}">`).join("");
 
-    /* --- STRICT ISOLATION & DEDUPLICATION: PREVENTS GHOST/DOUBLE VILLAGES --- */
     const allVillages = cleanAndDedupeList([...localData.map(d => d.village), ...crossVillages]);
     document.getElementById("villageList").innerHTML = allVillages.map(n=>`<option value="${n}">`).join("");
     document.getElementById("jformVillageList").innerHTML = allVillages.map(n=>`<option value="${n}">`).join("");
@@ -4420,9 +4745,6 @@ function closeSeasonScreen(){ document.getElementById("seasonScreen").style.disp
 function singleClickPrint(id){ clearTimeout(clickTimer); clickTimer = setTimeout(() => { openSingleEntryPreview(id); clickTimer = null; }, 300); }
 function doubleClickEdit(id){ clearTimeout(clickTimer); clickTimer = null; editEntry(id); }
 
-/* ========================================================================= */
-/* --- RESPONSIVE MOBILE SLIP PREVIEW (BAGS + EXTRA KG EXACT DISPLAY) --- */
-/* ========================================================================= */
 function openForcedPreview(id, forceType) {
   const s = document.getElementById("season").value; if(!s) return;
   db.ref("seasons/"+s+"/entries/"+id).once("value", snap => {
@@ -4467,19 +4789,19 @@ function openForcedPreview(id, forceType) {
 
        previewHTML = `
          <div style="font-family:sans-serif; padding:12px; color:#1e293b; width:100%; max-width:480px; margin:0 auto; box-sizing:border-box;">
-           <h2 style="text-align:center; margin-bottom:2px; color:#2563eb; font-size:18px;">🏛️ Pakki Parchi Hisab</h2>
+           <h2 style="text-align:center; margin-bottom:2px; color:#0265d2; font-size:18px;">🏛️ Pakki Parchi Hisab</h2>
            <p style="text-align:center; font-size:12px; color:#475569; margin:0 0 10px 0;">Season: ${s}</p>
            <table border="1" style="width:100%; border-collapse:collapse; font-size:13px; border-color:#e2e8f0;">
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold; width:45%;">Date</th><td style="padding:8px; color:#1e293b; font-weight:500;">${r.date || ""}</td></tr>
-             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#2563eb; font-weight:bold;">${r.customer || ""}</td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Customer</th><td style="padding:8px; color:#0265d2; font-weight:bold;">${r.customer || ""}</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags / Weight</th><td style="padding:8px; color:#1e293b; font-weight:bold;">${bagsDisplay} (${r.quintal || ""})</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Base Gross Bhav</th><td style="padding:8px; color:#1e293b;">₹${grossVal.toFixed(2)} (@₹${rateVal}/Qtl)</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Commission</th><td style="padding:8px; color:#16a34a; font-weight:bold;">₹${commVal.toFixed(2)}</td></tr>
              ${taxPercentText}
              <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">SGST</th><td style="padding:8px; color:#1e293b;">₹${sgstAmt.toFixed(2)}</td></tr>
-             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">CGST</th><td style="padding:8px; color:#1e293b;">₹${cgstAmt.toFixed(2)}</td></tr>
-             <tr style="background:#eff6ff; font-size:15px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Govt Amount</th><td style="padding:10px; color:#2563eb;"><b>₹${finalGovtAmount.toFixed(2)}</b></td></tr>
+             <tr><th style="background:#f8fafc; padding:8px; text-align:left; color:#1e293b;">CGST</th><td style="padding:8px; color:#1e293b;">₹${cgstAmt.toFixed(2)}</td></tr>
+             <tr style="background:#eff6ff; font-size:15px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Govt Amount</th><td style="padding:10px; color:#0265d2;"><b>₹${finalGovtAmount.toFixed(2)}</b></td></tr>
            </table>
          </div>
        `;
@@ -4501,7 +4823,7 @@ function openForcedPreview(id, forceType) {
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Bags (Bore)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">${bagsDisplay}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Quintal Weight</th><td style="padding:8px; color:#1e293b;">${r.quintal || ""}</td></tr>
              <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Rate (Bhav)</th><td style="padding:8px; color:#1e293b; font-weight:bold;">₹${rateVal} / Qtl</td></tr>
-             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b; font-weight:bold;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
+             <tr><th style="background:#fffaf0; padding:8px; text-align:left; color:#1e293b;">Labour Charge</th><td style="padding:8px; color:#dc2626; font-weight:500;">₹${labVal.toFixed(2)}</td></tr>
              <tr style="background:#fffaf0; font-size:16px; color:#1e293b;"><th style="padding:10px; text-align:left; color:#1e293b; font-weight:bold;">Final Amount</th><td style="padding:10px; color:#b91c1c;"><b>₹${netKhachi.toFixed(2)}</b></td></tr>
            </table>
          </div>
@@ -4509,11 +4831,12 @@ function openForcedPreview(id, forceType) {
     }
     
     const prevContent = document.getElementById("previewContent");
+    prevContent.style.width = '480px';
+    prevContent.style.minWidth = '480px';
+    prevContent.style.maxWidth = '480px';
     prevContent.innerHTML = previewHTML;
-    prevContent.style.minWidth = "unset";
-    prevContent.style.width = "100%";
-    prevContent.style.transform = "none";
     document.getElementById("zoomRange").value = 1.0;
+    document.getElementById("zoomPercentBadge").innerText = "100%";
     document.getElementById("printPreviewModal").style.display = "flex";
   });
 }
@@ -4546,7 +4869,7 @@ function runAISummary() {
     document.getElementById("aiResultView").innerHTML = `
       <b>📊 Season Summary (AI Calculated):</b><br>
       • Total Entries: <b>${m.entriesCount}</b><br>
-      • Total Bore Count: <b>${m.finalBore} Bags | Extra: ${m.extraKg} Kg</b><br>
+      • Total Bore Count (Cut Baad): <b>${m.finalBore} Bags | Extra: ${m.extraKg} Kg</b><br>
       • Net Payout Amount: <b>₹${m.netPayout.toFixed(2)}</b><br>
       • Total Fasal Cut: <b>${m.cutQtl.toFixed(2)} Qtl</b><br>
       • Active Customers: <b>${m.customersCount}</b> | Villages Covered: <b>${m.villagesCount}</b>
@@ -4609,7 +4932,7 @@ function handleAIQuery() {
   if(!s) return;
   
   let view = document.getElementById("aiResultView");
-  view.innerHTML = "<div style='color:#64748b;'>Gemini Processing Query...</div>";
+  view.innerHTML = "<div style='color:#64748b;'>Processing Query...</div>";
 
   if(query === "" || query === "app info" || query === "help") {
      view.innerHTML = `<b>ℹ️ Mandi App Pro Manual:</b><br>Aap is AI Engine se reports, calculations aur fast updates kar sakte hain.`;
@@ -5203,7 +5526,7 @@ function showCombined(){
     alert("Kripya hisab ke liye rows select karein!");
     return;
   }
-  let totalBore = 0, totalExtra = 0, totalAmount = 0, totalCut = 0, totalKgRaw = 0;
+  let totalBore = 0, totalExtra = 0, totalAmount = 0, totalKgRaw = 0;
   let custName = "";
 
   selectedChecks.forEach(chk => {
